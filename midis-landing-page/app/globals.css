@@ -1,0 +1,1203 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   MIDIS LANDING PAGE — DESIGN SYSTEM
+   --------------------------------------------------------------------------
+   Accent #EF8716 is the MIDIS logo orange, MEASURED from the brand files in
+   public/brand (the horizontal logo is a clean two-colour PNG containing only
+   #FFFFFF and #EF8716). It is not an estimate and not a substitute.
+
+   Contrast, computed against WCAG 2.2:
+     #EF8716 on #FFFFFF ...... 2.55:1  -> NEVER body text on a light surface
+     #EF8716 on #141518 ...... 7.26:1  -> fine for text on dark surfaces
+     #141518 on #EF8716 ...... 7.26:1  -> buttons take CHARCOAL text, not white
+     #AA5A0A on #F8F8F6 ...... 4.72:1  -> the orange for TEXT on light
+
+   The brief suggested #171717 / #242424 / #F8F8F6 / #686868 as starting
+   points. The neutrals below sit on those values; the ink is nudged a half
+   step cooler (#141518) so the orange reads as warm against it rather than
+   muddy, and #686868 is kept only for large text — #5F6166 carries anything
+   that has to clear 4.5:1 on paper.
+   ========================================================================== */
+
+@theme {
+  /* ---- Neutrals: ~85% of the visual surface ---------------------------- */
+  --color-paper: #f8f8f6;
+  --color-surface: #ffffff;
+  --color-ink: #141518;
+  --color-ink-soft: #242424;
+  --color-ink-raised: #1d1f23;
+  --color-line: #e7e7e3;
+  --color-line-dark: #2c2e33;
+  /* #686868 is 5.1:1 on paper — safe for body text. */
+  --color-muted: #686868;
+  /* On dark surfaces. 6.4:1 on --color-ink. */
+  --color-muted-dark: #a0a09c;
+  /* For text over a scrimmed photograph, where the ground is not flat. */
+  --color-muted-strong: #5f6166;
+
+  /* ---- Signature accent ------------------------------------------------ */
+  --color-accent: #ef8716;
+  --color-accent-hover: #d97608;
+  /* AA-safe orange TEXT on light surfaces. Never use --color-accent for this. */
+  --color-accent-ink: #aa5a0a;
+  --color-accent-soft: #fdf1e4;
+  --color-accent-line: #f3d5b2;
+
+  /* ---- Typography ------------------------------------------------------ */
+  --font-display: var(--font-inter-tight), "Inter Tight", system-ui, sans-serif;
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  /*
+   * Fluid display scale.
+   *
+   * Every clamp is tuned so the smallest value is readable at 320px without
+   * the heading breaking into single-word lines — the brief calls that out
+   * specifically. The vw coefficient is deliberately modest: an aggressive
+   * one looks impressive at 1920 and wraps badly on a 360px phone.
+   */
+  --text-display-xl: clamp(2.5rem, 1.35rem + 5.1vw, 6.25rem);
+  --text-display-lg: clamp(2.125rem, 1.3rem + 3.6vw, 4.5rem);
+  --text-display-md: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
+  --text-display-sm: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
+
+  /* ---- Motion: one shared language ------------------------------------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur-fast: 200ms;
+  --dur-base: 420ms;
+  --dur-slow: 760ms;
+
+  /* ---- Layout ---------------------------------------------------------- */
+  --space-section: clamp(3.5rem, 6vw, 7rem);
+  --space-block: clamp(1.75rem, 2.5vw, 2.75rem);
+
+  /*
+   * CONTAINER WIDTHS, MEASURED AGAINST THE MAIN MIDIS SITE.
+   *
+   * The reference (new-midis-ten.vercel.app) was measured at three widths:
+   *
+   *     viewport   gutter   content
+   *     390px       20px      350px
+   *     1440px      65px     1310px
+   *     1920px     102px     1715px   (capped at its own 118rem)
+   *
+   * That is a ~4.5vw gutter with a 118rem ceiling. This page previously
+   * capped at 84rem, so at 1920px it rendered 1344px of content inside
+   * 288px margins — visibly narrower and more boxed-in than the main site.
+   *
+   * ONE WIDTH, NOT TWO. An earlier version of this pass used 100rem for
+   * text sections and 118rem for visual ones. That reintroduces exactly the
+   * defect reported on the FAQ: above 1600px the two caps resolve to
+   * different left edges, so a section heading in one container and the grid
+   * beneath it in the other would start 144px apart at 1920px.
+   *
+   * So every container is 118rem and shares one left edge at every width.
+   * Expansiveness comes from the container; readability comes from max-w-*
+   * on the text block itself, which is where it belongs — a container should
+   * not be doing two jobs at once.
+   */
+  --container-site: 118rem;
+
+  /*
+   * 20px on a phone, ~65px at 1440, 96px ceiling — tracking the reference's
+   * measured gutters rather than a guess. The floor is 20px rather than 16
+   * because that is what the main site uses and it reads more comfortably
+   * against a full-bleed photograph.
+   */
+  --gutter: clamp(1.25rem, 4.5vw, 6rem);
+
+  --header-h: 4.5rem;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Anchored sections must clear the sticky header. */
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+  /*
+   * Belt and braces with the same rule on <body>.
+   *
+   * `overflow-x: clip` on <body> alone does NOT stop <html> reporting a
+   * wider scroll width, so a transform that reaches past the viewport still
+   * produces a horizontal scrollbar. Clipping both closes that. `clip`
+   * rather than `hidden` because `hidden` would make this a scroll
+   * container and silently kill `position: sticky` on descendants.
+   */
+  overflow-x: clip;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  /* Guards against one wide child creating a horizontal scrollbar. */
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  text-wrap: balance;
+}
+
+/* Long paragraphs read better without a one-word last line. */
+p {
+  text-wrap: pretty;
+}
+
+/* ==========================================================================
+   Focus
+   --------------------------------------------------------------------------
+   One visible ring for every interactive element, defined once. `:focus-
+   visible` rather than `:focus` so a mouse click on a button does not leave a
+   ring behind, while keyboard tabbing always shows one.
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* On dark panels the orange ring is still 7.26:1 — but add a light halo so it
+   survives sitting on top of a photograph. */
+.on-dark :focus-visible {
+  outline-color: var(--color-accent);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.25);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+/* ==========================================================================
+   Reveal-on-scroll
+   --------------------------------------------------------------------------
+   The entrance animation for the whole page, expressed in CSS so that no
+   JavaScript is needed to *render* anything — the observer in <Reveal> only
+   flips a data attribute. Elements are visible by default and hidden only
+   once the observer confirms it is running, so a visitor with JS disabled, or
+   one who arrives before hydration, still sees a complete page.
+   ========================================================================== */
+
+[data-reveal] {
+  opacity: 1;
+}
+
+/* ---- default: fade and rise --------------------------------------------- */
+
+[data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+[data-reveal="shown"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-slow) var(--ease-out-expo),
+    transform var(--dur-slow) var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* ---- fade only: where movement would be noise --------------------------- */
+
+[data-reveal="pending"][data-reveal-variant="fade"] {
+  transform: none;
+}
+
+/* ---- scale: a small settle, for cards ----------------------------------- */
+
+[data-reveal="pending"][data-reveal-variant="scale"] {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+}
+
+/* ---- clip: a wipe from the bottom edge, for photographs -----------------
+   The image itself does not move; the mask opens over it. `clip-path` is a
+   compositor property, so this costs no layout work.                        */
+
+/*
+ * THE CLIP IS ON THE CHILD, NOT ON THE OBSERVED ELEMENT.
+ *
+ * This was originally `[data-reveal="pending"][data-reveal-variant="clip"]`
+ * — clipping the very element the IntersectionObserver watches. An element
+ * clipped to zero height has no intersection area, so `isIntersecting`
+ * never became true, the state never advanced past "pending", and every
+ * project screenshot stayed permanently invisible.
+ *
+ * It is a self-defeating loop: the hidden state is what prevents the
+ * observer from ever un-hiding it. Clipping a child instead leaves the
+ * observed box at full size, so the reveal can actually fire.
+ *
+ * Worth noting how it hid: the element's OPACITY stays 1 throughout, so a
+ * check for invisible content that only looks at opacity reports everything
+ * as fine. The layout audit now checks the rendered clip too.
+ */
+[data-reveal="pending"][data-reveal-variant="clip"] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-reveal-variant="clip"] > * {
+  transition: clip-path 900ms var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal="pending"][data-reveal-variant="clip"] > * {
+  clip-path: inset(0 0 100% 0);
+}
+
+[data-reveal="shown"][data-reveal-variant="clip"] > * {
+  clip-path: inset(0 0 0 0);
+}
+
+/* ---- lines: the heading reveal ------------------------------------------
+   Each real line sits in an overflow-hidden box and slides up from beneath
+   it. The inner span carries its own --line-delay, so the lines cascade
+   rather than arriving together.
+
+   `padding-bottom` + matching negative margin give descenders (g, y, p) room
+   inside the mask; without it they are sliced off at the baseline.           */
+
+.reveal-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.reveal-line-inner {
+  display: block;
+  will-change: transform;
+}
+
+[data-reveal="pending"][data-reveal-variant="lines"] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-reveal="pending"][data-reveal-variant="lines"] .reveal-line-inner {
+  transform: translateY(105%);
+}
+
+[data-reveal="shown"][data-reveal-variant="lines"] .reveal-line-inner {
+  transform: none;
+  transition: transform 820ms var(--ease-out-expo);
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--line-delay, 0ms));
+}
+
+/* ==========================================================================
+   Reduced motion
+   --------------------------------------------------------------------------
+   Everything that moves is switched off together, including the smooth
+   scroll, rather than component by component.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-reveal],
+  [data-reveal="pending"],
+  [data-reveal="shown"] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@utility container-site {
+  width: 100%;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* The small uppercase label above a section heading. */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/*
+ * A hairline that reads as a rule, not a border.
+ *
+ * Used between editorial rows. It is a pseudo-element rather than a
+ * border-top so it can be inset from the container edge independently of the
+ * row's own padding.
+ */
+@utility rule-top {
+  position: relative;
+}
+
+/* Screen-reader-only, for labels that are visually implied by layout. */
+@utility sr-only-focusable {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+
+  &:focus {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0.75rem 1.25rem;
+    overflow: visible;
+    clip-path: none;
+    background: var(--color-ink);
+    color: #fff;
+    border-radius: 0.5rem;
+  }
+}
+
+/* ==========================================================================
+   Marquee — the client logo rail
+   --------------------------------------------------------------------------
+   Pure CSS. Two identical tracks translate by exactly -50% of the wrapper, so
+   the loop is seamless regardless of how many logos are in it.
+   ========================================================================== */
+
+@keyframes midis-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: midis-marquee var(--marquee-duration, 60s) linear infinite;
+}
+
+/* Pausing on hover lets someone actually look at a mark they recognise. */
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    /* Without the animation the track must not overflow; let it wrap. */
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* The duplicate half exists only to make the loop seamless — drop it, or
+     every client would be listed twice in the static grid. */
+  .marquee-track > [aria-hidden="true"] {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Hero entrance
+   --------------------------------------------------------------------------
+   The hero animates from CSS alone — no observer, no hydration dependency.
+   That matters for more than elegance: the headline is the LCP element, and
+   an element that waits for JavaScript to become visible pushes LCP out by
+   however long hydration takes.
+
+   `animation-fill-mode: both` holds the start frame before the delay
+   elapses, so a staggered child does not flash at full opacity first.
+   ========================================================================== */
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-settle {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 620ms var(--ease-out-expo) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.hero-settle {
+  animation: hero-settle 860ms var(--ease-out-expo) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .hero-settle {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Accordion
+   --------------------------------------------------------------------------
+   Height is animated with grid-template-rows rather than max-height, so the
+   panel opens to its real height instead of an arbitrary guess that clips
+   long answers or leaves a gap after short ones.
+   ========================================================================== */
+
+.accordion-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out-expo);
+}
+
+.accordion-panel[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.accordion-panel > div {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-panel {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Micro-interactions
+   --------------------------------------------------------------------------
+   Small, consistent, and defined once so every instance behaves identically
+   rather than each component inventing its own timing. All of them animate
+   transform, opacity or colour only — nothing that triggers layout.
+   ========================================================================== */
+
+/*
+ * An underline that draws in from the left on hover.
+ *
+ * A gradient sized with `background-size` rather than a pseudo-element, so
+ * it needs no extra DOM and wraps correctly across multiple lines.
+ */
+@utility link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1.5px;
+  transition: background-size var(--dur-base) var(--ease-out-quart);
+  padding-bottom: 2px;
+
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1.5px;
+  }
+}
+
+/* Always-present accent rule that thickens on hover, for links that carry
+   an underline as part of their resting state. */
+@utility link-underline-accent {
+  background-image: linear-gradient(var(--color-accent), var(--color-accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+  transition: background-size var(--dur-base) var(--ease-out-quart);
+  padding-bottom: 3px;
+
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 3px;
+  }
+}
+
+/*
+ * The standard interactive card.
+ *
+ * One definition for every card on the page — services, work, the portfolio
+ * gateway — so the lift distance, shadow and timing cannot drift apart
+ * between sections. The lift is 4px: enough to register, small enough that a
+ * grid of them does not look like it is jumping.
+ *
+ * Gated behind `hover: hover` so a touch device never sticks in the hovered
+ * state after a tap.
+ */
+@utility card-lift {
+  transition:
+    transform var(--dur-base) var(--ease-out-quart),
+    box-shadow var(--dur-base) var(--ease-out-quart),
+    border-color var(--dur-base) var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .card-lift:hover {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   IMMERSIVE LAYOUT
+   --------------------------------------------------------------------------
+   Two container widths, for two different jobs.
+
+     container-site   84rem. The TEXT measure. Headings, paragraphs and form
+                      columns stay here so a line never runs the full width
+                      of a 1920px display.
+     container-wide   96rem. VISUAL compositions only — project showcases,
+                      bento grids, logo rails. Wider than the text measure so
+                      imagery reads as expansive, still bounded so it never
+                      becomes an undesigned stretch.
+
+   A section background is always edge-to-edge; only its content is bounded.
+   That is what makes a band read as immersive rather than as a card
+   floating on a page.
+   ========================================================================== */
+
+@theme {
+  --radius-card: 1.25rem;
+  --radius-card-lg: 1.5rem;
+}
+
+/*
+ * Kept as a named alias for visual compositions — the project showcase, the
+ * service bento, the pricing grid — so those call sites still read as
+ * "this is a wide visual band". It resolves to the SAME width and gutter as
+ * container-site on purpose: see the note on --container-site for why two
+ * different caps break alignment above 1600px.
+ */
+@utility container-wide {
+  width: 100%;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* ==========================================================================
+   GLASS
+   --------------------------------------------------------------------------
+   USED SELECTIVELY, AND THE REASON MATTERS.
+
+   backdrop-filter blurs WHAT IS BEHIND the element. Over a flat paper
+   background there is nothing to blur, so the effect costs a compositor
+   layer and renders as a plain translucent rectangle. Glass is therefore
+   applied only where something actually sits behind it: over photography,
+   over the dark sections, and over the accent wash. The typography-led
+   sections stay clean, which is also what keeps the glass ones special.
+
+   A WARNING WORTH LEAVING IN THE CODE: an element with backdrop-filter
+   becomes the CONTAINING BLOCK for its fixed-position descendants. That is
+   not a quirk — it already broke this site's mobile menu once, collapsing
+   the panel to 1px tall. Never put a position:fixed child inside one.
+   ========================================================================== */
+
+/* On a DARK ground — the pricing grid, the final CTA. */
+@utility glass-dark {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: var(--radius-card-lg);
+  background: rgb(255 255 255 / 0.045);
+  /*
+   * NO HAND-WRITTEN -webkit- PREFIX HERE, DELIBERATELY.
+   *
+   * Writing `backdrop-filter` and `-webkit-backdrop-filter` with identical
+   * values let Lightning CSS dedupe the pair and keep only the PREFIXED
+   * one — and Chrome does not recognise `-webkit-backdrop-filter`
+   * (`CSS.supports("-webkit-backdrop-filter", "blur(4px)")` is false while
+   * the unprefixed form is true). The result was glass that rendered as a
+   * flat translucent rectangle in every Chromium browser.
+   *
+   * Lightning CSS prefixes from the browser targets on its own. Declaring
+   * the standard property alone is what actually ships working glass.
+   */
+  backdrop-filter: blur(14px) saturate(120%);
+  box-shadow:
+    0 16px 48px rgb(0 0 0 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+  transition:
+    transform var(--dur-base) var(--ease-out-quart),
+    border-color var(--dur-base) var(--ease-out-quart),
+    background-color var(--dur-base) var(--ease-out-quart),
+    box-shadow var(--dur-base) var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .glass-dark:hover {
+    border-color: rgb(239 135 22 / 0.4);
+    background: rgb(255 255 255 / 0.07);
+  }
+}
+
+/* On a LIGHT ground that has imagery or a wash behind it. */
+@utility glass-light {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgb(255 255 255 / 0.55);
+  border-radius: var(--radius-card-lg);
+  background: rgb(255 255 255 / 0.62);
+  /* Standard property only — see the note in glass-dark. */
+  backdrop-filter: blur(16px) saturate(130%);
+  box-shadow:
+    0 14px 40px rgb(20 21 24 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.7);
+  transition:
+    transform var(--dur-base) var(--ease-out-quart),
+    border-color var(--dur-base) var(--ease-out-quart),
+    box-shadow var(--dur-base) var(--ease-out-quart);
+}
+
+/*
+ * Mobile simplification.
+ *
+ * backdrop-filter is the most expensive thing on this page for a phone GPU,
+ * and at small sizes the blur is barely legible anyway. Below lg the glass
+ * becomes a plain translucent surface: same design language, a fraction of
+ * the cost.
+ */
+@media (max-width: 1023px) {
+  .glass-dark,
+  .glass-light {
+    backdrop-filter: none;
+  }
+  .glass-dark {
+    background: rgb(255 255 255 / 0.06);
+  }
+  .glass-light {
+    background: rgb(255 255 255 / 0.9);
+  }
+}
+
+/* ==========================================================================
+   3D TILT
+   --------------------------------------------------------------------------
+   Perspective lives on the wrapper and the transform on an inner element, so
+   the card children keep their own stacking and the rotation has a
+   believable vanishing point.
+
+   --mx / --my are written by TiltCard (a pointer listener on the element
+   itself, never on the document) in the range -0.5..0.5. Rotation is capped
+   at 5deg: the brief asks for premium rather than playful, and past about
+   six degrees a card starts to read as a toy.
+
+   Gated on (hover: hover) and (pointer: fine) so a touch screen never gets a
+   transform stuck mid-tilt after a tap.
+   ========================================================================== */
+
+@utility tilt-root {
+  perspective: 1100px;
+  transform-style: preserve-3d;
+}
+
+@utility tilt-inner {
+  transition: transform 480ms var(--ease-out-quart);
+  will-change: transform;
+}
+
+@utility tilt-lift {
+  transition: transform 480ms var(--ease-out-quart);
+}
+
+/*
+ * The cursor-following sheen. A radial gradient positioned from the same
+ * --mx/--my the tilt uses, so the highlight tracks the pointer across the
+ * card face. Only opacity animates on enter and leave.
+ */
+@utility tilt-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out-quart);
+  background: radial-gradient(
+    30rem 30rem at calc(50% + var(--mx, 0) * 55%) calc(50% + var(--my, 0) * 55%),
+    rgb(255 255 255 / 0.17),
+    transparent 60%
+  );
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tilt-root[data-tilting="true"] .tilt-inner {
+    /* No transition while tracking — the pointer IS the easing. A
+       transition here makes the card lag behind the cursor. */
+    transition: none;
+    transform: rotateX(calc(var(--my, 0) * -5deg))
+      rotateY(calc(var(--mx, 0) * 5deg));
+  }
+
+  /* Content lifted off the card face, so the tilt has real depth instead of
+     looking like a rotating photograph. */
+  .tilt-root[data-tilting="true"] .tilt-lift {
+    transform: translateZ(34px);
+  }
+
+  .tilt-root[data-tilting="true"] .tilt-sheen {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-inner,
+  .tilt-lift {
+    transform: none !important;
+    transition: none !important;
+  }
+  .tilt-sheen {
+    opacity: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   SCROLL-DRIVEN MOTION
+   --------------------------------------------------------------------------
+   These use animation-timeline, so the browser drives them from scroll
+   position on the compositor — no scroll listener, no JavaScript, nothing to
+   throttle. Wrapped in @supports: a browser without it gets the static
+   layout, and the reveal animations still run there.
+   ========================================================================== */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Project imagery drifts inside its frame as the frame crosses the
+       viewport. The image is pre-scaled 1.06 so the drift never exposes an
+       edge. Total travel is 4% of the frame height. */
+    @keyframes media-drift {
+      from {
+        transform: translateY(-2%) scale(1.06);
+      }
+      to {
+        transform: translateY(2%) scale(1.06);
+      }
+    }
+
+    .media-drift {
+      animation: media-drift linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    /* The process connector draws itself as the section is read. */
+    @keyframes line-draw {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    @keyframes line-draw-y {
+      from {
+        transform: scaleY(0);
+      }
+      to {
+        transform: scaleY(1);
+      }
+    }
+
+    .line-draw {
+      transform-origin: left center;
+      animation: line-draw linear both;
+      animation-timeline: view();
+      animation-range: cover 12% cover 62%;
+    }
+
+    .line-draw-y {
+      transform-origin: top center;
+      animation: line-draw-y linear both;
+      animation-timeline: view();
+      animation-range: cover 5% cover 72%;
+    }
+  }
+}
+
+/* ==========================================================================
+   AMBIENT DEPTH
+   --------------------------------------------------------------------------
+   A very slow, very low-contrast drift behind the dark sections. It is the
+   only looping animation besides the logo rail, it travels 2% of its own
+   size, and it is purely decorative — so it is the first thing switched off
+   for reduced motion.
+   ========================================================================== */
+
+@keyframes ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.07);
+  }
+}
+
+.ambient {
+  animation: ambient-drift 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Magnetic button nudge
+   --------------------------------------------------------------------------
+   Four pixels, maximum. A magnetic button that moves far enough to really
+   notice is a button that moves out from under the cursor, which is an
+   accessibility problem dressed up as a flourish.
+   ========================================================================== */
+
+@media (hover: hover) and (pointer: fine) {
+  .magnetic {
+    transition: transform var(--dur-fast) var(--ease-out-quart);
+  }
+  .magnetic[data-magnet="true"] {
+    transform: translate(calc(var(--mx, 0) * 4px), calc(var(--my, 0) * 4px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magnetic[data-magnet="true"] {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Section-specific reveal identities
+   --------------------------------------------------------------------------
+   Each major section gets its own entrance so the page does not read as one
+   fade-up repeated ten times, while all of them share the same easing and
+   duration tokens so they belong to one system.
+   ========================================================================== */
+
+/* Trust: logos brighten into place rather than moving. */
+[data-reveal="pending"][data-reveal-variant="lift"] {
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
+}
+
+/*
+ * Work / case studies: content slides in from the side it occupies.
+ *
+ * VERTICAL ON PHONES, AND NOT ONLY FOR TASTE. A horizontal translate on a
+ * pending element pushes it past the viewport edge, and `overflow-x: clip`
+ * on <body> does not stop <html> reporting the wider scroll width — so the
+ * page gained 12px of horizontal scroll at every width up to 430px. Measured
+ * at 320–430px: the column sat at left 44 (16 container + 28 translate)
+ * instead of 16.
+ *
+ * Below lg the two side variants therefore fall back to the vertical rise,
+ * which is also the right call on a single-column layout: there is no "side"
+ * for content to come from when everything is stacked.
+ */
+[data-reveal="pending"][data-reveal-variant="side-left"],
+[data-reveal="pending"][data-reveal-variant="side-right"] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+@media (min-width: 1024px) {
+  [data-reveal="pending"][data-reveal-variant="side-left"] {
+    transform: translateX(-28px);
+  }
+
+  [data-reveal="pending"][data-reveal-variant="side-right"] {
+    transform: translateX(28px);
+  }
+}
+
+/* Process: steps rise with a slight rotation, like cards being dealt. */
+[data-reveal="pending"][data-reveal-variant="deal"] {
+  opacity: 0;
+  transform: translateY(22px) rotate(-0.6deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal][data-reveal-variant] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   THE CLOSING COMPOSITION — final CTA + footer
+   --------------------------------------------------------------------------
+   These two sections are designed as ONE band. They share a background
+   colour, the lighting carries across the seam, and there is no hard edge
+   between them — the CTA resolves into the footer rather than stopping.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   The oversized footer wordmark
+   --------------------------------------------------------------------------
+   Two stacked copies of the same text. The outline is always present; the
+   filled copy is clipped to nothing and wipes open left-to-right when the
+   footer is reached, which is the outline-to-fill reveal.
+
+   THE CLIP IS ON A CHILD, never on the element the IntersectionObserver
+   watches — clipping the observed element to zero area stops it ever
+   intersecting, which is exactly how the project screenshots were once left
+   permanently invisible.
+
+   OVERFLOW: the wrapper clips, the text never wraps, and the size is a vw
+   clamp — so the wordmark can bleed off both edges by design without ever
+   producing a horizontal scrollbar.
+   -------------------------------------------------------------------------- */
+
+@utility wordmark-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0.78;
+}
+
+@utility wordmark-type {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  /*
+   * Sized to SPAN the viewport, not to sit in the middle of it.
+   *
+   * The vw figure is what makes the word reach the edges. Measured rather
+   * than estimated: "MIDIS" in Inter Tight 600 at -0.05em renders about
+   * 2.37x its font-size, not the ~3.1x a glyph-count estimate suggests — so
+   * an earlier 30.5vw left it ~1040px wide in a 1440px viewport, still
+   * reading as a centred heading rather than a full-width treatment.
+   *
+   * At 40vw it measures ~1365px at 1440 and ~1820px at 1920. The 50rem
+   * ceiling only engages past ~2000px. `wordmark-wrap` clips, so any
+   * overshoot is deliberate bleed, never overflow.
+   */
+  font-size: clamp(4rem, 40vw, 50rem);
+  letter-spacing: -0.05em;
+  line-height: 0.78;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Resting state: outline only. */
+@utility wordmark-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.16);
+}
+
+/* The fill that wipes in over the outline. */
+@utility wordmark-fill {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background-image: linear-gradient(
+    96deg,
+    rgb(255 255 255 / 0.95) 0%,
+    rgb(255 255 255 / 0.72) 38%,
+    var(--color-accent) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  clip-path: inset(0 100% 0 0);
+}
+
+[data-reveal="shown"] .wordmark-fill {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1500ms var(--ease-out-expo) 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-fill {
+    clip-path: inset(0 0 0 0);
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Hairline dividers that draw themselves
+   -------------------------------------------------------------------------- */
+
+@utility hairline {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    rgb(255 255 255 / 0.16),
+    rgb(255 255 255 / 0.05) 55%,
+    transparent
+  );
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hairline {
+      transform-origin: left center;
+      animation: line-draw linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 38%;
+    }
+  }
+}
+
+/* ==========================================================================
+   FINAL CTA — typography-driven
+   --------------------------------------------------------------------------
+   The composition is carried by type, spacing and light. There is no card,
+   no mockup, no background lettering and no illustration: everything that
+   used to sit on the right has been removed, and the section is a single
+   centred column.
+   ========================================================================== */
+
+/*
+ * The headline scale.
+ *
+ * Its own clamp rather than --text-display-lg, because this is the largest
+ * type on the page and wants a steeper curve: 2.5rem on a 320px phone,
+ * growing to 6.5rem. The vw coefficient is what makes it feel cinematic on
+ * a wide screen while still fitting "Something Better?" on one line at
+ * 360px, which is where the previous scale started breaking awkwardly.
+ */
+@utility cta-headline {
+  font-size: clamp(2.5rem, 1.1rem + 6.1vw, 6.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.038em;
+  text-wrap: balance;
+}
+
+/*
+ * The accented second line.
+ *
+ * A white-to-orange gradient clipped to the glyphs, which drifts across on
+ * hover. Both ends of the ramp clear AA on the charcoal ground — white is
+ * 15.8:1 and #EF8716 is 7.26:1 — so the treatment never costs legibility.
+ *
+ * The @supports guard matters: without `background-clip: text`, transparent
+ * text on a transparent background is invisible. The fallback is a solid
+ * accent fill, so an unsupporting browser gets a readable orange line rather
+ * than a blank one.
+ */
+@utility cta-accent-text {
+  color: var(--color-accent);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .cta-accent-text {
+    color: transparent;
+    background-image: linear-gradient(
+      100deg,
+      #ffffff 0%,
+      #ffffff 26%,
+      var(--color-accent) 68%,
+      #f6ad5c 100%
+    );
+    background-size: 220% 100%;
+    background-position: 0% 50%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    transition: background-position 1100ms var(--ease-out-quart);
+  }
+
+  /* Driven from the heading, so hovering anywhere on the headline moves it
+     — a target the size of two words would be fussy to find. */
+  @media (hover: hover) and (pointer: fine) {
+    .cta-headline:hover .cta-accent-text {
+      background-position: 100% 50%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-accent-text {
+    transition: none;
+  }
+}
+
+/*
+ * The one decorative detail: a thin orange rule under the content, drawing
+ * out from the centre once the section is reached. It is 2px of gradient
+ * that fades at both ends, so it reads as a glint rather than a border.
+ */
+@utility accent-rule {
+  height: 2px;
+  width: min(9rem, 40%);
+  margin-inline: auto;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent),
+    transparent
+  );
+  transform: scaleX(0);
+  transform-origin: center;
+}
+
+[data-reveal="shown"] .accent-rule {
+  transform: scaleX(1);
+  transition: transform 1200ms var(--ease-out-expo) 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accent-rule {
+    transform: scaleX(1);
+    transition: none;
+  }
+}

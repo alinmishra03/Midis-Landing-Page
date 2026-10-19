@@ -1,0 +1,487 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Arrow, Button } from "@/components/ui/Button";
+import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
+import {
+  BUDGETS,
+  EXISTING_SITE,
+  PAGE_COUNTS,
+  PROJECT_TYPES,
+  TIMELINES,
+} from "@/content/forms";
+import { estimatorSchema } from "@/lib/enquiry";
+import { estimator } from "@/content/sections";
+import { cn } from "@/lib/utils";
+
+/**
+ * SECTION 5 — the Website Project Estimator.
+ *
+ * WHAT IT DOES NOT DO: calculate a price. The brief forbids inventing an
+ * automatic estimate, MIDIS has no confirmed rate card, and MIDIS.pdf's own
+ * developer note says to show an indicative figure "only if MIDIS has a
+ * defined pricing model. Otherwise, use the form to collect requirements and
+ * arrange a consultation." So step 4 shows a plain-language SUMMARY of what
+ * the visitor selected — useful, honest, and not a number anyone could be
+ * held to.
+ *
+ * STEP VALIDATION. Each step is validated against the same Zod field schemas
+ * the server uses, field by field, so the browser and the API can never
+ * disagree about what is valid. Advancing is blocked on a failing step —
+ * but errors appear only after an attempt to advance, never while the
+ * visitor is still typing their first character into a field.
+ *
+ * DUPLICATE SUBMISSION. Guarded twice: `status` disables the control, and
+ * `sent` is a ref that survives re-renders, so a double-click, an Enter
+ * keypress landing on the button, and a re-submit after a slow response all
+ * resolve to one POST.
+ */
+
+const STEPS = [
+  { title: "Project type", legend: "What do you need?" },
+  { title: "Requirements", legend: "Tell us about the site" },
+  { title: "Budget & timeline", legend: "Scope and timing" },
+  { title: "Your details", legend: "Where we send the response" },
+] as const;
+
+/** Which fields each step owns. Drives both validation and focus. */
+const STEP_FIELDS = [
+  ["projectType"],
+  ["pages", "existingSite"],
+  ["budget", "timeline"],
+  ["name", "email", "company", "phone"],
+] as const;
+
+type FieldName =
+  | "projectType"
+  | "pages"
+  | "existingSite"
+  | "budget"
+  | "timeline"
+  | "name"
+  | "email"
+  | "company"
+  | "phone";
+
+const EMPTY = {
+  projectType: "",
+  pages: "",
+  existingSite: "",
+  budget: "",
+  timeline: "",
+  name: "",
+  email: "",
+  company: "",
+  phone: "",
+};
+
+export function EstimatorForm() {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [values, setValues] = useState<Record<FieldName, string>>(EMPTY);
+  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "submitting">("idle");
+  const [honey, setHoney] = useState("");
+
+  const sent = useRef(false);
+  const stepHeadingRef = useRef<HTMLParagraphElement>(null);
+
+  const set = (field: FieldName) => (value: string) => {
+    setValues((previous) => ({ ...previous, [field]: value }));
+    /* Clear this field's error the moment it is touched — leaving a stale
+       message under a field the visitor has just fixed is its own problem. */
+    setErrors((previous) =>
+      previous[field] ? { ...previous, [field]: undefined } : previous,
+    );
+  };
+
+  /** Validates one step against the server's own field schemas. */
+  function validateStep(index: number) {
+    const shape = estimatorSchema.shape;
+    const next: Partial<Record<FieldName, string>> = {};
+
+    for (const field of STEP_FIELDS[index]) {
+      const result = shape[field].safeParse(values[field]);
+      if (!result.success) {
+        next[field] = result.error.issues[0]?.message ?? "Please check this.";
+      }
+    }
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
+  /**
+   * Moves focus to the new step's label.
+   *
+   * Without this, a keyboard or screen-reader user presses "Continue" and
+   * focus stays on a button that has just been replaced — so nothing is
+   * announced and the next step's fields are somewhere behind them.
+   */
+  function goTo(index: number) {
+    setStep(index);
+    setFormError(null);
+    requestAnimationFrame(() => stepHeadingRef.current?.focus());
+  }
+
+  function onNext() {
+    if (validateStep(step)) goTo(step + 1);
+  }
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+
+    if (status === "submitting" || sent.current) return;
+    if (!validateStep(step)) return;
+
+    const parsed = estimatorSchema.safeParse({
+      kind: "estimator",
+      ...values,
+      website: honey,
+    });
+
+    if (!parsed.success) {
+      const next: Partial<Record<FieldName, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as FieldName;
+        if (key && !next[key]) next[key] = issue.message;
+      }
+      setErrors(next);
+      /* Send them back to the earliest step that actually has a problem,
+         rather than showing an error about a field three steps behind. */
+      const broken = STEP_FIELDS.findIndex((fields) =>
+        fields.some((field) => next[field]),
+      );
+      if (broken >= 0 && broken !== step) goTo(broken);
+      return;
+    }
+
+    setStatus("submitting");
+    setFormError(null);
+
+    try {
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok || !body.ok) {
+        setStatus("idle");
+        setFormError(
+          body.message ??
+            "We could not submit your request just now. Please email us at hello@midis.in.",
+        );
+        if (body.fieldErrors) setErrors(body.fieldErrors);
+        return;
+      }
+
+      /* Only now — the CMS has confirmed the record. Never before. */
+      sent.current = true;
+      router.push("/thank-you/project-enquiry");
+    } catch {
+      setStatus("idle");
+      setFormError(
+        "We could not reach our server. Please check your connection, or email us at hello@midis.in.",
+      );
+    }
+  }
+
+  const isLast = step === STEPS.length - 1;
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="relative rounded-2xl border border-line bg-surface p-5 sm:p-8"
+    >
+      <Honeypot value={honey} onChange={setHoney} />
+
+      {/* ================= progress ================= */}
+      <div>
+        <div className="flex items-center justify-between gap-4">
+          <p
+            ref={stepHeadingRef}
+            tabIndex={-1}
+            className="text-sm font-semibold text-ink outline-none"
+          >
+            <span className="text-accent-ink">
+              Step {step + 1} of {STEPS.length}
+            </span>
+            <span className="mx-2 text-line" aria-hidden="true">
+              /
+            </span>
+            {STEPS[step].title}
+          </p>
+        </div>
+
+        {/*
+          The bar is decorative — the sentence above already states the
+          position in text, which is what a screen reader should read.
+        */}
+        <div
+          aria-hidden="true"
+          className="mt-3 flex gap-1.5"
+        >
+          {STEPS.map((s, index) => (
+            <span
+              key={s.title}
+              className={cn(
+                "h-1 flex-1 rounded-full transition-colors duration-[var(--dur-base)]",
+                index <= step ? "bg-accent" : "bg-line",
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ================= steps ================= */}
+      {/*
+        `key` on the wrapper restarts the entrance animation per step, which
+        is what makes the transition read as movement between steps rather
+        than content silently swapping in place.
+      */}
+      <div key={step} className="hero-rise mt-7">
+        {step === 0 ? (
+          <OptionGroup
+            legend="What do you need?"
+            name="projectType"
+            options={PROJECT_TYPES}
+            value={values.projectType}
+            onChange={set("projectType")}
+            error={errors.projectType}
+            required
+            columns={2}
+          />
+        ) : null}
+
+        {step === 1 ? (
+          <div className="flex flex-col gap-7">
+            <OptionGroup
+              legend="How many pages do you need?"
+              name="pages"
+              options={PAGE_COUNTS}
+              value={values.pages}
+              onChange={set("pages")}
+              error={errors.pages}
+              required
+              columns={2}
+            />
+            <OptionGroup
+              legend="Do you have an existing website?"
+              name="existingSite"
+              options={EXISTING_SITE}
+              value={values.existingSite}
+              onChange={set("existingSite")}
+              error={errors.existingSite}
+              required
+              columns={1}
+            />
+          </div>
+        ) : null}
+
+        {step === 2 ? (
+          <div className="flex flex-col gap-7">
+            <OptionGroup
+              legend="What is your estimated budget?"
+              name="budget"
+              options={BUDGETS}
+              value={values.budget}
+              onChange={set("budget")}
+              error={errors.budget}
+              required
+              columns={2}
+            />
+            <OptionGroup
+              legend="When would you like to launch?"
+              name="timeline"
+              options={TIMELINES}
+              value={values.timeline}
+              onChange={set("timeline")}
+              error={errors.timeline}
+              required
+              columns={2}
+            />
+          </div>
+        ) : null}
+
+        {step === 3 ? (
+          <div className="flex flex-col gap-5">
+            {/*
+              The summary. Plainly what they chose — NOT a calculated price.
+              See the note at the top of this file.
+            */}
+            <div className="rounded-lg bg-paper p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Your project, so far
+              </p>
+              <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                {(
+                  [
+                    ["Project", values.projectType],
+                    ["Pages", values.pages],
+                    ["Current site", values.existingSite],
+                    ["Budget", values.budget],
+                    ["Launch", values.timeline],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="flex gap-2">
+                    <dt className="shrink-0 text-muted">{label}:</dt>
+                    <dd className="font-medium text-ink">{value || "—"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <TextField
+                label="Name"
+                name="name"
+                autoComplete="name"
+                required
+                value={values.name}
+                onChange={(event) => set("name")(event.target.value)}
+                error={errors.name}
+              />
+              <TextField
+                label="Business email"
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                required
+                value={values.email}
+                onChange={(event) => set("email")(event.target.value)}
+                error={errors.email}
+              />
+              <TextField
+                label="Company"
+                name="company"
+                autoComplete="organization"
+                required
+                value={values.company}
+                onChange={(event) => set("company")(event.target.value)}
+                error={errors.company}
+              />
+              <TextField
+                label="Phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                optional
+                placeholder="Include country code"
+                value={values.phone}
+                onChange={(event) => set("phone")(event.target.value)}
+                error={errors.phone}
+              />
+            </div>
+
+            <p className="text-xs leading-relaxed text-muted">
+              {estimator.supportingText}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {/* ================= errors & controls ================= */}
+      {/*
+        `role="alert"` so a submission failure is announced rather than only
+        appearing. It sits above the buttons so it is impossible to miss.
+      */}
+      {formError ? (
+        <div
+          role="alert"
+          className="mt-6 rounded-lg border border-[#b42318]/30 bg-[#fef3f2] p-4"
+        >
+          <FieldError id="estimator-form-error">{formError}</FieldError>
+        </div>
+      ) : null}
+
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {step > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => goTo(step - 1)}
+            className="sm:-ml-3"
+          >
+            <span aria-hidden="true">←</span> Back
+          </Button>
+        ) : (
+          <span className="hidden sm:block" />
+        )}
+
+        {isLast ? (
+          <Button
+            type="submit"
+            size="lg"
+            disabled={status === "submitting"}
+            className="w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-65"
+          >
+            {status === "submitting" ? (
+              <>
+                <Spinner />
+                Sending…
+              </>
+            ) : (
+              <>
+                {estimator.cta}
+                <Arrow />
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="lg"
+            onClick={onNext}
+            className="w-full sm:w-auto"
+          >
+            Continue
+            <Arrow />
+          </Button>
+        )}
+      </div>
+
+      {/* Politely announces the in-flight state to assistive technology. */}
+      <p aria-live="polite" className="sr-only">
+        {status === "submitting" ? "Sending your project details." : ""}
+      </p>
+    </form>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      aria-hidden="true"
+      className="animate-spin"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        opacity="0.25"
+      />
+      <path
+        d="M8 1.5A6.5 6.5 0 0 1 14.5 8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
