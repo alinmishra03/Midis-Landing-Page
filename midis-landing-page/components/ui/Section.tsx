@@ -27,8 +27,8 @@ import { Reveal, RevealText } from "./Reveal";
 type Tone = "paper" | "surface" | "ink";
 
 const tones: Record<Tone, string> = {
-  paper: "bg-paper text-ink",
-  surface: "bg-surface text-ink",
+  paper: "bg-paper text-fg",
+  surface: "bg-surface text-fg",
   ink: "bg-ink text-white on-dark",
 };
 

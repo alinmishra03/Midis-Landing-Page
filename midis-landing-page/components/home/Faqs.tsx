@@ -104,7 +104,7 @@ export function Faqs() {
                     className={cn(
                       "group/faq flex w-full items-start justify-between gap-6 py-5 text-left sm:py-6",
                       "transition-colors duration-[var(--dur-fast)]",
-                      isOpen ? "text-accent-ink" : "text-ink hover:text-accent-ink",
+                      isOpen ? "text-accent-ink" : "text-fg hover:text-accent-ink",
                     )}
                   >
                     <span className="text-base font-semibold leading-snug sm:text-lg">
@@ -125,8 +125,8 @@ export function Faqs() {
                         "relative mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border",
                         "transition-[background-color,border-color,color] duration-[var(--dur-fast)]",
                         isOpen
-                          ? "border-accent bg-accent text-ink"
-                          : "border-ink/20 text-ink group-hover/faq:border-accent/70",
+                          ? "border-accent bg-accent text-on-accent"
+                          : "border-fg/20 text-fg group-hover/faq:border-accent/70",
                       )}
                     >
                       <span className="absolute h-px w-2.5 bg-current" />

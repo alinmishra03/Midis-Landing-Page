@@ -115,7 +115,7 @@ export function Services() {
                     className={cn(
                       "relative flex h-full flex-col justify-end overflow-hidden",
                       "rounded-[var(--radius-card-lg)] p-6 sm:p-8",
-                      "ring-1 ring-ink/10 transition-[box-shadow,--tw-ring-color] duration-[var(--dur-base)]",
+                      "ring-1 ring-fg/10 transition-[box-shadow,--tw-ring-color] duration-[var(--dur-base)]",
                       "hover:ring-accent/40 hover:shadow-[0_28px_60px_-28px_rgba(20,21,24,0.6)]",
                       bento.height,
                       "text-white",

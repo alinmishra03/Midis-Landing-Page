@@ -111,7 +111,7 @@ export function CaseStudies() {
               that the work has none.
             */}
             <Reveal delay={120}>
-              <p className="mt-6 rounded-lg bg-accent-soft/60 p-4 text-sm leading-relaxed text-ink-soft">
+              <p className="mt-6 rounded-lg bg-accent-soft/60 p-4 text-sm leading-relaxed text-fg">
                 We publish outcomes only once they are measured and the client
                 has approved them. Until then, the work itself is the
                 evidence — every project above links to the site that is

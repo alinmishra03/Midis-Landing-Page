@@ -182,7 +182,7 @@ export function AuditForm() {
           ref={errorRef}
           tabIndex={-1}
           role="alert"
-          className="mt-6 rounded-lg border border-[#b42318]/30 bg-[#fef3f2] p-4 outline-none"
+          className="mt-6 rounded-lg border border-danger/30 bg-danger-soft p-4 outline-none"
         >
           <FieldError id="audit-form-error">{formError}</FieldError>
         </div>

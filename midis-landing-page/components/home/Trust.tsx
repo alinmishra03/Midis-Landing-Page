@@ -33,12 +33,22 @@ function LogoChip({ mark }: { mark: (typeof clientMarks)[number] }) {
     <div
       className={cn(
         "group/logo flex h-20 w-44 shrink-0 items-center justify-center rounded-xl px-6",
-        "transition-[background-color,box-shadow,border-color] duration-[var(--dur-base)]",
-        /* Hover illumination: the chip lifts out of the rail rather than the
-           logo being recoloured, which is not ours to do. */
+        "transition-[box-shadow] duration-[var(--dur-base)]",
+        /*
+          THE CHIP DOES NOT FOLLOW THE THEME, DELIBERATELY.
+
+          `onDark` means the mark is light-on-transparent. Such a mark needs
+          a dark chip in BOTH themes, and a dark mark needs a light chip in
+          both — if the chip flipped with the page, half of these logos would
+          disappear on one theme or the other. Recolouring or inverting
+          someone else's logo to avoid that is not ours to do.
+
+          The two chip classes are therefore fixed colours (globals.css), and
+          only the hover shadow is shared.
+        */
         mark.onDark
-          ? "bg-ink hover:shadow-[0_10px_30px_-12px_rgba(20,21,24,0.55)]"
-          : "bg-paper ring-1 ring-line hover:ring-accent/40 hover:shadow-[0_10px_30px_-14px_rgba(20,21,24,0.3)]",
+          ? "logo-chip-dark hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+          : "logo-chip-light hover:shadow-[0_10px_30px_-14px_rgba(0,0,0,0.28)]",
       )}
     >
       <Image

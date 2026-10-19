@@ -207,7 +207,7 @@ export function EstimatorForm() {
           <p
             ref={stepHeadingRef}
             tabIndex={-1}
-            className="text-sm font-semibold text-ink outline-none"
+            className="text-sm font-semibold text-fg outline-none"
           >
             <span className="text-accent-ink">
               Step {step + 1} of {STEPS.length}
@@ -331,7 +331,7 @@ export function EstimatorForm() {
                 ).map(([label, value]) => (
                   <div key={label} className="flex gap-2">
                     <dt className="shrink-0 text-muted">{label}:</dt>
-                    <dd className="font-medium text-ink">{value || "—"}</dd>
+                    <dd className="font-medium text-fg">{value || "—"}</dd>
                   </div>
                 ))}
               </dl>
@@ -397,7 +397,7 @@ export function EstimatorForm() {
       {formError ? (
         <div
           role="alert"
-          className="mt-6 rounded-lg border border-[#b42318]/30 bg-[#fef3f2] p-4"
+          className="mt-6 rounded-lg border border-danger/30 bg-danger-soft p-4"
         >
           <FieldError id="estimator-form-error">{formError}</FieldError>
         </div>

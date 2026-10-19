@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
 import { cn } from "@/lib/utils";
@@ -113,14 +114,15 @@ export function Header() {
               /* `min-h-11` gives each nav item a 44px tap target. Without
                  it the link box is only as tall as its 14px text (20px),
                  which fails WCAG 2.5.8's 24px minimum. */
-              className="flex min-h-11 items-center text-sm font-medium text-ink/75 transition-colors duration-[var(--dur-fast)] hover:text-ink"
+              className="flex min-h-11 items-center text-sm font-medium text-fg/75 transition-colors duration-[var(--dur-fast)] hover:text-fg"
             >
               <span className="link-underline">{item.label}</span>
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <ThemeToggle />
           <Button
             href="#estimator"
             size="md"
@@ -136,7 +138,7 @@ export function Header() {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls={panelId}
-            className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-ink lg:hidden"
+            className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-fg lg:hidden"
           >
             <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
@@ -193,7 +195,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="border-b border-line py-4 text-xl font-medium text-ink"
+                className="border-b border-line py-4 text-xl font-medium text-fg"
               >
                 {item.label}
               </a>

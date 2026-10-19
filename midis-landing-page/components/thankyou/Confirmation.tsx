@@ -106,7 +106,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                   <li key={step.title} className="flex items-start gap-3.5">
                     <span
                       aria-hidden="true"
-                      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent font-display text-xs font-semibold text-ink"
+                      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent font-display text-xs font-semibold text-on-accent"
                     >
                       {index + 1}
                     </span>
@@ -114,7 +114,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                       <h3 className="text-[0.9375rem] font-semibold leading-snug">
                         {step.title}
                       </h3>
-                      <p className="mt-1 text-sm leading-relaxed text-ink-soft/85">
+                      <p className="mt-1 text-sm leading-relaxed text-fg/85">
                         {step.body}
                       </p>
                     </div>
@@ -209,7 +209,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
             <p className="mt-10 text-center">
               <Link
                 href="/"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-ink transition-colors hover:text-accent-ink"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-fg transition-colors hover:text-accent-ink"
               >
                 <span className="link-underline-accent">
                   Back to the MIDIS site

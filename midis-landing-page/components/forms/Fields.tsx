@@ -29,7 +29,7 @@ export function FieldError({ id, children }: { id: string; children?: string }) 
   if (!children) return null;
 
   return (
-    <p id={id} className="mt-2 flex items-start gap-1.5 text-sm text-[#b42318]">
+    <p id={id} className="mt-2 flex items-start gap-1.5 text-sm text-danger">
       <svg
         viewBox="0 0 16 16"
         width="15"
@@ -70,7 +70,7 @@ export function TextField({
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-ink">
+      <label htmlFor={id} className="block text-sm font-medium text-fg">
         {label}
         {required ? (
           <span className="ml-0.5 text-accent-ink" aria-hidden="true">
@@ -90,11 +90,11 @@ export function TextField({
           cn(error && errorId, hint && hintId).trim() || undefined
         }
         className={cn(
-          "mt-2 block w-full rounded-lg border bg-surface px-3.5 py-3 text-base text-ink",
+          "mt-2 block w-full rounded-lg border bg-surface px-3.5 py-3 text-base text-fg",
           "placeholder:text-muted/70",
           "transition-colors duration-[var(--dur-fast)]",
           "focus:border-accent focus:outline-none",
-          error ? "border-[#b42318]" : "border-line hover:border-ink/25",
+          error ? "border-danger" : "border-line hover:border-fg/25",
         )}
         {...props}
       />
@@ -151,7 +151,7 @@ export function SelectField({
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-ink">
+      <label htmlFor={id} className="block text-sm font-medium text-fg">
         {label}
         {required ? (
           <span className="ml-0.5 text-accent-ink" aria-hidden="true">
@@ -183,11 +183,11 @@ export function SelectField({
             follows its container and the browser elides the long option, as
             it does natively on a narrow screen.
           */
-          "mt-2 block w-full min-w-0 appearance-none rounded-lg border bg-surface px-3.5 py-3 pr-10 text-base text-ink",
+          "mt-2 block w-full min-w-0 appearance-none rounded-lg border bg-surface px-3.5 py-3 pr-10 text-base text-fg",
           "bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M4%206l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%23686868%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:16px] bg-[right_0.875rem_center] bg-no-repeat",
           "transition-colors duration-[var(--dur-fast)]",
           "focus:border-accent focus:outline-none",
-          error ? "border-[#b42318]" : "border-line hover:border-ink/25",
+          error ? "border-danger" : "border-line hover:border-fg/25",
           value === "" && "text-muted",
         )}
       >
@@ -195,7 +195,7 @@ export function SelectField({
           {placeholder}
         </option>
         {options.map((option) => (
-          <option key={option} value={option} className="text-ink">
+          <option key={option} value={option} className="text-fg">
             {option}
           </option>
         ))}
@@ -240,7 +240,7 @@ export function OptionGroup({
       aria-invalid={error ? true : undefined}
       aria-describedby={error ? errorId : undefined}
     >
-      <legend className="text-sm font-medium text-ink">
+      <legend className="text-sm font-medium text-fg">
         {legend}
         {required ? (
           <span className="ml-0.5 text-accent-ink" aria-hidden="true">
@@ -272,8 +272,8 @@ export function OptionGroup({
                 checked
                   ? "border-accent bg-accent-soft"
                   : error
-                    ? "border-[#b42318] bg-surface hover:border-ink/35"
-                    : "border-line bg-surface hover:border-ink/35",
+                    ? "border-danger bg-surface hover:border-fg/35"
+                    : "border-line bg-surface hover:border-fg/35",
               )}
             >
               {/*
@@ -297,7 +297,7 @@ export function OptionGroup({
                 aria-hidden="true"
                 className={cn(
                   "flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors",
-                  checked ? "border-accent bg-accent" : "border-ink/30 bg-surface",
+                  checked ? "border-accent bg-accent" : "border-fg/30 bg-surface",
                 )}
               >
                 {checked ? (
@@ -305,7 +305,7 @@ export function OptionGroup({
                 ) : null}
               </span>
 
-              <span className="text-[0.9375rem] leading-snug text-ink">
+              <span className="text-[0.9375rem] leading-snug text-fg">
                 {option}
               </span>
             </label>
@@ -360,12 +360,12 @@ export function Checkbox({
             /* The tick, drawn with a background image so it rides on the
                input itself and needs no extra element. */
             "checked:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M3.5%208.2l3%203%206-6.4%22%20fill%3D%22none%22%20stroke%3D%22%23141518%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] checked:bg-center checked:bg-no-repeat",
-            error ? "border-[#b42318]" : "border-ink/30 hover:border-ink/50",
+            error ? "border-danger" : "border-fg/30 hover:border-fg/50",
           )}
         />
         <label
           htmlFor={id}
-          className="cursor-pointer text-sm leading-relaxed text-ink"
+          className="cursor-pointer text-sm leading-relaxed text-fg"
         >
           {children}
         </label>

@@ -45,12 +45,12 @@ const base =
 const variants: Record<Variant, string> = {
   /* Charcoal text on orange — the only accessible way round. */
   primary:
-    "bg-accent text-ink hover:bg-accent-hover shadow-[0_1px_2px_rgba(20,21,24,0.14)] " +
+    "bg-accent text-on-accent hover:bg-accent-hover shadow-[0_1px_2px_rgba(20,21,24,0.14)] " +
     "hover:shadow-[0_8px_20px_-8px_rgba(239,135,22,0.75)]",
   /* On paper: a quiet outline that does not compete with the primary. */
   secondary:
-    "border border-ink/20 bg-transparent text-ink hover:border-ink/55 hover:bg-ink/[0.04]",
-  ghost: "text-ink hover:text-accent-ink bg-transparent",
+    "border border-fg/20 bg-transparent text-fg hover:border-fg/55 hover:bg-fg/[0.06]",
+  ghost: "text-fg hover:text-accent-ink bg-transparent",
   /* On a dark panel, where a white outline is the quiet option. */
   onDark:
     "border border-white/25 bg-transparent text-white hover:border-white/70 hover:bg-white/10",

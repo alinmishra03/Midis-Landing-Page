@@ -20,29 +20,85 @@
    that has to clear 4.5:1 on paper.
    ========================================================================== */
 
+/* ==========================================================================
+   THEME TOKENS
+   --------------------------------------------------------------------------
+   Two groups, and the distinction is the whole design:
+
+   GROUP 1 — FLIPS WITH THE THEME. The page surfaces and the text on them.
+     paper / surface / surface-2   the page and its alternating bands
+     fg / muted / muted-strong     text on those surfaces
+     line                          hairlines on those surfaces
+     accent-ink / accent-soft      the accent AS TEXT and as a tint
+
+   GROUP 2 — DARK IN BOTH THEMES. This page has always had deliberately dark
+   bands (pricing, the final CTA, the footer) and photographic cards with a
+   dark scrim. Those stay dark in light mode AND in dark mode — they are a
+   composition device, not a consequence of the theme. In dark mode they go
+   DEEPER than the page so the band is still legible as a band.
+     ink / ink-raised              those band backgrounds and photo scrims
+     muted-dark                    muted text on them
+     line-dark                     hairlines on them
+     on-accent                     text on an orange fill, never white
+
+   WHY `fg` EXISTS AT ALL. `ink` previously meant two things at once: the
+   primary text colour AND the dark band. A theme flip needs those to move in
+   opposite directions, so the text meaning moved to `fg` and `ink` kept the
+   surface meaning.
+
+   Tailwind v4 compiles `bg-paper` to `background-color: var(--color-paper)`,
+   so redefining the variable under a dark scope re-themes every utility
+   without touching a single component class.
+   ========================================================================== */
+
 @theme {
-  /* ---- Neutrals: ~85% of the visual surface ---------------------------- */
-  --color-paper: #f8f8f6;
+  /* ---- Group 1: flips. Light values are the defaults. ------------------ */
+  --color-paper: #faf9f6;
   --color-surface: #ffffff;
+  --color-surface-2: #f1f0ec;
+  --color-fg: #141518;
+  /* 5.4:1 on paper — safe for body text. */
+  --color-muted: #666663;
+  /* For text over a scrimmed photograph, where the ground is not flat. */
+  --color-muted-strong: #5f6166;
+  --color-line: #e4e3de;
+
+  /* ---- Group 2: dark in both themes. ----------------------------------- */
   --color-ink: #141518;
   --color-ink-soft: #242424;
   --color-ink-raised: #1d1f23;
-  --color-line: #e7e7e3;
   --color-line-dark: #2c2e33;
-  /* #686868 is 5.1:1 on paper — safe for body text. */
-  --color-muted: #686868;
-  /* On dark surfaces. 6.4:1 on --color-ink. */
+  /* On the dark bands. 6.4:1 on --color-ink. */
   --color-muted-dark: #a0a09c;
-  /* For text over a scrimmed photograph, where the ground is not flat. */
-  --color-muted-strong: #5f6166;
 
   /* ---- Signature accent ------------------------------------------------ */
   --color-accent: #ef8716;
   --color-accent-hover: #d97608;
-  /* AA-safe orange TEXT on light surfaces. Never use --color-accent for this. */
+  /*
+   * The accent AS TEXT. #EF8716 is only 2.55:1 on paper, so on a light
+   * surface this is the darkened ramp; in dark mode it can be the brand
+   * orange itself, which is 7.1:1 on the dark page. The token flips so
+   * `text-accent-ink` is correct in both themes without a conditional.
+   */
   --color-accent-ink: #aa5a0a;
   --color-accent-soft: #fdf1e4;
   --color-accent-line: #f3d5b2;
+  /*
+   * Text sitting ON an orange fill — buttons, the open FAQ icon, the step
+   * badges. Charcoal on #EF8716 is 7.26:1; white on it is 2.1:1 and fails.
+   * Fixed in both themes: an orange button needs dark text whatever the
+   * page is doing.
+   */
+  --color-on-accent: #141518;
+
+  /*
+   * Validation. #b42318 is 4.8:1 on white but only 3.9:1 on the dark page,
+   * so the dark theme lifts it to #ff8f85 (6.1:1) rather than reusing the
+   * same red and hoping. The soft tint behind an error summary flips too —
+   * a pale pink panel on a dark page glares.
+   */
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
 
   /* ---- Typography ------------------------------------------------------ */
   --font-display: var(--font-inter-tight), "Inter Tight", system-ui, sans-serif;
@@ -137,7 +193,11 @@ html {
 
 body {
   background-color: var(--color-paper);
-  color: var(--color-ink);
+  /* --color-fg, NOT --color-ink: `ink` is the dark BAND colour and goes
+     deeper in dark mode, so pointing inherited text at it rendered every
+     heading that set no colour of its own near-black on a near-black page.
+     Caught by measuring contrast, not by reading the diff. */
+  color: var(--color-fg);
   font-family: var(--font-sans);
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
@@ -184,7 +244,8 @@ p {
 
 ::selection {
   background: var(--color-accent);
-  color: var(--color-ink);
+  /* Text on an orange fill is always charcoal — see --color-on-accent. */
+  color: var(--color-on-accent);
 }
 
 /* ==========================================================================
@@ -1199,5 +1260,240 @@ p {
   .accent-rule {
     transform: scaleX(1);
     transition: none;
+  }
+}
+
+/* ==========================================================================
+   DARK THEME
+   --------------------------------------------------------------------------
+   Declared twice on purpose:
+
+     1. `:root[data-theme="dark"]`  — an explicit choice, set by the toggle
+        and replayed before first paint by the inline script in the layout.
+     2. the `prefers-color-scheme` block — the system preference, applied
+        only when the visitor has NOT chosen light explicitly. The
+        `:not([data-theme="light"])` guard is what makes an explicit light
+        choice survive a dark OS setting.
+
+   Only Group 1 moves. The dark bands go deeper rather than lighter, so a
+   section that was a dark band on a light page is still a distinct band on
+   a dark page instead of dissolving into it.
+   ========================================================================== */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-paper: #111113;
+  --color-surface: #18181b;
+  --color-surface-2: #212125;
+  --color-fg: #f6f6f5;
+  /* 7.9:1 on the dark page — comfortably past AA for body text. */
+  --color-muted: #a8a8a4;
+  --color-muted-strong: #b8b8b4;
+  --color-line: #2b2b30;
+
+  /* The bands go DEEPER than the page, not lighter. */
+  --color-ink: #09090b;
+  --color-ink-soft: #141417;
+  --color-ink-raised: #161619;
+  --color-line-dark: #2b2b30;
+
+  /* The brand orange is 7.1:1 on #111113, so it needs no darkening here. */
+  --color-accent-ink: #ef8716;
+  /* A warm tint rather than a pale wash; #fdf1e4 would glare on a dark page. */
+  --color-accent-soft: #2a1b0b;
+  --color-accent-line: #46300f;
+
+  --color-danger: #ff8f85;
+  --color-danger-soft: #2a1210;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-paper: #111113;
+    --color-surface: #18181b;
+    --color-surface-2: #212125;
+    --color-fg: #f6f6f5;
+    --color-muted: #a8a8a4;
+    --color-muted-strong: #b8b8b4;
+    --color-line: #2b2b30;
+
+    --color-ink: #09090b;
+    --color-ink-soft: #141417;
+    --color-ink-raised: #161619;
+    --color-line-dark: #2b2b30;
+
+    --color-accent-ink: #ef8716;
+    --color-accent-soft: #2a1b0b;
+    --color-accent-line: #46300f;
+
+    --color-danger: #ff8f85;
+    --color-danger-soft: #2a1210;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   The switch itself
+   --------------------------------------------------------------------------
+   Only colour properties transition, and only on the elements that actually
+   carry a themed colour. `transition: all` here would animate every layout
+   property on every element on the page during a theme change, which is both
+   expensive and a source of visible reflow.
+
+   `.theme-switching` is set by the toggle for the length of the transition
+   and then removed, so these rules are inert during normal scrolling — a
+   permanent colour transition would otherwise fight every hover state.
+   -------------------------------------------------------------------------- */
+
+.theme-switching,
+.theme-switching *::before,
+.theme-switching *::after,
+.theme-switching * {
+  transition:
+    background-color 260ms var(--ease-out-quart),
+    border-color 260ms var(--ease-out-quart),
+    color 260ms var(--ease-out-quart),
+    fill 260ms var(--ease-out-quart),
+    stroke 260ms var(--ease-out-quart),
+    box-shadow 260ms var(--ease-out-quart) !important;
+  transition-delay: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switching,
+  .theme-switching *::before,
+  .theme-switching *::after,
+  .theme-switching * {
+    transition: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Theme-dependent adjustments that a token swap cannot express
+   -------------------------------------------------------------------------- */
+
+/*
+ * Glass.
+ *
+ * The dark recipe over a dark page produces a barely-visible panel, so each
+ * theme gets its own surface and border rather than the same alpha values
+ * applied blindly. Readability wins over transparency: in light mode the
+ * panel is opaque enough to carry text regardless of what sits behind it.
+ */
+:root[data-theme="dark"] .glass-dark,
+:root:not([data-theme="light"]) .glass-dark {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.05);
+}
+
+/*
+ * The two logo chips in the trust rail.
+ *
+ * These must NOT follow the theme. A dark-on-transparent client mark needs a
+ * light chip and a light-on-transparent mark needs a dark one — in both
+ * themes. Letting the chip flip would make half the logos vanish, and
+ * recolouring somebody else's logo is not ours to do.
+ */
+.logo-chip-light {
+  background: #ffffff;
+  /* A real hairline, not a hint: in light mode this white chip sits on the
+     white trust section, so the edge is the only thing separating them. */
+  box-shadow: inset 0 0 0 1px rgb(20 21 24 / 0.13);
+}
+
+.logo-chip-dark {
+  background: #141518;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+/*
+ * The hero wash. The warm radial reads as light bleeding onto paper in light
+ * mode; on a dark page the same wash needs to be stronger to register at all.
+ */
+:root[data-theme="dark"] .hero-wash,
+:root:not([data-theme="light"]) .hero-wash {
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   The auto-switching wordmark
+   --------------------------------------------------------------------------
+   Both marks are in the DOM; CSS decides which is painted. Doing this in CSS
+   rather than JavaScript means the right one is correct on first paint, with
+   no hydration mismatch and no flash of the wrong mark.
+   -------------------------------------------------------------------------- */
+
+.logo-on-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-on-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-on-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-on-light {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .logo-on-dark {
+    display: block;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Theme toggle icons
+   --------------------------------------------------------------------------
+   The sun shows while the page is light, the moon while it is dark — the
+   icon names the theme you are IN, and the button's accessible label names
+   the theme you would move TO. Both are rendered; CSS picks, for the same
+   first-paint reason as the wordmark.
+   -------------------------------------------------------------------------- */
+
+.theme-icon-sun,
+.theme-icon-moon {
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart);
+}
+
+.theme-icon-moon {
+  opacity: 0;
+  transform: rotate(-70deg) scale(0.6);
+}
+
+:root[data-theme="dark"] .theme-icon-sun {
+  opacity: 0;
+  transform: rotate(70deg) scale(0.6);
+}
+
+:root[data-theme="dark"] .theme-icon-moon {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(70deg) scale(0.6);
+  }
+
+  :root:not([data-theme="light"]) .theme-icon-moon {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-icon-sun,
+  .theme-icon-moon {
+    transition: opacity var(--dur-fast) linear;
+    transform: none !important;
   }
 }

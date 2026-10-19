@@ -71,7 +71,7 @@ export default function FreeWebsiteAuditPage() {
           </Link>
           <Link
             href="/"
-            className="flex min-h-11 items-center text-sm font-medium text-muted transition-colors hover:text-ink"
+            className="flex min-h-11 items-center text-sm font-medium text-muted transition-colors hover:text-fg"
           >
             <span aria-hidden="true">←</span>&nbsp;Back to the site
           </Link>

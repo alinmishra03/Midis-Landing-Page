@@ -56,7 +56,7 @@ export function BrowserFrame({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl bg-white ring-1 ring-ink/10",
+        "overflow-hidden rounded-xl bg-surface ring-1 ring-fg/10",
         "shadow-[0_18px_40px_-20px_rgba(20,21,24,0.45)]",
         className,
       )}
@@ -65,7 +65,7 @@ export function BrowserFrame({
       <div
         aria-hidden="true"
         className={cn(
-          "flex items-center gap-2 border-b border-line bg-[#f1f1ee]",
+          "flex items-center gap-2 border-b border-line bg-surface-2",
           compact ? "px-2.5 py-1.5" : "px-3.5 py-2.5",
         )}
       >
@@ -84,7 +84,7 @@ export function BrowserFrame({
 
         <div
           className={cn(
-            "ml-1 flex-1 truncate rounded-full bg-white/80 text-center font-medium text-muted",
+            "ml-1 flex-1 truncate rounded-full bg-paper/80 text-center font-medium text-muted",
             compact
               ? "px-2 py-0.5 text-[0.5rem]"
               : "px-3 py-1 text-[0.6875rem]",

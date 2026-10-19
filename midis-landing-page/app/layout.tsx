@@ -94,6 +94,30 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${interTight.variable}`}>
       <head>
         {/*
+          THEME, APPLIED BEFORE FIRST PAINT.
+
+          This runs synchronously in <head>, so `data-theme` is on <html>
+          before the browser paints anything — which is the whole reason it
+          is an inline string rather than a component. Deferring it to React
+          would mean painting the light theme first and correcting it after
+          hydration, which is the flash this exists to prevent.
+
+          It only writes the attribute for an EXPLICIT stored choice. With no
+          stored choice it does nothing at all, and the `prefers-color-scheme`
+          block in globals.css takes over — so the system preference is
+          honoured on a first visit with no JavaScript involved.
+
+          Wrapped in try/catch because reading localStorage throws outright
+          in some privacy modes, and a theme preference is not worth breaking
+          the page over.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("midis-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}',
+          }}
+        />
+        {/*
           Without JavaScript, the IntersectionObserver in <Reveal> never
           runs. The component is written to render visible by default so
           this is belt-and-braces rather than the only guard — but a page

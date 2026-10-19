@@ -46,7 +46,7 @@ export function Estimator() {
                   "No obligation, and no automated quote.",
                   "A member of the team reviews every enquiry.",
                 ].map((line) => (
-                  <li key={line} className="flex items-start gap-3 text-sm text-ink">
+                  <li key={line} className="flex items-start gap-3 text-sm text-fg">
                     <svg
                       viewBox="0 0 16 16"
                       width="18"

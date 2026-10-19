@@ -46,7 +46,7 @@ export function Hero() {
       */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="hero-wash pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
             "radial-gradient(60rem 40rem at 78% 18%, rgba(239,135,22,0.07), transparent 65%)",

@@ -147,7 +147,7 @@ function ProjectRow({
             href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group/btn inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink transition-colors hover:text-accent-ink"
+            className="group/btn inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fg transition-colors hover:text-accent-ink"
           >
             <span className="link-underline-accent">Visit the live site</span>
             <span aria-hidden="true" className="text-muted">
@@ -184,7 +184,7 @@ export function Work() {
             href={PORTFOLIO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="card-lift group grid items-center gap-8 rounded-2xl bg-ink p-6 text-white ring-1 ring-ink/10 hover:bg-ink-raised hover:shadow-[0_28px_56px_-28px_rgba(20,21,24,0.6)] sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14"
+            className="card-lift group grid items-center gap-8 rounded-2xl bg-ink p-6 text-white ring-1 ring-fg/10 hover:bg-ink-raised hover:shadow-[0_28px_56px_-28px_rgba(20,21,24,0.6)] sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14"
           >
             <div>
               <p className="eyebrow text-accent">The full portfolio</p>
