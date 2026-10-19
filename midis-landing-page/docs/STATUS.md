@@ -54,6 +54,7 @@ above the fold waits on a server round-trip.
 | 5 | Project estimator | `components/home/Estimator.tsx` + `forms/EstimatorForm.tsx` |
 | 6 | How it works | `components/home/Process.tsx` |
 | 7 | Case studies | `components/home/CaseStudies.tsx` |
+| 7b | Client testimonials | `components/home/Testimonials.tsx` + `content/testimonials.ts` |
 | 8 | Pricing & scope | `components/home/Pricing.tsx` |
 | 9 | FAQs | `components/home/Faqs.tsx` |
 | 10 | Final CTA | `components/home/FinalCta.tsx` |
@@ -135,7 +136,11 @@ would make the page dynamic under `cacheComponents` for no benefit.
 
 ## 6. Open questions for MIDIS
 
-1. **Testimonials** — any approved, attributed reviews (name, role, company)?
+1. **Testimonials — the section is built and currently renders nothing.**
+   The PDF's three quotes are marked "Placeholder Only" and are not
+   published. Supply any approved, attributed review (quote, name, role,
+   company, plus sign-off to publish) and it appears by adding one entry to
+   `content/testimonials.ts` — no code change. See `docs/TESTIMONIALS.md`.
 2. **Canonical host** — the PDF writes `midis.com/thank-you/book-a-call`.
    The verified domain is `midis.in`. The **path** is honoured exactly; the
    **host** is `midis.in`. Confirm.

@@ -8,6 +8,7 @@ import { Services } from "@/components/home/Services";
 import { Estimator } from "@/components/home/Estimator";
 import { Process } from "@/components/home/Process";
 import { CaseStudies } from "@/components/home/CaseStudies";
+import { Testimonials } from "@/components/home/Testimonials";
 import { Pricing } from "@/components/home/Pricing";
 import { Faqs } from "@/components/home/Faqs";
 import { FinalCta } from "@/components/home/FinalCta";
@@ -24,6 +25,11 @@ import { site } from "@/content/site";
  * had to read about process. Everything after it exists to catch the people
  * who were not ready at that moment, and each of those sections routes back
  * to the same form rather than introducing a competing action.
+ *
+ * TESTIMONIALS sit between the case studies and the cost section: social
+ * proof lands best directly after the work that earned it, and just before
+ * the visitor starts thinking about price. The section renders only when an
+ * approved client quote exists, so the order holds either way.
  *
  * ONE H1. The hero owns it. Every section below is an h2, every card an h3.
  */
@@ -68,6 +74,9 @@ export default function HomePage() {
         <Estimator />
         <Process />
         <CaseStudies />
+        {/* Renders nothing until an approved, attributed client quote
+            exists in content/testimonials.ts — see that file. */}
+        <Testimonials />
         <Pricing />
         <Faqs />
         <FinalCta />

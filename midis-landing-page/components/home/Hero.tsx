@@ -155,8 +155,21 @@ export function Hero() {
               alt text names them. But the two behind the lead frame are
               hidden below `lg`, where they would only produce clutter.
             */}
+            {/*
+              HIDDEN BELOW 768px, ON THE WRAPPER ONLY.
+
+              `hidden md:block` is on the TiltCard — the mockup's own
+              container — so the whole stack (frames, chrome bars, dots and
+              URLs) leaves the layout entirely on a phone and occupies no
+              height. Hiding the images alone, or using visibility/opacity,
+              would keep the box and leave a gap under the CTAs.
+
+              Deliberately NOT on the column: the client counts below stay
+              visible, and the portfolio previews further down the page are
+              untouched.
+            */}
             <TiltCard
-              className="hero-settle relative xl:pb-16 xl:pl-14"
+              className="hero-settle relative hidden md:block xl:pb-16 xl:pl-14"
               innerClassName="relative"
             >
               {/* back frame */}
@@ -209,7 +222,7 @@ export function Hero() {
               "15+ years" — nothing that has not been verified.
             */}
             <dl
-              className="hero-rise mt-7 flex flex-wrap gap-x-8 gap-y-3 xl:mt-0 xl:pl-14"
+              className="hero-rise mt-0 flex flex-wrap gap-x-8 gap-y-3 md:mt-7 xl:mt-0 xl:pl-14"
               style={{ "--d": "460ms" } as React.CSSProperties}
             >
               <div>
