@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
  */
 
 type Variant = "primary" | "secondary" | "ghost" | "onDark";
-type Size = "md" | "lg";
+type Size = "sm" | "md" | "lg";
 
 const base = cn(
   "group/btn inline-flex items-center justify-center gap-2 rounded-full",
@@ -68,12 +68,19 @@ const variants: Record<Variant, string> = {
 };
 
 /**
- * Two sizes, both clearing the 44px tap-target minimum.
+ * Three sizes, every one of them clearing the 44px tap-target minimum.
  *
- * `lg` (52px) is the page CTA. `md` (48px) is for dense chrome — the header.
- * These are the only two button heights on the site.
+ * `lg` (52px) is the page CTA. `md` (48px) is for dense chrome. `sm` (44px)
+ * exists for the floating header and nothing else: that bar is 64px tall at
+ * the top of the page and 56px once scrolled, so a 48px control leaves four
+ * pixels of breathing room at the bottom of the travel and the pill stops
+ * reading as floating. 44px is the WCAG 2.5.8 floor, so this is as small as
+ * a control on this site is allowed to get.
+ *
+ * These are the only three button heights on the site.
  */
 const sizes: Record<Size, string> = {
+  sm: "min-h-11 px-4 text-sm",
   md: "min-h-12 px-5 py-2.5 text-[0.9375rem]",
   lg: "min-h-[3.25rem] px-7 py-3 text-base",
 };

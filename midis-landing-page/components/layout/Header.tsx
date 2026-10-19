@@ -7,34 +7,130 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ContactActions } from "./ContactActions";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
-import { cn } from "@/lib/utils";
 
 /**
- * Sticky site header.
+ * The floating site header.
  *
- * Two behaviours, both small and both deliberate:
+ * SHAPE. A translucent pill inside `container-site`, so its left and right
+ * edges land on the same line as every section heading and card on the page.
+ * The glass, the sizing tokens and the three-column grid live in
+ * globals.css under "SITE HEADER"; this file owns only the behaviour.
  *
- *   - It is transparent over the top of the hero and gains a solid paper
- *     background plus a hairline once the page scrolls, so the hero reads as
- *     full-bleed without the nav ever sitting unreadably over an image.
- *   - The mobile panel traps focus while open, closes on Escape, closes on
- *     any navigation, and locks background scroll. A menu that can be tabbed
- *     out of behind its own overlay is worse than no menu.
+ * WHERE THE BREAKPOINTS COME FROM — they were measured, not picked.
+ *
+ *   The five links are centred with `1fr auto 1fr`, which only centres
+ *   honestly while BOTH side columns fit inside their own track. The
+ *   action cluster is the wide one, so the question is always "does twice
+ *   the right-hand group, plus the links, fit the shell?"
+ *
+ *   - Below 1280 it does not: at 1024 the shell is ~932px and that sum is
+ *     ~1124px. So `lg` uses `auto 1fr auto` instead — the links still sit
+ *     in the middle of the space left over, nothing overlaps, and nothing
+ *     is pushed off the shell.
+ *   - From 1280 the sum is ~1124px against a ~1164px shell, so the grid
+ *     becomes `1fr auto 1fr` and the links are centred against the shell
+ *     itself.
+ *   - Labelled WhatsApp/Call pills cost ~155px more than the two circles.
+ *     Centred, that needs ~1434px of shell, which arrives at about 1600px
+ *     — hence `min-[1600px]`. Below it the same two actions are 44px
+ *     circles with their labels on `aria-label`, which is what §6 of the
+ *     brief allows when the bar is short of room.
+ *
+ * ONE CONTROL HEIGHT. The toggle, the contact pills and the CTA are all
+ * 44px: `size="sm"` on the Button and the pills, `size-11` on the toggle,
+ * with `.nav-group-end a, .nav-group-end button { min-height }` in the CSS
+ * as the bar's standing guarantee. Nothing in the bar sets its own height.
+ *
+ * THE PANEL LIVES OUTSIDE <header>, AND THAT IS LOAD-BEARING — see the note
+ * above it.
  */
+
+/** Trailing chevron on each row of the mobile panel. */
+function Chevron() {
+  return (
+    <svg viewBox="0 0 16 16" width="15" height="15" fill="none" aria-hidden="true">
+      <path
+        d="M6 3.5 10.5 8 6 12.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
 
-  /* ---- solid background after the first fold of scroll ---- */
+  /* ---- the settled state, a few pixels into the scroll ---- */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /*
+   * ---- which section the visitor is actually in ----
+   *
+   * A narrow band across the viewport — everything above 32% and below 62%
+   * is cropped away — so at most one section qualifies at a time and the
+   * highlight changes once, cleanly, as a section crosses the middle of the
+   * screen. A full-height root would have three sections "visible" at once
+   * on a tall display and the active link would flicker between them.
+   *
+   * The hero is observed too, under a sentinel key: while it holds the band
+   * the answer is "none", which is what keeps every link quiet at the top of
+   * the page rather than lighting up Work before the visitor has reached it.
+   *
+   * When the band falls in a gap between sections nothing is reported, and
+   * the previous answer stands — the alternative is the highlight blinking
+   * off in the space between two sections.
+   */
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const HERO = "\u0000hero";
+    const targets: { key: string; el: Element }[] = [];
+
+    const hero = document.querySelector("main > section:first-child");
+    if (hero) targets.push({ key: HERO, el: hero });
+
+    for (const item of sectionNav) {
+      const el = document.getElementById(item.href.slice(1));
+      if (el) targets.push({ key: item.href.slice(1), el });
+    }
+    if (targets.length === 0) return;
+
+    const inBand = new Set<string>();
+    const keyOf = (el: Element) => targets.find((t) => t.el === el)?.key;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const key = keyOf(entry.target);
+          if (!key) continue;
+          if (entry.isIntersecting) inBand.add(key);
+          else inBand.delete(key);
+        }
+
+        /* Document order, so a section that overlaps the one below it still
+           resolves to the higher of the two. */
+        const first = targets.find((t) => inBand.has(t.key));
+        if (!first) return;
+        setActiveId(first.key === HERO ? null : first.key);
+      },
+      { rootMargin: "-32% 0px -62% 0px", threshold: 0 },
+    );
+
+    for (const target of targets) observer.observe(target.el);
+    return () => observer.disconnect();
   }, []);
 
   /* ---- escape, scroll lock, and focus handling for the mobile panel ---- */
@@ -82,189 +178,185 @@ export function Header() {
     };
   }, [open]);
 
+  const closeAnd = () => setOpen(false);
+
   return (
     <>
-    <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-50 h-[var(--header-h)]",
-        "transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)]",
-        scrolled || open
-          ? "border-b border-line bg-paper/92 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent",
-      )}
-    >
-      <div className="container-site flex h-full items-center justify-between gap-6">
-        <Link
-          href="/"
-          aria-label="MIDIS — home"
-          className="flex min-h-11 shrink-0 items-center rounded-sm"
-          onClick={() => setOpen(false)}
-        >
-          <Logo />
-        </Link>
+      <header className="site-header" data-scrolled={scrolled || undefined}>
+        <div className="container-site">
+          <div className="nav-shell">
+            <div className="nav-grid">
+              {/* ================= left: the mark ================= */}
+              <div className="nav-group-start">
+                <Link
+                  href="/"
+                  aria-label="MIDIS — home"
+                  className="flex min-h-11 shrink-0 items-center rounded-full px-2"
+                  onClick={closeAnd}
+                >
+                  <Logo />
+                </Link>
+              </div>
 
-        {/* ---- desktop nav ---- */}
-        <nav
-          aria-label="Page sections"
-          className="hidden items-center gap-8 lg:flex"
-        >
-          {sectionNav.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              /* `min-h-11` gives each nav item a 44px tap target. Without
-                 it the link box is only as tall as its 14px text (20px),
-                 which fails WCAG 2.5.8's 24px minimum. */
-              className="flex min-h-11 items-center text-sm font-medium text-fg/75 transition-colors duration-[var(--dur-fast)] hover:text-fg"
-            >
-              <span className="link-underline">{item.label}</span>
-            </a>
-          ))}
-        </nav>
+              {/* ================= centre: the sections ================= */}
+              <nav
+                aria-label="Page sections"
+                className="nav-group-center hidden lg:block"
+              >
+                <ul className="nav-links">
+                  {sectionNav.map((item) => {
+                    const active = activeId === item.href.slice(1);
+                    return (
+                      <li key={item.href}>
+                        <a
+                          href={item.href}
+                          className="nav-link"
+                          data-active={active || undefined}
+                          /* The observer will confirm this a moment later;
+                             setting it on click means the highlight moves
+                             with the visitor rather than after the scroll
+                             has finished. */
+                          onClick={() => setActiveId(item.href.slice(1))}
+                          aria-current={active ? "true" : undefined}
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/*
-            CONTACT ACTIONS, SIZED TO THE SPACE THEY HAVE.
-
-            Labelled pills only from `xl`: at 1024 the bar already carries
-            the logo, five nav links, the toggle and the consultation CTA,
-            and two ~120px pills on top of that overflow the container.
-            Between 380px and `xl` the same two actions render as 44px
-            circles instead.
-
-            Below 380px the bar is left alone entirely — logo, toggle and
-            the menu trigger is all that fits at 320px — and the pills
-            appear inside the menu panel, which every visitor can reach.
-          */}
-          <ContactActions
-            variant="pill"
-            className="hidden xl:flex"
-          />
-          <ContactActions
-            variant="icon"
-            className="hidden min-[380px]:flex xl:hidden"
-          />
-
-          <ThemeToggle />
-          <Button
-            href="#estimator"
-            size="md"
-            className="hidden sm:inline-flex"
-          >
-            Get a Free Consultation
-          </Button>
-
-          {/* ---- mobile trigger ---- */}
-          <button
-            ref={triggerRef}
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-controls={panelId}
-            className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-fg lg:hidden"
-          >
-            <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-              {open ? (
-                <path
-                  d="M6 6l12 12M18 6L6 18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
+              {/* ================= right: the actions ================= */}
+              <div className="nav-group-end">
+                <ContactActions
+                  variant="pill"
+                  size="sm"
+                  className="hidden min-[1600px]:flex"
                 />
-              ) : (
-                <path
-                  d="M3.5 7.5h17M3.5 16.5h17"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
+                <ContactActions
+                  variant="icon"
+                  className="hidden min-[380px]:flex min-[1600px]:hidden"
                 />
-              )}
-            </svg>
-          </button>
+
+                <ThemeToggle />
+
+                <Button href="#estimator" size="sm" className="hidden sm:inline-flex">
+                  Get a Free Consultation
+                </Button>
+
+                {/* ---- mobile trigger ---- */}
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  onClick={() => setOpen((v) => !v)}
+                  aria-expanded={open}
+                  aria-controls={panelId}
+                  className="inline-flex size-11 items-center justify-center rounded-full text-fg transition-colors duration-[var(--dur-fast)] hover:bg-fg/[0.07] lg:hidden"
+                >
+                  <span className="sr-only">
+                    {open ? "Close menu" : "Open menu"}
+                  </span>
+                  {/* Two bars that cross, rather than an icon swap — an SVG
+                      swap cannot be animated and reads as a flicker. */}
+                  <span aria-hidden="true" className="nav-burger">
+                    <span />
+                    <span />
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-
-    </header>
+      </header>
 
       {/* ================= mobile panel =================
           OUTSIDE the <header>, and that is load-bearing.
 
-          While open, the header carries `backdrop-blur-md`
-          (backdrop-filter: blur(12px)). A filtered element becomes the
-          CONTAINING BLOCK for its fixed-position descendants, so when this
-          panel lived inside the header, `top: 4.5rem; bottom: 0` resolved
-          against the header's own 72px box instead of the viewport. The
-          panel computed to 1px tall, its links painted over the hero, and
-          `elementFromPoint` at a link's centre returned the hero section —
-          every item in the mobile menu was unclickable.
+          The shell carries `backdrop-filter`, and a filtered element becomes
+          the CONTAINING BLOCK for its fixed-position descendants. When this
+          panel lived inside the header, `top: …; bottom: 0` resolved against
+          the header's own box instead of the viewport: the panel computed to
+          1px tall, its links painted over the hero, and `elementFromPoint` at
+          a link's centre returned the hero section — every item in the mobile
+          menu was unclickable. Measured with Playwright at 390px.
 
-          Measured with Playwright at 390px. Moving the panel out of the
-          filtered subtree restores the viewport as its containing block.
-          z-40 keeps it beneath the header bar so the close button stays on
-          top. */}
-      {open ? (
-        <div
-          id={panelId}
-          ref={panelRef}
-          className="fixed inset-x-0 top-[var(--header-h)] bottom-0 z-40 overflow-y-auto border-t border-line bg-paper lg:hidden"
-        >
-          <nav
-            aria-label="Page sections"
-            className="container-site flex flex-col py-4"
-          >
-            {sectionNav.map((item) => (
-              <a
+          It is also MOUNTED AT ALL TIMES, so it can animate out as well as
+          in. `inert` is what keeps it out of the tab order and the
+          accessibility tree while closed; `pointer-events: none` alone would
+          leave every link tabbable behind the page. */}
+      <div
+        id={panelId}
+        ref={panelRef}
+        data-open={open || undefined}
+        inert={!open}
+        className="nav-panel lg:hidden"
+      >
+        <nav aria-label="Page sections" className="container-site">
+          <ul>
+            {sectionNav.map((item, index) => (
+              <li
                 key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="border-b border-line py-4 text-xl font-medium text-fg"
+                className="nav-panel-item"
+                style={{ "--i": index } as React.CSSProperties}
               >
-                {item.label}
-              </a>
+                <a
+                  href={item.href}
+                  onClick={closeAnd}
+                  className="nav-panel-link"
+                  data-active={activeId === item.href.slice(1) || undefined}
+                  aria-current={
+                    activeId === item.href.slice(1) ? "true" : undefined
+                  }
+                >
+                  {item.label}
+                  <Chevron />
+                </a>
+              </li>
             ))}
-          </nav>
+          </ul>
+        </nav>
 
-          {/*
-            The contact actions, labelled, inside the panel.
+        {/*
+          The contact actions, labelled, inside the panel.
 
-            This is what guarantees they are reachable at 320px, where the
-            bar itself has no room for them.
+          This is what guarantees they are reachable at 320px, where the bar
+          itself has no room for them.
 
-            `flex-1` alone is not enough to make them equal: a flex item
-            defaults to `min-width: auto`, so the wider label refuses to
-            shrink to the shared basis and the pair lands at 136px and 132px.
-            `min-w-0` lets both reach the same width, which is what matches
-            them to the full-width buttons directly beneath.
-          */}
-          <div className="container-site pt-2">
-            <ContactActions
-              variant="pill"
-              className="w-full gap-3 [&>a]:min-w-0 [&>a]:flex-1"
-            />
-          </div>
-
-          <div className="container-site flex flex-col gap-3 pb-10 pt-3">
-            <Button
-              href="#estimator"
-              size="lg"
-              onClick={() => setOpen(false)}
-              className="w-full"
-            >
-              Get a Free Consultation
-            </Button>
-            <Button
-              href="/free-website-audit"
-              variant="secondary"
-              size="lg"
-              onClick={() => setOpen(false)}
-              className="w-full"
-            >
-              Get a Free Website Audit
-            </Button>
-          </div>
+          `flex-1` alone is not enough to make them equal: a flex item
+          defaults to `min-width: auto`, so the wider label refuses to shrink
+          to the shared basis and the pair lands at 136px and 132px.
+          `min-w-0` lets both reach the same width, which is what matches
+          them to the full-width buttons directly beneath.
+        */}
+        <div
+          className="nav-panel-item container-site pt-5"
+          style={{ "--i": sectionNav.length } as React.CSSProperties}
+        >
+          <ContactActions
+            variant="pill"
+            className="w-full gap-3 [&>a]:min-w-0 [&>a]:flex-1"
+          />
         </div>
-      ) : null}
+
+        <div
+          className="nav-panel-item container-site flex flex-col gap-3 pt-3"
+          style={{ "--i": sectionNav.length + 1 } as React.CSSProperties}
+        >
+          <Button href="#estimator" size="lg" onClick={closeAnd} className="w-full">
+            Get a Free Consultation
+          </Button>
+          <Button
+            href="/free-website-audit"
+            variant="secondary"
+            size="lg"
+            onClick={closeAnd}
+            className="w-full"
+          >
+            Get a Free Website Audit
+          </Button>
+        </div>
+      </div>
     </>
   );
 }

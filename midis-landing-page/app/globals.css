@@ -1241,6 +1241,509 @@ p {
 }
 
 /* ==========================================================================
+   SITE HEADER — the floating navigation shell
+   --------------------------------------------------------------------------
+   A translucent pill that floats clear of the viewport edges rather than a
+   full-bleed bar welded to the top. Three things make it work:
+
+   1. IT SHARES THE PAGE'S LEFT AND RIGHT EDGES. The shell sits inside
+      `container-site`, so its edges land on the same line as every section
+      heading, every card and the footer. A floating bar with its own
+      arbitrary inset would be the one element on the page that agrees with
+      nothing else.
+
+   2. ONE CONTROL HEIGHT. `--nav-control-h` sizes the theme toggle, both
+      contact pills and the consultation CTA. They cannot drift apart,
+      because none of them carries its own height. 44px is the floor from
+      WCAG 2.5.8, and it is also what makes the bar compact enough to float.
+
+   3. THE BAR SHRINKS, THE RESERVED SPACE DOES NOT. `--nav-h` drops a few
+      pixels on scroll; `--header-h` — which `scroll-padding-top`, the hero
+      and the sticky estimator all read — stays put. Anchoring to a moving
+      target would shift every in-page jump by the difference.
+
+   BACKDROP-FILTER IS DECLARED UNPREFIXED, AND ONLY ONCE. Lightning CSS
+   dedupes a hand-written standard/`-webkit-` pair and keeps the prefixed
+   one, which Chrome then reports as unsupported — that is what silently
+   killed the glass elsewhere in this project. Standard property only.
+   ========================================================================== */
+
+:root {
+  /* Gap from the viewport top to the shell. */
+  --nav-inset: 0.625rem;
+  /* The shell's own height at the top of the page. */
+  --nav-h: 3.5rem;
+  /* Every interactive control inside the bar. */
+  --nav-control-h: 2.75rem;
+
+  /* Light values; the dark block at the end of this file flips them. */
+  --nav-bg: rgb(250 249 246 / 0.72);
+  --nav-bg-scrolled: rgb(250 249 246 / 0.9);
+  --nav-border: rgb(20 21 24 / 0.09);
+  --nav-border-scrolled: rgb(20 21 24 / 0.13);
+  --nav-shadow: 0 10px 34px -22px rgb(20 21 24 / 0.5);
+  --nav-panel-bg: rgb(250 249 246 / 0.97);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --nav-inset: 0.875rem;
+    --nav-h: 3.75rem;
+    /* 14px inset + 60px bar + 6px clearance. */
+    --header-h: 5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --nav-inset: 1rem;
+    --nav-h: 4rem;
+    /* 16px inset + 64px bar + 4px clearance. */
+    --header-h: 5.25rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   The fixed wrapper
+   --------------------------------------------------------------------------
+   Deliberately NOT the thing that carries the blur. The blur lives on the
+   shell inside it, so the wrapper stays a plain positioning context — see
+   the note on the mobile panel in Header.tsx for what a filtered ancestor
+   does to fixed-position descendants.
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 50;
+  padding-top: var(--nav-inset);
+  /* The wrapper spans the full width but must not swallow clicks aimed at
+     the page either side of the floating shell. */
+  pointer-events: none;
+}
+
+/* The container is full-width; only the shell itself should catch clicks,
+   so the page stays reachable in the gutters either side of it. */
+.site-header .nav-shell {
+  pointer-events: auto;
+}
+
+.nav-shell {
+  display: flex;
+  align-items: center;
+  height: var(--nav-h);
+  padding-inline: 0.5rem 0.5rem;
+  border: 1px solid var(--nav-border);
+  border-radius: calc(var(--nav-h) / 2);
+  background: var(--nav-bg);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--nav-shadow);
+  transition:
+    height var(--dur-base) var(--ease-out-quart),
+    background-color var(--dur-base) var(--ease-out-quart),
+    border-color var(--dur-base) var(--ease-out-quart),
+    border-radius var(--dur-base) var(--ease-out-quart);
+}
+
+@media (min-width: 640px) {
+  .nav-shell {
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .nav-shell {
+    padding-inline: 0.75rem 0.75rem;
+  }
+}
+
+/*
+ * Scrolled state.
+ *
+ * A few pixels of height and a more opaque ground — enough that the bar
+ * reads as settled and the labels stay legible over whatever has scrolled
+ * under them, nowhere near the shrink-and-lurch the brief rules out.
+ */
+.site-header[data-scrolled] .nav-shell {
+  height: calc(var(--nav-h) - 0.25rem);
+  background: var(--nav-bg-scrolled);
+  border-color: var(--nav-border-scrolled);
+}
+
+@media (min-width: 1024px) {
+  .site-header[data-scrolled] .nav-shell {
+    height: calc(var(--nav-h) - 0.5rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Three groups, and the middle one is genuinely centred
+   --------------------------------------------------------------------------
+   `1fr auto 1fr` centres the link group against the SHELL, not against
+   whatever width the logo and the action cluster happen to leave over. The
+   two side columns are free to be different widths — which they always are
+   — without dragging the navigation off centre, and no margin anywhere is
+   doing alignment work.
+   -------------------------------------------------------------------------- */
+
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * THE LINKS APPEAR AT 1024, BUT THEY ARE ONLY CENTRED AGAINST THE SHELL
+ * FROM 1280.
+ *
+ * `1fr auto 1fr` centres honestly only while BOTH side columns fit inside
+ * their own track, and the action cluster is ~360px wide. At 1024 the shell
+ * is 932px, which leaves each side track 258px — so the cluster was squeezed
+ * and the theme toggle measured 28px wide instead of 44px.
+ *
+ * Between lg and xl the side columns therefore size to their content and the
+ * links centre within whatever is left. Nothing overlaps, nothing is
+ * squashed, and the only cost is that the link group sits slightly left of
+ * the shell's true centre — which is invisible, and a great deal better than
+ * a crushed control.
+ */
+@media (min-width: 1024px) {
+  .nav-grid {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .nav-grid {
+    grid-template-columns: 1fr auto 1fr;
+  }
+}
+
+.nav-group-start {
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nav-group-center {
+  justify-self: center;
+  min-width: 0;
+}
+
+.nav-group-end {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .nav-group-end {
+    gap: 0.375rem;
+  }
+}
+
+/*
+ * ONE HEIGHT FOR EVERY CONTROL IN THE BAR.
+ *
+ * The toggle, both contact pills and the CTA each ship their own height
+ * from their own component. Here they are all pinned to `--nav-control-h`,
+ * so "equal heights" is a property of the bar rather than something four
+ * separate files have to keep agreeing about. `:where()` would lose to the
+ * utility classes these elements carry, so the selector is plain.
+ */
+.nav-group-end a,
+.nav-group-end button {
+  min-height: var(--nav-control-h);
+  /*
+   * A flex item shrinks before its container overflows, and a shrunk
+   * circular control stops being a 44px tap target — measured at 1024,
+   * where the theme toggle came out 28px wide. Running out of room is a
+   * breakpoint problem; it must never be solved by crushing a control.
+   */
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation links
+   -------------------------------------------------------------------------- */
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--nav-control-h);
+  padding-inline: 0.75rem;
+  /* The same pill radius Tailwind's `rounded-full` produces, so the nav
+     links and the controls beside them are one shape rather than two that
+     merely look alike. */
+  border-radius: calc(infinity * 1px);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out-quart),
+    background-color var(--dur-fast) var(--ease-out-quart);
+}
+
+@media (min-width: 1280px) {
+  .nav-link {
+    padding-inline: 0.9375rem;
+  }
+}
+
+/*
+ * The underline is a pseudo-element scaled from the centre, not a
+ * background-size trick, because it has to sit at a fixed distance below
+ * the label inside a pill with its own padding.
+ */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur-base) var(--ease-out-quart);
+}
+
+@media (min-width: 1280px) {
+  .nav-link::after {
+    left: 0.9375rem;
+    right: 0.9375rem;
+  }
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  color: var(--color-fg);
+}
+
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* The section currently under the header. Orange label plus a drawn rule —
+   the same rule the hover state animates, so the two states are one idea. */
+.nav-link[data-active] {
+  color: var(--color-accent-ink);
+  font-weight: 600;
+}
+
+.nav-link[data-active]::after {
+  transform: scaleX(1);
+}
+
+/* --------------------------------------------------------------------------
+   Hamburger
+   --------------------------------------------------------------------------
+   Two bars that travel to the centre and cross, rather than an icon swap.
+   Swapping two SVGs cannot be animated and reads as a flicker at this size.
+   -------------------------------------------------------------------------- */
+
+.nav-burger {
+  position: relative;
+  display: block;
+  width: 1.125rem;
+  height: 0.75rem;
+}
+
+.nav-burger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.75px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    top var(--dur-fast) var(--ease-out-quart),
+    transform var(--dur-fast) var(--ease-out-quart);
+}
+
+.nav-burger span:first-child {
+  top: 0;
+}
+
+.nav-burger span:last-child {
+  top: calc(100% - 1.75px);
+}
+
+[aria-expanded="true"] .nav-burger span {
+  top: calc(50% - 0.875px);
+}
+
+[aria-expanded="true"] .nav-burger span:first-child {
+  transform: rotate(45deg);
+}
+
+[aria-expanded="true"] .nav-burger span:last-child {
+  transform: rotate(-45deg);
+}
+
+/* --------------------------------------------------------------------------
+   Mobile panel
+   --------------------------------------------------------------------------
+   Always mounted so it can animate OUT as well as in. `inert` (set by the
+   component when closed) removes it from the tab order and the
+   accessibility tree, which `pointer-events: none` alone would not do.
+   -------------------------------------------------------------------------- */
+
+.nav-panel {
+  position: fixed;
+  inset-inline: 0;
+  top: calc(var(--nav-inset) + var(--nav-h));
+  bottom: 0;
+  z-index: 40;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 1.25rem;
+  padding-bottom: 2.5rem;
+  background: var(--nav-panel-bg);
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.75rem);
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart),
+    visibility 0s linear var(--dur-base);
+}
+
+.nav-panel[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart),
+    visibility 0s;
+}
+
+/*
+ * Staggered entrance.
+ *
+ * `--i` is set per row in the markup. The delay applies only on the way IN:
+ * on close everything leaves together, because a staggered exit keeps the
+ * last item on screen after the visitor has already moved on.
+ */
+.nav-panel-item {
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart);
+}
+
+.nav-panel[data-open] .nav-panel-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(60ms + var(--i, 0) * 45ms);
+}
+
+.nav-panel-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.25rem;
+  padding-block: 0.875rem;
+  border-bottom: 1px solid var(--color-line);
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-fg);
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+
+.nav-panel-link:hover,
+.nav-panel-link:focus-visible {
+  color: var(--color-accent-ink);
+}
+
+.nav-panel-link[data-active] {
+  color: var(--color-accent-ink);
+  font-weight: 600;
+}
+
+/* The chevron trails each row and leans in on hover. */
+.nav-panel-link svg {
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: transform var(--dur-fast) var(--ease-out-quart);
+}
+
+.nav-panel-link:hover svg {
+  transform: translateX(0.25rem);
+}
+
+.nav-panel-link[data-active] svg {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   --------------------------------------------------------------------------
+   Everything still CHANGES — the bar still settles, the panel still opens,
+   the active link still shows. Only the travel and the stagger go.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-shell,
+  .nav-link,
+  .nav-link::after,
+  .nav-burger span,
+  .nav-panel,
+  .nav-panel-item,
+  .nav-panel-link svg {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .nav-panel,
+  .nav-panel-item {
+    transform: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Touch devices
+   --------------------------------------------------------------------------
+   backdrop-filter is the most expensive thing in this header for a phone
+   GPU, and it is sitting over content that scrolls continuously. The shell
+   keeps its translucency but drops the blur, matching what the glass
+   utilities already do below `lg`.
+   -------------------------------------------------------------------------- */
+
+@media (hover: none) {
+  .nav-shell {
+    backdrop-filter: none;
+    background: var(--nav-bg-scrolled);
+  }
+
+  .nav-panel {
+    backdrop-filter: none;
+    background: var(--color-paper);
+  }
+}
+
+/* ==========================================================================
    DARK THEME
    --------------------------------------------------------------------------
    Declared twice on purpose:
@@ -1283,6 +1786,15 @@ p {
 
   --color-danger: #ff8f85;
   --color-danger-soft: #2a1210;
+
+  /* The floating header. Deeper than the page so the shell still reads
+     as a distinct surface once content scrolls beneath it. */
+  --nav-bg: rgb(24 24 27 / 0.7);
+  --nav-bg-scrolled: rgb(24 24 27 / 0.9);
+  --nav-border: rgb(255 255 255 / 0.1);
+  --nav-border-scrolled: rgb(255 255 255 / 0.14);
+  --nav-shadow: 0 10px 34px -22px rgb(0 0 0 / 0.75);
+  --nav-panel-bg: rgb(17 17 19 / 0.97);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1308,6 +1820,15 @@ p {
 
     --color-danger: #ff8f85;
     --color-danger-soft: #2a1210;
+
+    /* The floating header. Deeper than the page so the shell still reads
+       as a distinct surface once content scrolls beneath it. */
+    --nav-bg: rgb(24 24 27 / 0.7);
+    --nav-bg-scrolled: rgb(24 24 27 / 0.9);
+    --nav-border: rgb(255 255 255 / 0.1);
+    --nav-border-scrolled: rgb(255 255 255 / 0.14);
+    --nav-shadow: 0 10px 34px -22px rgb(0 0 0 / 0.75);
+    --nav-panel-bg: rgb(17 17 19 / 0.97);
   }
 }
 

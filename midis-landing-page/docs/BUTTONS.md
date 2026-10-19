@@ -109,3 +109,33 @@ in their container, so the wrap reads as deliberate.
 3. **`NEXT_PUBLIC_CALENDLY_URL` is unset.**
 4. **No Lighthouse score taken.**
 5. The eight content questions in `STATUS.md` §6 still stand.
+
+
+---
+
+## A third size, added for the floating navbar
+
+`sm` — 44px, `min-h-11 px-4 text-sm`.
+
+The floating header is 64px tall at the top of the page and 56px once
+scrolled. A 48px `md` control leaves four pixels of breathing room at the
+bottom of that travel, and the pill stops reading as floating. `sm` is used
+by the consultation CTA in the bar, and matched by `ContactActions
+size="sm"` and the theme toggle, so every control in the navbar is exactly
+44px.
+
+44px is the WCAG 2.5.8 floor, so this is as small as a control on this site
+is allowed to get, and `sm` is for the navbar only — no page CTA uses it.
+
+The three heights are now:
+
+| size | height | used by |
+| --- | --- | --- |
+| `sm` | 44px | the floating navbar, and nothing else |
+| `md` | 48px | dense chrome |
+| `lg` | 52px | every page CTA |
+
+Nothing in the navbar sets its own height: `.nav-group-end a, .nav-group-end
+button { min-height: var(--nav-control-h) }` is the bar's standing
+guarantee, and `flex-shrink: 0` stops any of them being squashed — measured
+at 1024, where the theme toggle came out 28px wide before that rule existed.

@@ -136,11 +136,15 @@ would make the page dynamic under `cacheComponents` for no benefit.
 
 ## 6. Open questions for MIDIS
 
-1. **Testimonials — the section is built and currently renders nothing.**
-   The PDF's three quotes are marked "Placeholder Only" and are not
-   published. Supply any approved, attributed review (quote, name, role,
-   company, plus sign-off to publish) and it appears by adding one entry to
-   `content/testimonials.ts` — no code change. See `docs/TESTIMONIALS.md`.
+1. **Testimonials — the section is live but showing SAMPLE CONTENT.**
+   Six placeholder quotes under placeholder names, each carrying a "Sample"
+   chip, with a note under the subheading saying they are not real reviews.
+   Switched on at MIDIS's request on 2026-10-19 so the section is visible
+   while real quotes are collected. **This should not stay on at launch.**
+   Supply any approved, attributed review (quote, name, role, company, plus
+   sign-off to publish) and it replaces the samples automatically by adding
+   one entry to `content/testimonials.ts` — no code change. See
+   `docs/TESTIMONIALS.md`.
 2. **Canonical host** — the PDF writes `midis.com/thank-you/book-a-call`.
    The verified domain is `midis.in`. The **path** is honoured exactly; the
    **host** is `midis.in`. Confirm.

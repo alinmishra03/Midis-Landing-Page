@@ -15,6 +15,12 @@ import { cn } from "@/lib/utils";
  * pair for the mobile bar; `variant="pill"` is the labelled pair for the
  * desktop header and the mobile menu panel. Both are 44px minimum targets.
  *
+ * `size` picks the pill height. `sm` (44px) matches the floating header's
+ * other controls — the theme toggle and the consultation CTA — so all three
+ * sit on one baseline without the bar having to correct any of them. `md`
+ * (48px) is for the mobile menu panel, where the pills sit directly above
+ * full-width `lg` buttons and a 44px pill would read as the odd one out.
+ *
  * THEME. Colours are the semantic tokens, so these read correctly in both
  * themes without a conditional: WhatsApp keeps a quiet outline rather than
  * its own brand green, which would be the one off-palette colour on the
@@ -62,17 +68,22 @@ const SHARED = cn(
 
 export function ContactActions({
   variant = "pill",
+  size = "md",
   className,
 }: {
   variant?: "pill" | "icon";
+  size?: "sm" | "md";
   className?: string;
 }) {
   const icon = variant === "icon";
 
-  /* Pills match the header button's 48px; icons are a 44px circle. */
+  /* Icons are always a 44px circle — there is no smaller tap target that
+     still passes. Pills take their height from `size`. */
   const shape = icon
     ? "size-11 rounded-full"
-    : "min-h-12 gap-2 rounded-full px-4 text-[0.9375rem] font-semibold";
+    : size === "sm"
+      ? "min-h-11 gap-2 rounded-full px-4 text-sm font-semibold"
+      : "min-h-12 gap-2 rounded-full px-4 text-[0.9375rem] font-semibold";
 
   const quiet = cn(
     "border-fg/20 bg-transparent text-fg",

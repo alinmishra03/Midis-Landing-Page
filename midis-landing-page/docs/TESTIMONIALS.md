@@ -5,12 +5,31 @@ and exactly what someone has to do to make it appear.
 
 ---
 
-## 1. The section is built, and it renders nothing
+## 1. The section is live, and it is showing sample content
 
-`components/home/Testimonials.tsx` is complete and wired into the page
-between `<CaseStudies />` and `<Pricing />`. It returns `null`.
+`components/home/Testimonials.tsx` is wired into the page between
+`<CaseStudies />` and `<Pricing />`, and it is visible.
 
-That is the intended state, not an unfinished one.
+What it shows is **placeholder copy, not client feedback**. The approved
+list is still empty; the samples are there so the section is visible and
+reviewable while real testimonials are collected. This was switched on at
+the client's explicit request on 2026-10-19 — before that the section
+rendered nothing at all.
+
+**Every sample is labelled.** A "Sample" chip on each card, and one quiet
+line under the subheading reading "Sample content — placeholder quotes shown
+while client testimonials are being collected. These are not real reviews."
+Both are driven by the same flag as the content, so they cannot drift out of
+step with what is on screen, and both disappear the moment a real approved
+quote is added.
+
+The names are "Demo Client One" … "Demo Client Six" at "Demo Company"
+rather than plausible-looking people at plausible-looking businesses. That
+is deliberate: a realistic-sounding fake name is what would turn a layout
+placeholder into a fabricated review, and it would also risk resembling a
+real person. Nothing in the sample copy claims a result, a metric or an
+outcome — the quotes describe working with a team, which is the one thing a
+placeholder can say without inventing a business achievement.
 
 MIDIS.pdf page 10 carries three quotes. Each is headed **"Demo Testimonial —
 Placeholder Only"**, attributed to "Demo Client Name" at "Demo Company",
@@ -72,28 +91,22 @@ export const approvedTestimonials = testimonials.filter((t) => t.approved);
 
 ---
 
-## 3. Previewing the layout before real quotes exist
+## 3. Turning the samples off
 
 ```bash
-NEXT_PUBLIC_SHOW_DEMO_TESTIMONIALS=true npm run build
+NEXT_PUBLIC_SHOW_SAMPLE_TESTIMONIALS=false npm run build
 ```
 
-This renders the PDF's three placeholders so the layout can be reviewed.
-It is unset in production, and `NEXT_PUBLIC_` values are inlined at build
-time, so a production build contains no testimonial markup at all —
-verified: `curl` of the built page matches `Words From Our Clients` **0**
-times.
+With no approved quotes and no samples the section renders nothing at all,
+and the page reads as complete without it — no empty heading, no
+"testimonials coming soon", no placeholder card.
 
-When the flag is on, the preview cannot be mistaken for a live page:
+Approved quotes always win over samples, so adding a real one turns the
+samples off by itself. You never have to do both.
 
-- a banner across the section states the quotes are placeholders from
-  MIDIS.pdf, are not client feedback, and do not appear in production;
-- **every** card carries a "Demo content" badge;
-- the names are the PDF's own placeholders, so even a screenshot of the
-  preview invents no person and no business.
-
-Approved quotes always win over demo quotes, so turning the flag on can
-never replace or hide real feedback.
+There are six samples: the three from MIDIS.pdf page 10, reproduced word for
+word, plus three more written in the same register so the desktop grid fills
+two rows and the mobile carousel has enough cards to page through.
 
 ---
 
@@ -140,15 +153,15 @@ on the track as a whole. No card can be swiped to and found blank.
 
 ## 5. What was measured
 
-Against a build with the demo flag on (`scratchpad/qa/testimonials.mjs`,
-`swipe.mjs`) — **67 assertions, all passing**:
+`scratchpad/qa/testimonials.mjs` and `swipe.mjs` — **65 assertions, all
+passing**:
 
 | Area | Result |
 | --- | --- |
 | Placement | between `case-studies` and `pricing`; still exactly one `h1` |
 | Copy | heading and subheading match the brief verbatim |
-| Provenance | section banner + 3/3 card badges in the demo preview |
-| Desktop 1440 | 3-column grid, equal widths (421px) and heights (337px), one top edge |
+| Provenance | section note + 6/6 card chips, counted on the chip element |
+| Desktop 1440 | 3-column grid, six cards in two rows, each row sharing a top edge |
 | Mobile 390 | `overflow-x: auto`, `x mandatory` snap, `snap-align: center`, card 76% of track |
 | Swipe | CDP touch advances the track 0 → 255 and the live region follows; reverse swipe returns |
 | Snap | any offset from 200–340 resolves to 287 with the card dead centre (Δ0px) |
@@ -158,8 +171,8 @@ Against a build with the demo flag on (`scratchpad/qa/testimonials.mjs`,
 | Contrast | both themes, composited over the real ancestor stack — lowest 4.52:1, all pass AA |
 | Reduced motion | nothing hidden, arrows jump instantly |
 
-Production build (flag off): the string "Words From Our Clients" appears
-**0** times in the served HTML.
+With `NEXT_PUBLIC_SHOW_SAMPLE_TESTIMONIALS=false` and no approved quotes,
+the string "Words From Our Clients" appears **0** times in the served HTML.
 
 ### One thing deliberately *not* claimed
 

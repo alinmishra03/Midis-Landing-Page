@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Section, SectionHeader } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import {
-  showingDemo,
+  showingSamples,
   testimonialsSection,
   visibleTestimonials,
   type Testimonial,
@@ -15,18 +15,20 @@ import { cn } from "@/lib/utils";
 /**
  * SECTION — Words From Our Clients.
  *
- * RENDERS NOTHING UNTIL THERE IS SOMETHING REAL TO SHOW. MIDIS.pdf's three
- * quotes are each headed "Placeholder Only" under a note not to publish them
- * as genuine reviews, and no approved replacement has been supplied. So the
- * component returns `null` rather than showing an empty heading or an
- * invented quote — the page reads as complete without it, and the section
- * appears on its own the moment a quote with `approved: true` is added to
- * content/testimonials.ts.
+ * WHAT IT RENDERS, AND IN WHICH ORDER OF PREFERENCE. Approved client quotes
+ * if any exist; otherwise the placeholder set, so the section is visible and
+ * reviewable while real testimonials are being collected; otherwise nothing
+ * at all. The decision is made in content/testimonials.ts — this file only
+ * draws whatever comes back and marks it honestly.
  *
- * The demo quotes can be switched on for layout review with
- * NEXT_PUBLIC_SHOW_DEMO_TESTIMONIALS=true. When they are, the section wears
- * a banner and every card wears a badge, so a preview cannot be mistaken
- * for a live page.
+ * WHEN THE CONTENT IS PLACEHOLDER, IT SAYS SO. `showingSamples` puts a
+ * "Sample" chip on every card and one quiet line under the subheading. Both
+ * are driven by the same flag as the content itself, so they cannot drift
+ * out of step with what is on screen, and both disappear the moment a real
+ * approved quote is added. The marking is restrained rather than an alarm
+ * banner — the names are already unmistakably placeholders — but it is not
+ * optional: unlabelled fictional quotes on a live site are fabricated
+ * reviews, which is the one thing the brief rules out absolutely.
  *
  * ONE CAROUSEL, NO GESTURE CODE. The track is a scroll-snap container, so
  * touch swiping, momentum, trackpads and keyboard scrolling are the
@@ -59,7 +61,16 @@ function QuoteMark() {
   );
 }
 
-function Card({ t, demo }: { t: Testimonial; demo: boolean }) {
+/** First and last initial, e.g. "Priya Nair" -> "PN". */
+function initialsOf(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
+
+function Card({ t, sample }: { t: Testimonial; sample: boolean }) {
   return (
     <figure
       className={cn(
@@ -71,9 +82,11 @@ function Card({ t, demo }: { t: Testimonial; demo: boolean }) {
     >
       <div className="flex items-start justify-between gap-4">
         <QuoteMark />
-        {demo ? (
-          <span className="rounded-full bg-danger-soft px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-danger">
-            Demo content
+        {sample ? (
+          /* Quiet, not an alarm — but always present while the quote is
+             not a real one. */
+          <span className="rounded-full border border-line px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">
+            Sample
           </span>
         ) : null}
       </div>
@@ -93,13 +106,15 @@ function Card({ t, demo }: { t: Testimonial; demo: boolean }) {
             className="h-7 w-auto max-w-20 shrink-0 object-contain"
           />
         ) : (
-          /* Initial, not a stock portrait. The brief forbids inventing
-             customer photographs, and a generic avatar would imply one. */
+          /* Initials, not a stock portrait. The brief forbids inventing
+             customer photographs, and a generic avatar would imply one.
+             First and last initial rather than just the first: six names
+             beginning "Demo ..." all rendered an identical "D" disc. */
           <span
             aria-hidden="true"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-sm font-semibold text-accent-ink"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-xs font-semibold tracking-wide text-accent-ink"
           >
-            {t.name.trim().charAt(0)}
+            {initialsOf(t.name)}
           </span>
         )}
         <span className="min-w-0">
@@ -178,12 +193,14 @@ export function Testimonials() {
         sub={testimonialsSection.subheading}
       />
 
-      {showingDemo ? (
-        <div className="container-site mt-7">
-          <p className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-medium leading-relaxed text-danger">
-            Demo content — these are the placeholder quotes from MIDIS.pdf,
-            shown for layout review only. They are not client feedback and do
-            not appear in production.
+      {showingSamples ? (
+        <div className="container-site mt-5">
+          <p className="flex max-w-2xl items-start gap-2.5 text-sm leading-relaxed text-muted">
+            <span
+              aria-hidden="true"
+              className="mt-1.5 inline-block size-1.5 shrink-0 rounded-full bg-accent"
+            />
+            {testimonialsSection.sampleNote}
           </p>
         </div>
       ) : null}
@@ -206,7 +223,7 @@ export function Testimonials() {
               "-mx-[var(--gutter)] flex snap-x snap-mandatory gap-4 overflow-x-auto px-[var(--gutter)] pb-1",
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               "md:mx-0 md:grid md:snap-none md:gap-6 md:overflow-visible md:px-0 md:pb-0",
-              items.length >= 3 ? "md:grid-cols-3" : "md:grid-cols-2",
+              items.length >= 3 ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2",
             )}
           >
             {items.map((t, index) => (
@@ -217,7 +234,7 @@ export function Testimonials() {
                 }}
                 className="w-[85%] shrink-0 snap-center sm:w-[65%] md:w-auto"
               >
-                <Card t={t} demo={showingDemo} />
+                <Card t={t} sample={showingSamples} />
               </li>
             ))}
           </ul>
