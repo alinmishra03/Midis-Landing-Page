@@ -62,8 +62,18 @@ export const site = {
    * code — it is not a claim about an office. The registered address below
    * is the only location MIDIS states.
    */
+  /*
+   * The US line was removed on MIDIS's instruction (2026-10-19). The Indian
+   * line is now the only published number, and it is the same line the
+   * WhatsApp entry points use — so the header's "Call" and "WhatsApp"
+   * buttons both resolve to a number MIDIS has verified, rather than to two
+   * different ones.
+   *
+   * Still an array rather than a single value: the Organization schema
+   * builds a contactPoint per entry, and a second line can be added back
+   * without touching anything that reads this.
+   */
   phones: [
-    { region: "US", display: "+1 (862) 295-0117", e164: "+18622950117" },
     { region: "IN", display: "+91 97793 20626", e164: "+919779320626" },
   ],
 
@@ -100,6 +110,17 @@ export const site = {
 export const whatsappHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(
   site.whatsappMessage,
 )}`;
+
+/**
+ * The line a "Call us" control dials.
+ *
+ * Read from `site.phones` rather than written out again, so there is exactly
+ * one place a published number can be wrong. If the list is ever emptied,
+ * this is `null` and the header simply renders no Call button — a dialler
+ * that opens on nothing is worse than no button at all.
+ */
+export const primaryPhone = site.phones[0] ?? null;
+export const callHref = primaryPhone ? `tel:${primaryPhone.e164}` : null;
 
 /**
  * Footer navigation, exactly as MIDIS.pdf pages 13–14 list it.

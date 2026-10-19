@@ -72,6 +72,17 @@ export const projects: readonly Project[] = [
       "A not-for-profit early learning centre rooted in Country, where every child belongs. Seven nature-named rooms, a curriculum shaped like the landscape and clear family pathways give the brand warmth and trust.",
     url: "https://www.countrykids.au/",
     host: "countrykids.au",
+    /*
+     * Re-captured 2026-10-19 on MIDIS's instruction.
+     *
+     * The site opens on a video intro, then a globe of cards carrying a
+     * "Continue" control. This preview is the state AFTER that control is
+     * pressed: the globe unfolds into the card wall and the full navigation
+     * appears. The previous capture was the globe itself.
+     *
+     * Same 1800x1125 geometry as every other preview, so the showcase still
+     * never has to crop one differently from another.
+     */
     preview: "/images/work/country-kids.jpg",
   },
   {

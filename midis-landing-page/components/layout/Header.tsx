@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { ContactActions } from "./ContactActions";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,28 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {/*
+            CONTACT ACTIONS, SIZED TO THE SPACE THEY HAVE.
+
+            Labelled pills only from `xl`: at 1024 the bar already carries
+            the logo, five nav links, the toggle and the consultation CTA,
+            and two ~120px pills on top of that overflow the container.
+            Between 380px and `xl` the same two actions render as 44px
+            circles instead.
+
+            Below 380px the bar is left alone entirely — logo, toggle and
+            the menu trigger is all that fits at 320px — and the pills
+            appear inside the menu panel, which every visitor can reach.
+          */}
+          <ContactActions
+            variant="pill"
+            className="hidden xl:flex"
+          />
+          <ContactActions
+            variant="icon"
+            className="hidden min-[380px]:flex xl:hidden"
+          />
+
           <ThemeToggle />
           <Button
             href="#estimator"
@@ -202,7 +225,26 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="container-site flex flex-col gap-3 pb-10 pt-4">
+          {/*
+            The contact actions, labelled, inside the panel.
+
+            This is what guarantees they are reachable at 320px, where the
+            bar itself has no room for them.
+
+            `flex-1` alone is not enough to make them equal: a flex item
+            defaults to `min-width: auto`, so the wider label refuses to
+            shrink to the shared basis and the pair lands at 136px and 132px.
+            `min-w-0` lets both reach the same width, which is what matches
+            them to the full-width buttons directly beneath.
+          */}
+          <div className="container-site pt-2">
+            <ContactActions
+              variant="pill"
+              className="w-full gap-3 [&>a]:min-w-0 [&>a]:flex-1"
+            />
+          </div>
+
+          <div className="container-site flex flex-col gap-3 pb-10 pt-3">
             <Button
               href="#estimator"
               size="lg"
