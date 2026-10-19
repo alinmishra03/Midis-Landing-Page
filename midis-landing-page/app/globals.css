@@ -1474,3 +1474,139 @@ p {
     transform: none !important;
   }
 }
+
+/* ==========================================================================
+   COST FACTOR CARDS
+   --------------------------------------------------------------------------
+   Mobile-first. Each card reveals as IT reaches the viewport rather than the
+   whole set animating when the section does, which is what makes the stack
+   read as a sequence while scrolling.
+
+   The mechanism is the existing <Reveal> observer — one IntersectionObserver
+   per card, already independent — plus the `card3d` variant below. What
+   changes the feel is the DELAY: on a phone every card gets zero delay, so
+   it animates on its own arrival. The index stagger is reinstated only from
+   `lg`, where the grid puts several cards in view at once and a sequence has
+   to be expressed in time instead of scroll position.
+   ========================================================================== */
+
+@utility factor-grid {
+  /* The vanishing point every card's entrance rotates around. Set on the
+     list, not the card, so all five share one perspective origin and the
+     stack reads as a single plane rather than five unrelated tilts. */
+  perspective: 1200px;
+  perspective-origin: 50% 0%;
+}
+
+/*
+ * The entrance: rise, fade, settle from 0.96, and straighten from a 7deg
+ * lean. Seven degrees is small enough to read as depth rather than as a
+ * card falling over, which is where this effect usually goes wrong.
+ */
+[data-reveal="pending"][data-reveal-variant="card3d"] {
+  opacity: 0;
+  transform: translateY(26px) scale(0.96) rotateX(7deg);
+}
+
+[data-reveal="shown"][data-reveal-variant="card3d"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 620ms var(--ease-out-expo),
+    transform 760ms var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/*
+ * Desktop stagger, in CSS rather than as a per-card prop.
+ *
+ * At `lg` the five cards share a 3-column grid, so several cross the
+ * viewport threshold together and need sequencing in time. Below `lg` these
+ * rules do not apply and every card keeps its 0ms delay — which is exactly
+ * what makes the mobile reveal one-by-one.
+ */
+@media (min-width: 1024px) {
+  .factor-grid > *:nth-child(2) { --reveal-delay: 70ms; }
+  .factor-grid > *:nth-child(3) { --reveal-delay: 140ms; }
+  .factor-grid > *:nth-child(4) { --reveal-delay: 210ms; }
+  .factor-grid > *:nth-child(5) { --reveal-delay: 280ms; }
+  .factor-grid > *:nth-child(6) { --reveal-delay: 350ms; }
+}
+
+/* --------------------------------------------------------------------------
+   Active-card illumination
+   --------------------------------------------------------------------------
+   The card nearest the middle of the viewport brightens its border and its
+   step number. Driven by the scroll timeline, so it costs no JavaScript and
+   no scroll listener — the browser runs it on the compositor.
+
+   Phone only: on a desktop grid several cards sit mid-viewport at once and
+   lighting them all up says nothing. There, hover does this job instead.
+   -------------------------------------------------------------------------- */
+
+@supports (animation-timeline: view()) {
+  @media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+    @keyframes factor-active {
+      0%,
+      100% {
+        border-color: rgb(255 255 255 / 0.1);
+      }
+      45%,
+      55% {
+        border-color: rgb(239 135 22 / 0.55);
+      }
+    }
+
+    @keyframes factor-number-active {
+      0%,
+      100% {
+        opacity: 0.6;
+      }
+      45%,
+      55% {
+        opacity: 1;
+      }
+    }
+
+    .factor-card {
+      animation: factor-active linear both;
+      animation-timeline: view();
+      animation-range: cover 15% cover 85%;
+    }
+
+    .factor-number {
+      animation: factor-number-active linear both;
+      animation-timeline: view();
+      animation-range: cover 15% cover 85%;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Hover, from `lg` only
+   -------------------------------------------------------------------------- */
+
+@media (hover: hover) and (min-width: 1024px) {
+  .factor-card {
+    transition:
+      border-color var(--dur-base) var(--ease-out-quart),
+      background-color var(--dur-base) var(--ease-out-quart),
+      transform var(--dur-base) var(--ease-out-quart);
+  }
+
+  .factor-card:hover {
+    transform: translateY(-3px);
+    border-color: rgb(239 135 22 / 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .factor-card,
+  .factor-number {
+    animation: none;
+  }
+
+  .factor-card:hover {
+    transform: none;
+  }
+}

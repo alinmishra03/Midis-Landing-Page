@@ -108,6 +108,12 @@ type Variant =
   /** Process steps: rise with a slight rotation, like cards being dealt. */
   | "deal"
   /**
+   * The cost-factor cards: rise, fade, settle from 0.96 and straighten from
+   * a small forward lean. Needs a perspective on the parent — see
+   * `factor-grid` in globals.css.
+   */
+  | "card3d"
+  /**
    * Per-line mask reveal. `RevealText` sets this itself after measuring a
    * heading; it is also available directly for a heading whose lines are
    * authored by hand — the final CTA sets its own two lines so the second

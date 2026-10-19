@@ -67,26 +67,37 @@ export function Pricing() {
         translucent rectangle.
       */}
       <div className="container-wide relative z-10 mt-[var(--space-block)]">
-        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {pricingFactors.map((factor, index) => (
+        {/*
+          `factor-grid` carries the shared perspective the card entrances
+          rotate around, and the `lg`-only stagger. Mobile gap is 14px —
+          close enough to read as one stack, open enough that two cards are
+          never mistaken for one.
+        */}
+        <ol className="factor-grid grid gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          {pricingFactors.map((factor) => (
             <Reveal
               as="li"
               key={factor.number}
-              variant="scale"
-              delay={index * 70}
+              variant="card3d"
+              /*
+                No per-card delay. Each card has its own observer, so on a
+                phone it animates when IT arrives — which is the one-by-one
+                reveal. The stagger is reapplied from `lg` in CSS, where
+                several cards enter together.
+              */
               className="group/card"
             >
-              <div className="glass-dark h-full p-6 sm:p-7">
+              <div className="factor-card glass-dark h-full rounded-[1.25rem] p-5 sm:p-7">
                 <span
                   aria-hidden="true"
-                  className="font-display text-sm font-semibold tabular-nums text-accent"
+                  className="factor-number font-display text-sm font-semibold tabular-nums text-accent"
                 >
                   {factor.number}
                 </span>
-                <h3 className="mt-4 text-lg font-semibold leading-snug text-white">
+                <h3 className="mt-3.5 text-lg font-semibold leading-snug text-white">
                   {factor.title}
                 </h3>
-                <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-muted-dark">
+                <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted-dark">
                   {factor.body}
                 </p>
               </div>
@@ -97,8 +108,8 @@ export function Pricing() {
             The sixth cell completes the 3x2 grid rather than leaving a hole,
             and it carries the honest statement the section is built on.
           */}
-          <Reveal as="li" variant="scale" delay={350}>
-            <div className="glass-dark flex h-full flex-col justify-center border-accent/25 bg-accent/[0.07] p-6 sm:p-7">
+          <Reveal as="li" variant="card3d">
+            <div className="factor-card glass-dark flex h-full flex-col justify-center rounded-[1.25rem] border-accent/25 bg-accent/[0.07] p-5 sm:p-7">
               <p className="text-[0.9375rem] leading-relaxed text-white/90">
                 We scope a project before quoting it, and the proposal breaks
                 down what drives the number — so you can adjust the scope

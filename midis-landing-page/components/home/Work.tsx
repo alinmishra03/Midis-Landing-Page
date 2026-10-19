@@ -47,6 +47,20 @@ function ProjectRow({
      image-first, so the reading order stays consistent on a phone. */
   const flipped = index % 2 === 1;
 
+  /*
+   * COUNTRY KIDS HIDES ITS PREVIEW BELOW 768px, ON MIDIS'S INSTRUCTION.
+   *
+   * Scoped to this one project by slug rather than by a positional rule or
+   * a global selector, so no other project's screenshot can be caught by it
+   * if the order ever changes.
+   *
+   * `hidden md:block` removes the column from the layout entirely rather
+   * than making it invisible — `visibility: hidden` or `opacity: 0` would
+   * leave its height behind and open a gap above the text. The asset stays
+   * in the repo and the desktop rendering is untouched.
+   */
+  const hidePreviewOnMobile = project.slug === "country-kids";
+
   return (
     <article className="group grid items-center gap-8 lg:grid-cols-12 lg:gap-14">
       {/* ---- screenshot ----
@@ -59,6 +73,7 @@ function ProjectRow({
         className={cn(
           "lg:col-span-7",
           flipped ? "lg:order-2 lg:col-start-6" : "lg:order-1",
+          hidePreviewOnMobile && "hidden md:block",
         )}
       >
         <TiltCard>
