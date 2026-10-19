@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Arrow, Button } from "@/components/ui/Button";
+import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
 import {
   BUDGETS,
@@ -403,7 +403,10 @@ export function EstimatorForm() {
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* `flex-col-reverse` keeps the forward action ABOVE Back on a phone —
+          the primary path should not sit under the way out. twMerge lets it
+          override ButtonGroup`s own flex-col. */}
+      <ButtonGroup align="between" className="mt-8 flex-col-reverse">
         {step > 0 ? (
           <Button
             type="button"
@@ -422,7 +425,6 @@ export function EstimatorForm() {
             type="submit"
             size="lg"
             disabled={status === "submitting"}
-            className="w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-65"
           >
             {status === "submitting" ? (
               <>
@@ -441,13 +443,12 @@ export function EstimatorForm() {
             type="button"
             size="lg"
             onClick={onNext}
-            className="w-full sm:w-auto"
           >
             Continue
             <Arrow />
           </Button>
         )}
-      </div>
+      </ButtonGroup>
 
       {/* Politely announces the in-flight state to assistive technology. */}
       <p aria-live="polite" className="sr-only">

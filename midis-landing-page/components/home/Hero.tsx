@@ -1,7 +1,7 @@
-import { Arrow, Button } from "@/components/ui/Button";
+import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { BrowserFrame } from "@/components/ui/BrowserFrame";
 import { Eyebrow } from "@/components/ui/Section";
-import { Magnetic, TiltCard } from "@/components/ui/TiltCard";
+import { TiltCard } from "@/components/ui/TiltCard";
 import { hero } from "@/content/sections";
 import { heroShowcase } from "@/content/work";
 import { verifiedCounts } from "@/content/clients";
@@ -54,7 +54,21 @@ export function Hero() {
       />
 
       <div className="container-site">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)] lg:gap-14 xl:gap-20">
+        {/*
+          THE SPLIT STARTS AT `xl`, NOT `lg`.
+
+          At 1024 the two-column version left the text column only 471px
+          wide. That is cramped for display type, and it was too narrow for
+          the two CTAs side by side — flex squashed them until their labels
+          broke onto a second line, then wrapped them to unequal widths.
+          Measured at 1024px before the change: both buttons 74px tall
+          instead of 52px.
+
+          Giving the whole hero the full width at 1024 fixes the buttons and
+          gives the headline room, and the layered showcase still gets its
+          own column from 1280 up where there is actually space for it.
+        */}
+        <div className="grid items-center gap-12 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)] xl:gap-20">
           {/* ================= left: the message ================= */}
           <div className="relative z-10 max-w-2xl">
             {/* Uses the shared Eyebrow for identical markup to every other
@@ -79,7 +93,7 @@ export function Hero() {
               style={{ "--d": "90ms" } as React.CSSProperties}
             >
               Websites That Turn{" "}
-              <span className="lg:block">
+              <span className="xl:block">
                 Visitors Into{" "}
                 {/*
                   The one accent in the headline. --color-accent-ink
@@ -97,16 +111,21 @@ export function Hero() {
               {hero.subheadline}
             </p>
 
-            <div
-              className="hero-rise mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
+            {/*
+              The magnetic wrapper that used to sit around the primary has
+              been removed. It was an `inline-flex` span, so in the stacked
+              mobile column the primary kept its natural 261px while the
+              secondary stretched to the full width — the mismatch was the
+              wrapper, not the buttons. `ButtonGroup` now owns the layout.
+            */}
+            <ButtonGroup
+              className="hero-rise mt-9"
               style={{ "--d": "260ms" } as React.CSSProperties}
             >
-              <Magnetic>
-                <Button href={hero.primaryCta.href} size="lg">
-                  {hero.primaryCta.label}
-                  <Arrow />
-                </Button>
-              </Magnetic>
+              <Button href={hero.primaryCta.href} size="lg">
+                {hero.primaryCta.label}
+                <Arrow />
+              </Button>
               <Button
                 href={hero.secondaryCta.href}
                 variant="secondary"
@@ -114,7 +133,7 @@ export function Hero() {
               >
                 {hero.secondaryCta.label}
               </Button>
-            </div>
+            </ButtonGroup>
 
             <p
               className="hero-rise mt-8 max-w-md border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-muted-strong"
@@ -137,12 +156,12 @@ export function Hero() {
               hidden below `lg`, where they would only produce clutter.
             */}
             <TiltCard
-              className="hero-settle relative lg:pb-16 lg:pl-14"
+              className="hero-settle relative xl:pb-16 xl:pl-14"
               innerClassName="relative"
             >
               {/* back frame */}
               {rest[1] ? (
-                <div className="absolute left-0 top-10 hidden w-[62%] lg:block">
+                <div className="absolute left-0 top-10 hidden w-[62%] xl:block">
                   <BrowserFrame
                     src={rest[1].preview}
                     alt={`${rest[1].name} website homepage`}
@@ -156,7 +175,7 @@ export function Hero() {
 
               {/* middle frame */}
               {rest[0] ? (
-                <div className="absolute bottom-0 left-16 hidden w-[58%] lg:block">
+                <div className="absolute bottom-0 left-16 hidden w-[58%] xl:block">
                   <BrowserFrame
                     src={rest[0].preview}
                     alt={`${rest[0].name} website homepage`}
@@ -171,7 +190,7 @@ export function Hero() {
               {/* lead frame — the LCP image, so it loads eagerly.
                   `tilt-lift` pushes it forward of the two behind it, which
                   is what gives the stack real parallax as it turns. */}
-              <div className="tilt-lift relative lg:ml-auto lg:w-[86%]">
+              <div className="tilt-lift relative xl:ml-auto xl:w-[86%]">
                 <BrowserFrame
                   src={lead.preview}
                   alt={`${lead.name} website homepage, built by MIDIS`}
@@ -190,7 +209,7 @@ export function Hero() {
               "15+ years" — nothing that has not been verified.
             */}
             <dl
-              className="hero-rise mt-7 flex flex-wrap gap-x-8 gap-y-3 lg:mt-0 lg:pl-14"
+              className="hero-rise mt-7 flex flex-wrap gap-x-8 gap-y-3 xl:mt-0 xl:pl-14"
               style={{ "--d": "460ms" } as React.CSSProperties}
             >
               <div>

@@ -1,4 +1,4 @@
-import { Arrow, Button } from "@/components/ui/Button";
+import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { Eyebrow } from "@/components/ui/Section";
 import { finalCta } from "@/content/sections";
@@ -96,14 +96,10 @@ export function FinalCta() {
           </Reveal>
 
           <Reveal delay={370}>
-            {/* Equal widths on a phone so the stack reads as one block;
-                natural widths side by side from `sm`. */}
-            <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Button
-                href={finalCta.primaryCta.href}
-                size="lg"
-                className="w-full sm:w-auto"
-              >
+            {/* `ButtonGroup` handles the stacking and the equal widths, so
+                the per-button `w-full sm:w-auto` overrides are gone. */}
+            <ButtonGroup align="center" className="mt-10">
+              <Button href={finalCta.primaryCta.href} size="lg">
                 {finalCta.primaryCta.label}
                 <Arrow />
               </Button>
@@ -112,11 +108,10 @@ export function FinalCta() {
                 href={finalCta.secondaryCta.href}
                 variant="onDark"
                 size="lg"
-                className="w-full sm:w-auto"
               >
                 {finalCta.secondaryCta.label}
               </Button>
-            </div>
+            </ButtonGroup>
           </Reveal>
 
           <Reveal delay={460}>

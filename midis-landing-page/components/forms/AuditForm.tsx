@@ -353,7 +353,7 @@ export function AuditForm() {
         type="submit"
         size="lg"
         disabled={status === "submitting"}
-        className="mt-7 w-full disabled:cursor-not-allowed disabled:opacity-65"
+        className="mt-7 w-full"
       >
         {status === "submitting" ? (
           <>

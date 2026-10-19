@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Arrow, Button } from "@/components/ui/Button";
+import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { Logo } from "@/components/layout/Logo";
 import type { ThankYouContent } from "@/content/forms";
 import { site, whatsappHref } from "@/content/site";
@@ -164,11 +164,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
 
               {CALENDLY_URL ? (
                 <>
-                  <Button
-                    href={CALENDLY_URL}
-                    size="lg"
-                    className="mt-5 w-full sm:w-auto"
-                  >
+                  <Button href={CALENDLY_URL} size="lg" className="mt-5 w-full sm:w-auto">
                     {content.bookingCta}
                     <Arrow />
                   </Button>
@@ -187,7 +183,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                     arrange a time that suits you.
                   </p>
 
-                  <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+                  <ButtonGroup align="center" className="mt-6">
                     <Button href={`mailto:${site.email}`} size="lg">
                       Email {site.email}
                       <Arrow />
@@ -195,7 +191,7 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                     <Button href={whatsappHref} variant="secondary" size="lg">
                       Message on WhatsApp
                     </Button>
-                  </div>
+                  </ButtonGroup>
 
                   <p className="mt-4 text-xs text-muted">{content.duration}</p>
                 </>

@@ -961,29 +961,6 @@ p {
 }
 
 /* ==========================================================================
-   Magnetic button nudge
-   --------------------------------------------------------------------------
-   Four pixels, maximum. A magnetic button that moves far enough to really
-   notice is a button that moves out from under the cursor, which is an
-   accessibility problem dressed up as a flourish.
-   ========================================================================== */
-
-@media (hover: hover) and (pointer: fine) {
-  .magnetic {
-    transition: transform var(--dur-fast) var(--ease-out-quart);
-  }
-  .magnetic[data-magnet="true"] {
-    transform: translate(calc(var(--mx, 0) * 4px), calc(var(--my, 0) * 4px));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .magnetic[data-magnet="true"] {
-    transform: none;
-  }
-}
-
-/* ==========================================================================
    Section-specific reveal identities
    --------------------------------------------------------------------------
    Each major section gets its own entrance so the page does not read as one
