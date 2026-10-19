@@ -68,7 +68,7 @@ function ProjectRow({
             rel="noopener noreferrer"
             tabIndex={-1}
             aria-hidden="true"
-            className="card-lift block rounded-xl hover:shadow-[0_34px_70px_-30px_rgba(20,21,24,0.55)]"
+            className="card-lift block rounded-xl"
           >
             <BrowserFrame
               src={project.preview}
@@ -184,7 +184,7 @@ export function Work() {
             href={PORTFOLIO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="card-lift group grid items-center gap-8 rounded-2xl bg-ink p-6 text-white ring-1 ring-fg/10 hover:bg-ink-raised hover:shadow-[0_28px_56px_-28px_rgba(20,21,24,0.6)] sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14"
+            className="card-lift group grid items-center gap-8 rounded-2xl bg-ink p-6 text-white ring-1 ring-fg/10 hover:bg-ink-raised sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14"
           >
             <div>
               <p className="eyebrow text-accent">The full portfolio</p>

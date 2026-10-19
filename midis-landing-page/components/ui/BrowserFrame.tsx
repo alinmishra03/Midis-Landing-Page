@@ -56,8 +56,20 @@ export function BrowserFrame({
   return (
     <div
       className={cn(
+        /*
+         * NO BOX-SHADOW HERE, DELIBERATELY.
+         *
+         * This carried `shadow-[0_18px_40px_-20px_rgba(20,21,24,0.45)]`,
+         * which rendered as a grey smear below and beside every project
+         * screenshot — most visible on the lighter ones. The card is now
+         * bounded by exactly one thing: the 1px ring. That is the "single
+         * visible card boundary" the design calls for, and `overflow-hidden`
+         * keeps the screenshot inside the radius.
+         *
+         * If depth is ever wanted again, it belongs on a specific call site,
+         * not baked into every frame on the site.
+         */
         "overflow-hidden rounded-xl bg-surface ring-1 ring-fg/10",
-        "shadow-[0_18px_40px_-20px_rgba(20,21,24,0.45)]",
         className,
       )}
     >
