@@ -5,23 +5,29 @@
  * disagree about what a valid option is. The route handler validates against
  * these same lists; it does not trust anything the client posts.
  *
- * WHAT IS APPROVED AND WHAT IS SUPPORTING
- * ---------------------------------------
- * The AUDIT form is transcribed field-for-field from MIDIS.pdf pages 15–16,
- * including every option label, both consent sentences, the helper text and
- * the button label. Nothing in it is invented.
+ * WHERE THESE NOW DIVERGE FROM MIDIS.pdf
+ * --------------------------------------
+ * The forms were originally transcribed field-for-field from the PDF. MIDIS
+ * then asked for them to be shortened to raise completion, so the following
+ * APPROVED fields were deliberately dropped. Recorded here because they were
+ * client-approved content, and removing them was a decision rather than an
+ * oversight:
  *
- * The ESTIMATOR form's five questions are MIDIS.pdf page 6 verbatim. The PDF
- * lists options for only the first ("New Website / Redesign / E-commerce /
- * Landing Page / Other"); the option sets for pages, existing site, budget
- * and timeline are SUPPORTING and marked as such below. Budget reuses the
- * audit form's approved USD bands rather than inventing a second scale.
+ *   Estimator  "How many pages do you need?"   (p.6) — scoping detail the
+ *                                               consultation covers better
+ *              "When would you like to launch?" (p.6) — removed outright
+ *   Audit      "What is your main goal?"        (p.16) — overlapped the
+ *                                               service question it sat next to
+ *              separate First/Last name         (p.15) — merged into one field
+ *   Both       budget bands "Under $1,000" and "$10,000+" (p.16)
  *
- * CURRENCY — FLAGGED. MIDIS.pdf specifies USD bands. MIDIS is India-based
- * (registered in Punjab; published lines are +91 and +1) and its internal
- * cost references are in INR. The approved USD bands ship unchanged, as
- * instructed. Confirm this matches the intended audience before launch.
- * See docs/open-questions.md, item 6.
+ * Everything still present is the PDF's own wording. Nothing was invented
+ * and no new question was added.
+ *
+ * CURRENCY — STILL FLAGGED. The remaining bands are the PDF's USD values.
+ * MIDIS is India-based (registered in Punjab; published lines are +91 and
+ * +1) and its internal cost references are INR. Confirm USD suits the
+ * intended audience before launch. See docs/STATUS.md.
  */
 
 /* ==========================================================================
@@ -38,27 +44,10 @@ export const PROJECT_TYPES = [
 ] as const;
 
 /** SUPPORTING — the PDF asks the question but lists no options. */
-export const PAGE_COUNTS = [
-  "1–5 pages",
-  "6–10 pages",
-  "11–25 pages",
-  "25+ pages",
-  "Not sure yet",
-] as const;
-
-/** SUPPORTING. */
 export const EXISTING_SITE = [
   "Yes, and I want to keep it",
   "Yes, and I want to replace it",
   "No, this would be our first site",
-] as const;
-
-/** SUPPORTING. */
-export const TIMELINES = [
-  "As soon as possible",
-  "Within 1–3 months",
-  "Within 3–6 months",
-  "Still planning",
 ] as const;
 
 /* ==========================================================================
@@ -79,7 +68,7 @@ export const COUNTRIES = [
  * The PDF's screenshot is cut off by a scroll indicator after "SEO and
  * conversion optimisation". The five visible options are reproduced exactly;
  * none has been added. If a sixth exists below the fold, it is missing here.
- * See docs/open-questions.md, item 7.
+ * See docs/STATUS.md.
  */
 export const AUDIT_SERVICES = [
   "Website audit",
@@ -89,22 +78,17 @@ export const AUDIT_SERVICES = [
   "SEO and conversion optimisation",
 ] as const;
 
-/** APPROVED — MIDIS.pdf p.16. */
-export const GOALS = [
-  "Generate more leads",
-  "Improve conversion rate",
-  "Improve website design and UX",
-  "Launch a new website",
-  "Increase online sales",
-] as const;
-
-/** APPROVED — MIDIS.pdf p.16. USD, as supplied. See the currency note above. */
+/**
+ * Four bands, shared by both forms.
+ *
+ * The PDF's six (p.16) minus "Under $1,000" and "$10,000+", on MIDIS's
+ * instruction. Four reads as a quick choice rather than a questionnaire, and
+ * an even count lays out cleanly in the two-column grid from `sm` up.
+ */
 export const BUDGETS = [
-  "Under $1,000",
   "$1,000–$3,000",
   "$3,000–$5,000",
   "$5,000–$10,000",
-  "$10,000+",
   "Not sure yet",
 ] as const;
 
@@ -194,7 +178,10 @@ export const thankYouProject = {
   steps: [
     {
       title: "We review your requirements",
-      body: "We look at the scope, pages and timeline you shared.",
+      /* No longer mentions pages or timeline: the estimator stopped asking
+         for either, so promising to review them would describe information
+         the visitor was never given a chance to supply. */
+      body: "We look at the project type, budget and requirements you shared.",
     },
     {
       title: "We discuss your goals",

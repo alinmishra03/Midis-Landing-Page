@@ -8,14 +8,12 @@ import {
   FieldError,
   Honeypot,
   OptionGroup,
-  SelectField,
   TextField,
 } from "./Fields";
 import {
   AUDIT_SERVICES,
   BUDGETS,
   COUNTRIES,
-  GOALS,
   auditIntro,
   consent as consentCopy,
 } from "@/content/forms";
@@ -57,7 +55,6 @@ type FieldName =
   | "websiteUrl"
   | "country"
   | "service"
-  | "goal"
   | "budget"
   | "phone"
   | "consent";
@@ -70,7 +67,6 @@ const EMPTY = {
   websiteUrl: "",
   country: "",
   service: "",
-  goal: "",
   budget: "",
   phone: "",
 };
@@ -231,7 +227,7 @@ export function AuditForm() {
           name="company"
           autoComplete="organization"
           placeholder="Your company"
-          required
+          optional
           value={values.company}
           onChange={(event) => set("company")(event.target.value)}
           error={errors.company}
@@ -271,16 +267,6 @@ export function AuditForm() {
           error={errors.service}
           required
           columns={1}
-        />
-
-        <SelectField
-          label="What is your main goal?"
-          name="goal"
-          options={GOALS}
-          value={values.goal}
-          onChange={set("goal")}
-          error={errors.goal}
-          required
         />
 
         {/*

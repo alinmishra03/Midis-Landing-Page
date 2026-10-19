@@ -4,13 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
-import {
-  BUDGETS,
-  EXISTING_SITE,
-  PAGE_COUNTS,
-  PROJECT_TYPES,
-  TIMELINES,
-} from "@/content/forms";
+import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { estimatorSchema } from "@/lib/enquiry";
 import { estimator } from "@/content/sections";
 import { cn } from "@/lib/utils";
@@ -38,27 +32,34 @@ import { cn } from "@/lib/utils";
  * resolve to one POST.
  */
 
+/*
+ * THE FOUR-STEP SHAPE IS UNCHANGED.
+ *
+ * Two questions were removed on MIDIS's instruction — "How many pages do you
+ * need?" and "When would you like to launch?" (see the divergence note in
+ * content/forms.ts) — but the step structure, one topic per screen, is the
+ * original design and stays. The steps that held two questions now hold one;
+ * nothing was merged or collapsed.
+ */
 const STEPS = [
   { title: "Project type", legend: "What do you need?" },
   { title: "Requirements", legend: "Tell us about the site" },
-  { title: "Budget & timeline", legend: "Scope and timing" },
+  { title: "Budget", legend: "Scope" },
   { title: "Your details", legend: "Where we send the response" },
 ] as const;
 
 /** Which fields each step owns. Drives both validation and focus. */
 const STEP_FIELDS = [
   ["projectType"],
-  ["pages", "existingSite"],
-  ["budget", "timeline"],
+  ["existingSite"],
+  ["budget"],
   ["name", "email", "company", "phone"],
 ] as const;
 
 type FieldName =
   | "projectType"
-  | "pages"
   | "existingSite"
   | "budget"
-  | "timeline"
   | "name"
   | "email"
   | "company"
@@ -66,10 +67,8 @@ type FieldName =
 
 const EMPTY = {
   projectType: "",
-  pages: "",
   existingSite: "",
   budget: "",
-  timeline: "",
   name: "",
   email: "",
   company: "",
@@ -260,53 +259,30 @@ export function EstimatorForm() {
         ) : null}
 
         {step === 1 ? (
-          <div className="flex flex-col gap-7">
-            <OptionGroup
-              legend="How many pages do you need?"
-              name="pages"
-              options={PAGE_COUNTS}
-              value={values.pages}
-              onChange={set("pages")}
-              error={errors.pages}
-              required
-              columns={2}
-            />
-            <OptionGroup
-              legend="Do you have an existing website?"
-              name="existingSite"
-              options={EXISTING_SITE}
-              value={values.existingSite}
-              onChange={set("existingSite")}
-              error={errors.existingSite}
-              required
-              columns={1}
-            />
-          </div>
+          <OptionGroup
+            legend="Do you have an existing website?"
+            name="existingSite"
+            options={EXISTING_SITE}
+            value={values.existingSite}
+            onChange={set("existingSite")}
+            error={errors.existingSite}
+            required
+            columns={1}
+          />
         ) : null}
 
         {step === 2 ? (
-          <div className="flex flex-col gap-7">
-            <OptionGroup
-              legend="What is your estimated budget?"
-              name="budget"
-              options={BUDGETS}
-              value={values.budget}
-              onChange={set("budget")}
-              error={errors.budget}
-              required
-              columns={2}
-            />
-            <OptionGroup
-              legend="When would you like to launch?"
-              name="timeline"
-              options={TIMELINES}
-              value={values.timeline}
-              onChange={set("timeline")}
-              error={errors.timeline}
-              required
-              columns={2}
-            />
-          </div>
+          /* Four bands now, so the two-column grid fills evenly from `sm`. */
+          <OptionGroup
+            legend="What is your estimated budget?"
+            name="budget"
+            options={BUDGETS}
+            value={values.budget}
+            onChange={set("budget")}
+            error={errors.budget}
+            required
+            columns={2}
+          />
         ) : null}
 
         {step === 3 ? (
@@ -323,10 +299,8 @@ export function EstimatorForm() {
                 {(
                   [
                     ["Project", values.projectType],
-                    ["Pages", values.pages],
                     ["Current site", values.existingSite],
                     ["Budget", values.budget],
-                    ["Launch", values.timeline],
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label} className="flex gap-2">
@@ -363,7 +337,7 @@ export function EstimatorForm() {
                 label="Company"
                 name="company"
                 autoComplete="organization"
-                required
+                optional
                 value={values.company}
                 onChange={(event) => set("company")(event.target.value)}
                 error={errors.company}

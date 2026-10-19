@@ -4,10 +4,7 @@ import {
   BUDGETS,
   COUNTRIES,
   EXISTING_SITE,
-  GOALS,
-  PAGE_COUNTS,
   PROJECT_TYPES,
-  TIMELINES,
 } from "@/content/forms";
 
 /**
@@ -35,10 +32,18 @@ const email = z
   .max(160, "That email address is longer than we can store.")
   .pipe(z.email("Please enter a valid email address."));
 
-const company = z
+/**
+ * Company is OPTIONAL on both forms.
+ *
+ * It is useful context, not a reason to lose a lead — a sole trader or a
+ * pre-incorporation founder has nothing to type here, and a required field
+ * they cannot answer is where an enquiry gets abandoned. An empty string has
+ * to pass, which `min(1)` would not allow, so the rule is a max-length check
+ * with no floor.
+ */
+const optionalCompany = z
   .string()
   .trim()
-  .min(1, "Please enter your company name.")
   .max(120, "That company name is longer than we can store.");
 
 /**
@@ -103,15 +108,15 @@ export const estimatorSchema = z.object({
   projectType: z.enum(PROJECT_TYPES, {
     message: "Please choose what you need.",
   }),
-  pages: z.enum(PAGE_COUNTS, { message: "Please choose a page range." }),
   existingSite: z.enum(EXISTING_SITE, {
     message: "Please tell us about your current website.",
   }),
   budget: z.enum(BUDGETS, { message: "Please choose a budget range." }),
-  timeline: z.enum(TIMELINES, { message: "Please choose a timeline." }),
   name,
   email,
-  company,
+  /* Optional: a company name is useful context, not a reason to lose a
+     lead. Same for the phone number below. */
+  company: optionalCompany,
   phone: optionalPhone,
   website: honeypot,
 });
@@ -121,11 +126,10 @@ export const auditSchema = z.object({
   firstName: name,
   lastName: name,
   email,
-  company,
+  company: optionalCompany,
   websiteUrl,
   country: z.enum(COUNTRIES, { message: "Please choose a country." }),
   service: z.enum(AUDIT_SERVICES, { message: "Please choose a service." }),
-  goal: z.enum(GOALS, { message: "Please choose your main goal." }),
   budget: z.enum(BUDGETS, { message: "Please choose a budget range." }),
   phone: optionalPhone,
   /*
@@ -238,10 +242,8 @@ export function toStrapi(input: EnquiryInput): StrapiEnquiry {
       message: block([
         ["Source", "Landing page — Website Project Estimator"],
         ["What they need", input.projectType],
-        ["Pages", input.pages],
         ["Existing website", input.existingSite],
         ["Estimated budget", `${input.budget} (USD)`],
-        ["Preferred launch", input.timeline],
         ["Company", input.company],
         ["Phone", input.phone],
       ]),
@@ -258,7 +260,6 @@ export function toStrapi(input: EnquiryInput): StrapiEnquiry {
       ["Website to audit", input.websiteUrl],
       ["Country", input.country],
       ["Service of interest", input.service],
-      ["Main goal", input.goal],
       ["Estimated budget", `${input.budget} (USD)`],
       ["Company", input.company],
       ["Phone", input.phone],
