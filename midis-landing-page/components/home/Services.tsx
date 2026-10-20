@@ -1,195 +1,312 @@
+"use client";
+
 import Image from "next/image";
+import { useId, useRef, useState } from "react";
 import { Arrow } from "@/components/ui/Button";
-import { Section, SectionHeader } from "@/components/ui/Section";
+import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
-import { TiltCard } from "@/components/ui/TiltCard";
 import { services, servicesSection } from "@/content/sections";
 import { cn } from "@/lib/utils";
 
 /**
- * SECTION 4 — Core services. Cinematic bento, 2026-10-20 revision.
+ * SECTION 4 — Core services. EDITORIAL SHOWCASE, 2026-10-20 (third pass).
  *
- * WHAT CHANGED AND WHY. MIDIS flagged the previous treatment as too dark:
- * a flat 45% charcoal wash sat over every photograph on top of a heavy
- * gradient, so the imagery read as texture rather than pictures. The flat
- * wash is GONE. Readability now comes from geography instead of murk — a
- * bottom-weighted gradient puts the text block on near-solid charcoal
- * while the upper half of every photograph shows through at full strength,
- * and the number chip at the top carries its own small dark backing. The
- * same six approved services, descriptions, CTAs and live midis.in
- * destinations are untouched.
+ * NO CARDS, NO GRID — on MIDIS's explicit instruction. The section is now
+ * typography-led:
  *
- * CARD ANATOMY. Top: a numbered chip ("01"–"06"). Middle: the photograph,
- * clearly visible. Bottom: accent rule, heading, description, Explore link
- * — the hierarchy the brief specifies, built with flex column
- * justify-between so the image owns everything between chip and text.
+ * DESKTOP (lg+): six oversized service ROWS — number, title, description,
+ * arrow — separated by hairline dividers that draw themselves on scroll
+ * (the existing `line-draw` scroll-timeline utility). Beside them, a
+ * DEDICATED PREVIEW PANEL: the brief offers a cursor-chasing floating
+ * image or a designated region, and prefers the region — it can never
+ * collide with the text, which the floating version always threatens to.
+ * Hovering or keyboard-focusing a row crossfades the panel to that
+ * service's photograph, full-colour, NO scrim — nothing sits on top of it,
+ * so for the first time the imagery needs no darkening at all. A gentle
+ * pointer parallax (±10px, skipped under reduced motion) keeps the panel
+ * alive without chasing the cursor.
  *
- * ENTRANCES, VARIED BUT COORDINATED. The card itself keeps the alternating
- * side entrance (left card from the left, right card from the right,
- * falling back to a rise below `lg`); the PHOTOGRAPH opens separately
- * through a soft clip window with a slight lag (see "Services bento" in
- * globals.css), so a card assembles — frame, then image, with the featured
- * card leading its row. All of it collapses to an instant swap under
- * reduced motion.
+ * MOBILE/TABLET (<lg): an editorial ACCORDION — number, title, plus icon —
+ * one service open at a time, the first open by default so the pattern is
+ * discoverable. Expanding reveals the photograph, the approved
+ * description and the Explore link, through the site's existing
+ * grid-template-rows accordion mechanics (globals.css), with real
+ * aria-expanded/aria-controls semantics. Nothing depends on hover.
  *
- * HOVER CHOREOGRAPHY (pointer devices): image scales and brightens,
- * heading lifts 3px, the orange accent rule draws in, the Explore arrow
- * nudges (the whole card is group/btn), and the ring warms toward accent.
- * No hover shadow — the brief now rules out large shadows outright. The
- * existing TiltCard supplies the restrained 5° perspective tilt and the
- * cursor sheen.
+ * THE HEADING is hand-set in three masked lines ("lines" reveal variant,
+ * same mechanism as the final CTA) so "Business Goals" can carry the
+ * orange accent — the automatic splitter declines nested markup. The
+ * words are servicesSection.headline VERBATIM, merely wrapped; the
+ * whitespace text nodes between lines keep the accessible string intact.
  *
- * CONTRAST. White text sits only where the gradient has reached ≥ ~0.75
- * charcoal, so the floor holds across all six photographs without a flat
- * wash. The orange CTA is --color-accent, correct HERE because the surface
- * beneath it is near-charcoal (7.26:1), not paper.
- *
- * ALT TEXT. The photographs are decorative — each card already states its
- * service in text. They render with an empty alt and aria-hidden;
- * `imageSubject` stays in the content file so the choice is reviewable.
+ * SERVICES, DESCRIPTIONS, CTAs AND LIVE midis.in LINKS are all unchanged.
+ * Rows are real anchors, so keyboard users tab through them (focus also
+ * drives the preview) and the focus ring comes from the global style.
  */
-
-/**
- * Bento spans and heights.
- *
- * Desktop: three row shapes — 7/5, 5/7, 6/6 — with the featured card
- * widest and tallest. Tablet (`sm`–`lg`): two columns, with the first and
- * last cards spanning both so six cards make four full rows and nothing
- * trails off ragged. Phone: one column, heights content-driven above a
- * 14rem floor so no card pads itself with empty photograph.
- */
-const BENTO = [
-  {
-    span: "sm:col-span-2 lg:col-span-7",
-    height: "min-h-[15rem] sm:min-h-[26rem]",
-    featured: true,
-  },
-  { span: "lg:col-span-5", height: "min-h-[14rem] sm:min-h-[26rem]", featured: false },
-  { span: "lg:col-span-5", height: "min-h-[14rem] sm:min-h-[22rem]", featured: false },
-  { span: "lg:col-span-7", height: "min-h-[14rem] sm:min-h-[22rem]", featured: false },
-  { span: "lg:col-span-6", height: "min-h-[14rem] sm:min-h-[21rem]", featured: false },
-  {
-    span: "sm:col-span-2 lg:col-span-6",
-    height: "min-h-[14rem] sm:min-h-[21rem]",
-    featured: false,
-  },
-] as const;
 
 export function Services() {
+  /* Desktop preview: the row under the pointer (or keyboard focus). Starts
+     on the first service so the panel is never empty. */
+  const [active, setActive] = useState(0);
+  /* Mobile accordion: index of the open row, -1 for none. First open by
+     default so the interaction is discoverable. */
+  const [open, setOpen] = useState(0);
+
+  const previewRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useRef<boolean | null>(null);
+  const baseId = useId();
+
+  /* Gentle parallax: pointer position over the showcase nudges the preview
+     a few pixels. Direct style writes — no re-render per mousemove. */
+  function onPointerMove(event: React.MouseEvent<HTMLDivElement>) {
+    if (reduceMotion.current === null) {
+      reduceMotion.current = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+    }
+    if (reduceMotion.current) return;
+    const panel = previewRef.current;
+    if (!panel) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    panel.style.setProperty("--px", x.toFixed(3));
+    panel.style.setProperty("--py", y.toFixed(3));
+  }
+
   return (
     <Section id="services" tone="surface" labelledBy="services-heading">
-      <SectionHeader
-        eyebrow="What we do"
-        heading={servicesSection.headline}
-        headingId="services-heading"
-        sub={servicesSection.subheadline}
-      />
+      {/* ================= the editorial header ================= */}
+      <div className="container-site">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-end lg:gap-16">
+          <div>
+            <Reveal>
+              <Eyebrow className="mb-5">What we do</Eyebrow>
+            </Reveal>
+            {/*
+              servicesSection.headline, verbatim, hand-set as three masked
+              lines so the closing words can carry the accent. The " "
+              text nodes between lines are load-bearing: .reveal-line is
+              display:block, so they never render, but without them the
+              accessible string reads "SolutionsBuilt".
+            */}
+            <Reveal
+              as="h2"
+              id="services-heading"
+              variant="lines"
+              delay={60}
+              className="text-[length:var(--text-display-lg)] leading-[1.05]"
+            >
+              <span className="reveal-line">
+                <span className="reveal-line-inner">Digital Solutions</span>
+              </span>{" "}
+              <span className="reveal-line">
+                <span
+                  className="reveal-line-inner"
+                  style={{ "--line-delay": "90ms" } as React.CSSProperties}
+                >
+                  Built Around Your
+                </span>
+              </span>{" "}
+              <span className="reveal-line">
+                <span
+                  className="reveal-line-inner text-accent-ink"
+                  style={{ "--line-delay": "180ms" } as React.CSSProperties}
+                >
+                  Business Goals
+                </span>
+              </span>
+            </Reveal>
+          </div>
 
-      {/* The grid sits in the WIDE container while the header above stays in
-          the text measure — so the composition reads as expansive without
-          the heading running the width of a 1920px display. */}
-      <div className="container-wide mt-[var(--space-block)]">
-        <ul className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-12">
-          {services.map((service, index) => {
-            const bento = BENTO[index];
+          <Reveal delay={180}>
+            <p className="max-w-md text-base leading-relaxed text-muted sm:text-lg">
+              {servicesSection.subheadline}
+            </p>
+          </Reveal>
+        </div>
+      </div>
 
-            return (
-              <Reveal
-                as="li"
-                key={service.slug}
-                /*
-                  Alternating entrance direction: the left card of each row
-                  enters from the left, the right card from the right, so the
-                  bento assembles rather than fading in as a block. Both fall
-                  back to a vertical rise below `lg` (globals.css). The
-                  featured card leads; its row-mate follows.
-                */
-                variant={index % 2 === 0 ? "side-left" : "side-right"}
-                delay={index === 0 ? 0 : (index % 2) * 90 + 50}
-                className={cn(bento.span, "service-reveal group")}
-              >
-                <TiltCard className="h-full">
+      {/* ================= desktop: rows + preview panel ================= */}
+      <div className="container-wide mt-[var(--space-block)] hidden lg:block">
+        <div
+          onMouseMove={onPointerMove}
+          className="grid grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] items-start gap-12 xl:gap-16"
+        >
+          {/* ---- the rows ---- */}
+          <div>
+            {/* The architecture's top rule. */}
+            <div aria-hidden="true" className="line-draw h-px bg-line" />
+            <ul>
+              {services.map((service, index) => (
+                <Reveal as="li" key={service.slug} delay={index * 60} className="service-item">
                   <a
                     href={service.href}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-active={active === index || undefined}
+                    onMouseEnter={() => setActive(index)}
+                    onFocus={() => setActive(index)}
+                    className="service-row grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-5 py-6 xl:py-7"
+                  >
+                    <span className="service-row-number font-display text-sm font-semibold">
+                      0{index + 1}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="service-row-title block font-display text-[1.75rem] font-semibold leading-[1.12] xl:text-[2.125rem]">
+                        {service.name}
+                      </span>
+                      <span className="service-row-desc mt-1.5 block max-w-xl text-sm leading-relaxed text-muted">
+                        {service.description}
+                      </span>
+                    </span>
+                    <span className="service-row-arrow justify-self-end text-fg">
+                      <Arrow className="size-5" />
+                    </span>
+                  </a>
+                  {/* Divider: draws itself on scroll; its orange segment
+                      draws again, shorter, on the row's hover. */}
+                  <div aria-hidden="true" className="service-divider line-draw" />
+                </Reveal>
+              ))}
+            </ul>
+          </div>
+
+          {/* ---- the preview panel ----
+              Sticky so it rides alongside all six rows. aria-hidden: it is
+              a visual echo of the focused row, which already names and
+              describes its service in text. */}
+          <div
+            aria-hidden="true"
+            className="sticky top-[calc(var(--header-h)+1.5rem)]"
+          >
+            <Reveal variant="fade" delay={200}>
+              <div
+                ref={previewRef}
+                className="service-preview relative aspect-[4/3] overflow-hidden rounded-[var(--radius-card-lg)] bg-surface-2 ring-1 ring-fg/10"
+              >
+                {services.map((service, index) => (
+                  <Image
+                    key={service.slug}
+                    src={service.image}
+                    alt=""
+                    width={1600}
+                    height={1200}
+                    /* The first preview is visible immediately; the rest
+                       swap in on hover, so they can load lazily. */
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="(min-width: 1024px) 42vw, 1px"
                     className={cn(
-                      "service-card group/btn relative flex h-full flex-col justify-between overflow-hidden",
-                      "rounded-[var(--radius-card-lg)] p-5 sm:p-7",
-                      "ring-1 transition-[--tw-ring-color] duration-[var(--dur-base)]",
-                      /* The featured card wears a quiet orange ring at rest —
-                         its distinctive treatment besides sheer size. */
-                      bento.featured
-                        ? "ring-accent/30 hover:ring-accent/60"
-                        : "ring-fg/10 hover:ring-accent/45",
-                      bento.height,
-                      "text-white",
+                      "service-preview-img absolute inset-0 size-full object-cover",
+                      active === index && "is-active",
+                    )}
+                  />
+                ))}
+                {/* The panel's one orange detail, echoing the active row. */}
+                <span className="absolute left-5 top-5 inline-flex items-center rounded-full bg-[rgb(10_11_13/0.55)] px-2.5 py-1 font-display text-xs font-semibold tracking-[0.14em] text-white">
+                  0{active + 1}
+                </span>
+                <span className="service-preview-accent absolute bottom-0 left-0 h-[3px] w-16 bg-accent" />
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= mobile & tablet: the accordion ================= */}
+      <div className="container-site mt-[var(--space-block)] lg:hidden">
+        <div aria-hidden="true" className="h-px bg-line" />
+        {services.map((service, index) => {
+          const isOpen = open === index;
+          const buttonId = `${baseId}-svc-btn-${index}`;
+          const panelId = `${baseId}-svc-panel-${index}`;
+
+          return (
+            <Reveal as="div" key={service.slug} delay={index * 40} className="border-b border-line">
+              <h3>
+                <button
+                  type="button"
+                  id={buttonId}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setOpen(isOpen ? -1 : index)}
+                  className="flex min-h-14 w-full items-center gap-4 py-4 text-left"
+                >
+                  <span
+                    className={cn(
+                      "w-7 shrink-0 font-display text-xs font-semibold transition-colors duration-[var(--dur-fast)]",
+                      isOpen ? "text-accent-ink" : "text-muted",
                     )}
                   >
-                    {/* ---- photograph ----
-                        The wrap is the reveal's soft clip window AND the
-                        hover zoom surface; the drift animation owns the
-                        img's own transform, so the two never fight. */}
-                    <div aria-hidden="true" className="service-media-wrap absolute inset-0">
+                    0{index + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex-1 font-display text-lg font-semibold leading-snug transition-colors duration-[var(--dur-fast)] sm:text-xl",
+                      isOpen && "text-accent-ink",
+                    )}
+                  >
+                    {service.name}
+                  </span>
+                  {/* Plus that turns into a close at 45°. */}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "service-acc-icon shrink-0 text-fg",
+                      isOpen && "service-acc-icon-open",
+                    )}
+                  >
+                    <svg viewBox="0 0 16 16" width="16" height="16">
+                      <path
+                        d="M8 2.5v11M2.5 8h11"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                </button>
+              </h3>
+
+              <div
+                id={panelId}
+                role="region"
+                aria-labelledby={buttonId}
+                data-open={isOpen ? "true" : "false"}
+                className="accordion-panel"
+              >
+                <div className="overflow-hidden">
+                  <div className="pb-5">
+                    <div className="overflow-hidden rounded-xl">
                       <Image
                         src={service.image}
                         alt=""
+                        aria-hidden="true"
                         width={1600}
                         height={1000}
                         loading="lazy"
-                        sizes="(min-width: 1024px) 50vw, (min-width: 640px) 50vw, 92vw"
-                        className="service-img media-drift absolute inset-0 size-full scale-[1.06] object-cover"
+                        sizes="92vw"
+                        className="h-44 w-full object-cover sm:h-56"
                       />
-                      {/*
-                        THE ONLY OVERLAY — bottom-weighted, nothing flat.
-                        The top of the image is effectively untouched and
-                        the charcoal only builds where the text sits. Two
-                        curves live in globals.css: phones get a stronger
-                        mid-zone because the text block fills more of the
-                        compact card; from `sm` the lighter cinematic curve
-                        takes over.
-                      */}
-                      <div className="service-scrim absolute inset-0" />
                     </div>
-
-                    {/* Cursor-following highlight, above the image and below
-                        the text. Desktop pointers only. */}
-                    <span aria-hidden="true" className="tilt-sheen" />
-
-                    {/* ---- top: the number chip ---- */}
-                    <span className="relative z-10 inline-flex self-start items-center rounded-full border border-white/20 bg-[rgb(10_11_13/0.55)] px-2.5 py-1 text-[0.6875rem] font-semibold tracking-[0.14em] text-white/90">
-                      0{index + 1}
-                    </span>
-
-                    {/* ---- bottom: the message ----
-                        `tilt-lift` pushes it off the card face on the Z axis
-                        so the tilt has real depth. */}
-                    <div className="tilt-lift relative z-10 pt-10">
-                      <span aria-hidden="true" className="service-accent" />
-                      <h3
-                        className={cn(
-                          "font-semibold leading-snug",
-                          bento.featured
-                            ? "text-2xl sm:text-[2rem]"
-                            : "text-xl sm:text-2xl",
-                        )}
-                      >
-                        {service.name}
-                      </h3>
-                      <p className="mt-2.5 max-w-md text-[0.9375rem] leading-relaxed text-white/85">
-                        {service.description}
-                      </p>
-                      <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-accent">
-                        <span className="link-underline">{service.cta}</span>
-                        <Arrow />
-                      </span>
-                    </div>
-                  </a>
-                </TiltCard>
-              </Reveal>
-            );
-          })}
-        </ul>
+                    <p className="mt-3.5 text-sm leading-relaxed text-muted">
+                      {service.description}
+                    </p>
+                    <a
+                      href={service.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/btn mt-3.5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
+                    >
+                      {service.cta}
+                      <Arrow />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          );
+        })}
       </div>
     </Section>
   );

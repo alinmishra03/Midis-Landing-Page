@@ -2456,165 +2456,161 @@ body[data-popup-open] .floating-cta {
 }
 
 /* ==========================================================================
-   SERVICES BENTO — cinematic cards (MIDIS brief, 2026-10-20)
+   SERVICES SHOWCASE — editorial rows + preview panel (MIDIS brief,
+   2026-10-20, third pass: no cards, no grid)
    --------------------------------------------------------------------------
-   Three cooperating pieces per card:
+   Desktop: oversized rows whose hover state recolours the number, slides
+   the title, straightens the arrow to a diagonal, brightens the
+   description, draws an orange segment along the divider, and crossfades
+   the sticky preview panel to that service's photograph. Every transition
+   is transform, opacity or colour. `data-active` mirrors :hover so
+   keyboard focus drives the same state the pointer does.
 
-     .service-media-wrap  the photograph's window. Carries the entrance's
-                          soft clip reveal AND the hover zoom — the img's
-                          own transform belongs to the scroll-drift
-                          animation, so the wrap is the one element whose
-                          transform is free to transition.
-     .service-img         only its FILTER transitions (hover brighten).
-     .service-accent      the orange rule above each heading: drawn in on
-                          hover where hover exists, quietly present on
-                          touch, always present on the featured card.
+   The dividers reuse the scroll-driven `line-draw` utility, so the
+   architecture draws itself as the list enters the viewport — no listener.
 
-   Everything animates transform, opacity, clip-path or filter — compositor
-   territory. The reduced-motion block at the end flattens all of it.
+   The preview photographs carry NO scrim at all: nothing sits on them, so
+   nothing needs darkening. The pointer parallax reads --px/--py written by
+   Services.tsx (skipped under reduced motion at the source).
    ========================================================================== */
 
-.service-media-wrap {
-  transition: transform 480ms var(--ease-out-quart);
+.service-row-number {
+  color: var(--color-muted);
+  transition: color 320ms var(--ease-out-quart);
 }
 
-.service-img {
-  transition: filter 420ms var(--ease-out-quart);
+.service-row-title {
+  transition:
+    transform 380ms var(--ease-out-quart),
+    color 380ms var(--ease-out-quart);
 }
 
-/*
- * The gradient scrim. Bottom-weighted, never flat. On a phone the text
- * block fills more of the compact card, so the charcoal has to reach
- * higher (0.5 by mid-card); from `sm` the taller cards push the text down
- * and the lighter, more cinematic curve leaves the upper half untouched.
- */
-.service-scrim {
-  background: linear-gradient(
-    to top,
-    rgb(10 11 13 / 0.94) 0%,
-    rgb(10 11 13 / 0.8) 30%,
-    rgb(10 11 13 / 0.52) 55%,
-    rgb(10 11 13 / 0.14) 76%,
-    rgb(10 11 13 / 0) 88%
-  );
+.service-row-desc {
+  opacity: 0.72;
+  transition: opacity 380ms var(--ease-out-quart);
 }
 
-@media (min-width: 640px) {
-  .service-scrim {
-    background: linear-gradient(
-      to top,
-      rgb(10 11 13 / 0.92) 0%,
-      rgb(10 11 13 / 0.76) 24%,
-      rgb(10 11 13 / 0.38) 50%,
-      rgb(10 11 13 / 0.08) 70%,
-      rgb(10 11 13 / 0) 85%
-    );
-  }
+.service-row-arrow {
+  transition:
+    transform 380ms var(--ease-out-quart),
+    color 380ms var(--ease-out-quart);
 }
 
-.service-card h3 {
+.service-row:hover .service-row-number,
+.service-row[data-active] .service-row-number {
+  color: var(--color-accent-ink);
+}
+
+.service-row:hover .service-row-title,
+.service-row[data-active] .service-row-title {
+  transform: translateX(10px);
+  color: var(--color-accent-ink);
+}
+
+.service-row:hover .service-row-desc,
+.service-row[data-active] .service-row-desc {
+  opacity: 1;
+}
+
+/* The arrow turns diagonal — →  becomes ↗ — and warms. */
+.service-row:hover .service-row-arrow,
+.service-row[data-active] .service-row-arrow {
+  transform: translate(3px, -3px) rotate(-45deg);
+  color: var(--color-accent-ink);
+}
+
+/* The divider, with its hover-drawn orange segment. */
+.service-divider {
+  position: relative;
+  height: 1px;
+  background: var(--color-line);
+}
+
+.service-divider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  right: 62%;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
   transition: transform 420ms var(--ease-out-quart);
 }
 
-/* The brief's "subtle text contrast treatment": a soft 1px shade under the
-   type, so a heading whose top line reaches into the lighter half of a
-   BRIGHT photograph (the SEO dashboard, the UI/UX desk) keeps its edge.
-   Invisible over the dark gradient; nowhere near a heavy drop shadow. */
-.service-card h3,
-.service-card p {
-  text-shadow: 0 1px 2px rgb(10 11 13 / 0.45);
+.service-item:hover .service-divider::after,
+.service-item:focus-within .service-divider::after {
+  transform: scaleX(1);
 }
 
-.service-accent {
-  display: block;
-  width: 2.25rem;
-  height: 2px;
-  margin-bottom: 0.75rem;
-  border-radius: 2px;
-  background: var(--color-accent);
-  transform-origin: left center;
+/* ---- the preview panel ---- */
+
+.service-preview-img {
+  opacity: 0;
+  transform: translate3d(
+      calc(var(--px, 0) * 10px),
+      calc(var(--py, 0) * 10px),
+      0
+    )
+    scale(1.07);
   transition:
-    transform 420ms var(--ease-out-quart),
-    opacity 420ms var(--ease-out-quart);
+    opacity 440ms var(--ease-out-quart),
+    transform 720ms var(--ease-out-expo);
 }
 
-@media (hover: hover) {
-  /* Resting state on pointer devices: the rule waits to be drawn… */
-  .service-accent {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-
-  /* …except on the featured card, where it is part of the resting look. */
-  .service-reveal:first-child .service-accent {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-
-  .service-card:hover .service-media-wrap {
-    transform: scale(1.045);
-  }
-
-  .service-card:hover .service-img {
-    filter: brightness(1.08);
-  }
-
-  .service-card:hover h3 {
-    transform: translateY(-3px);
-  }
-
-  .service-card:hover .service-accent {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-}
-
-/* Touch devices: no hover to draw it, so the accent simply sits there. */
-@media (hover: none) {
-  .service-accent {
-    opacity: 0.85;
-  }
-}
-
-/*
- * Entrance: while the CARD is still pending (the <Reveal> li), its
- * photograph waits behind a soft inset window; when the card is shown the
- * window opens with a slight lag behind the card's own rise, so the card
- * assembles — frame first, image blooming after. Per-property delays keep
- * the lag off the transform channel, which the hover zoom needs instantly.
- */
-.service-reveal[data-reveal="pending"] .service-media-wrap {
-  clip-path: inset(9% 9% 9% 9% round 1.5rem);
-  opacity: 0.35;
-}
-
-.service-reveal[data-reveal="shown"] .service-media-wrap {
-  clip-path: inset(0 0 0 0 round var(--radius-card-lg));
+.service-preview-img.is-active {
   opacity: 1;
+  /* 1.035 resting scale keeps the parallax travel from exposing edges. */
+  transform: translate3d(
+      calc(var(--px, 0) * 10px),
+      calc(var(--py, 0) * 10px),
+      0
+    )
+    scale(1.035);
+}
+
+.service-preview-accent {
+  transition: width 420ms var(--ease-out-quart);
+}
+
+.service-preview:hover .service-preview-accent {
+  width: 6rem;
+}
+
+/* ---- the mobile accordion's icon ---- */
+
+.service-acc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: calc(infinity * 1px);
+  border: 1px solid var(--color-line);
   transition:
-    clip-path 800ms var(--ease-out-expo),
-    opacity 640ms var(--ease-out-quart),
-    transform 480ms var(--ease-out-quart);
-  transition-delay: calc(var(--reveal-delay, 0ms) + 90ms),
-    calc(var(--reveal-delay, 0ms) + 90ms), 0ms;
+    transform 320ms var(--ease-out-quart),
+    border-color 320ms var(--ease-out-quart),
+    color 320ms var(--ease-out-quart);
+}
+
+.service-acc-icon-open {
+  transform: rotate(45deg);
+  border-color: rgb(239 135 22 / 0.5);
+  color: var(--color-accent-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .service-media-wrap {
-    clip-path: none !important;
-    opacity: 1 !important;
+  .service-row-title,
+  .service-row-arrow,
+  .service-divider::after,
+  .service-acc-icon {
     transform: none !important;
     transition: none !important;
   }
 
-  .service-card h3,
-  .service-accent {
-    transform: none !important;
-    transition: none !important;
-  }
-
-  .service-accent {
-    opacity: 1 !important;
+  .service-preview-img,
+  .service-preview-img.is-active {
+    transform: none;
+    transition: opacity 1ms linear;
   }
 }
 
