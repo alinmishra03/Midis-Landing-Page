@@ -40,20 +40,25 @@ import {
 export function Footer() {
   return (
     <footer className="on-dark relative overflow-hidden bg-ink text-white">
-      {/* The join. One wash across the top edge, continuing the CTA's
-          lighting so the two sections read as a single surface. */}
+      {/*
+        The join gradient. Positioned at 50% 0% — the same horizontal centre
+        as the CTA's downward glow — so the two ambient pools align and the
+        warmth carries across the seam without a visible boundary. Slightly
+        larger radius than before so it reaches up into the CTA spacer and
+        visually bridges the two components.
+      */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-80"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-96"
         style={{
           background:
-            "radial-gradient(50rem 18rem at 28% 0%, rgba(239,135,22,0.10), transparent 70%)",
+            "radial-gradient(56rem 22rem at 50% 0%, rgba(239,135,22,0.12), transparent 68%)",
         }}
       />
 
       <div className="container-site relative z-10">
         {/* ================= identity + navigation ================= */}
-        <div className="grid gap-12 pt-14 md:pt-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.85fr)] lg:gap-20">
+        <div className="grid gap-12 pt-10 md:pt-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.85fr)] lg:gap-20">
           <Reveal>
             <Logo tone="dark" />
             <p className="mt-6 max-w-sm text-[0.9375rem] leading-relaxed text-muted-dark">

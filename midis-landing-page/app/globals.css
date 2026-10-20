@@ -350,6 +350,29 @@ p {
   will-change: transform;
 }
 
+/*
+ * DESCENDER FIX — cta-headline-line.
+ *
+ * `.reveal-line` uses `overflow: hidden` + `padding-bottom: 0.12em` to give
+ * descenders (g, y, p, q) room inside the mask. At body and section-heading
+ * scale (up to ~4.5rem) 0.12em is sufficient. At cta-headline's larger range
+ * (clamp 2.5–6.5rem, line-height 1.02) the descenders of "g" and "?" in
+ * "Something Better?" fall below the 0.12em clearance and are visibly
+ * sliced off by the overflow:hidden boundary.
+ *
+ * This class is applied to the SECOND reveal-line only (the one containing
+ * "Something Better?") and increases padding-bottom to 0.28em — enough for
+ * all Latin descenders at the maximum display size. margin-bottom mirrors the
+ * override to keep the heading block height identical to what it would be with
+ * the standard clearance, so no visual gap opens between the heading and the
+ * paragraph beneath it.
+ */
+.cta-headline-line {
+  padding-bottom: 0.28em;
+  margin-bottom: -0.28em;
+}
+
+
 [data-reveal="pending"][data-reveal-variant="lines"] {
   opacity: 1;
   transform: none;

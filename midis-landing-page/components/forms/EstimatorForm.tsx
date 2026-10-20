@@ -21,40 +21,52 @@ import { cn } from "@/lib/utils";
  * the visitor selected — useful, honest, and not a number anyone could be
  * held to.
  *
+ * STEP ORDER (reordered 2026-10-20 per MIDIS instruction):
+ *   Step 1 — Contact Details   (name, email, phone*, company)
+ *   Step 2 — Project Type      (what do you need?)
+ *   Step 3 — Requirements      (existing site?)
+ *   Step 4 — Budget & Submit   (budget range + project summary + submit)
+ *
+ * Previously contact details were step 4. Moving them to step 1 means the
+ * team receives contact information even if the visitor abandons mid-flow,
+ * and the visitor commits their identity before the project questions — a
+ * warmer, more personal journey.
+ *
  * STEP VALIDATION. Each step is validated against the same Zod field schemas
  * the server uses, field by field, so the browser and the API can never
- * disagree about what is valid. Advancing is blocked on a failing step —
- * but errors appear only after an attempt to advance, never while the
- * visitor is still typing their first character into a field.
+ * disagree about what is valid. Phone is required in the UI (step 1) even
+ * though the backend schema treats it as optional — the front-end check
+ * ensures a number is supplied, while the backend remains permissive in case
+ * of direct API calls. Advancing is blocked on a failing step — but errors
+ * appear only after an attempt to advance, never while the visitor is still
+ * typing their first character into a field.
  *
  * DUPLICATE SUBMISSION. Guarded twice: `status` disables the control, and
  * `sent` is a ref that survives re-renders, so a double-click, an Enter
  * keypress landing on the button, and a re-submit after a slow response all
  * resolve to one POST.
+ *
+ * PAYLOAD SHAPE UNCHANGED. The backend schema, Strapi mapping, and field
+ * names are identical — only the order the visitor fills them in has changed.
  */
 
 /*
- * THE FOUR-STEP SHAPE IS UNCHANGED.
- *
- * Two questions were removed on MIDIS's instruction — "How many pages do you
- * need?" and "When would you like to launch?" (see the divergence note in
- * content/forms.ts) — but the step structure, one topic per screen, is the
- * original design and stays. The steps that held two questions now hold one;
- * nothing was merged or collapsed.
+ * THE FOUR-STEP SHAPE IS UNCHANGED in count. Step titles and which fields
+ * live in each step have been reordered per MIDIS's instruction.
  */
 const STEPS = [
-  { title: "Project type", legend: "What do you need?" },
+  { title: "Contact Details", legend: "Let's get to know you" },
+  { title: "Project Type", legend: "What do you need?" },
   { title: "Requirements", legend: "Tell us about the site" },
-  { title: "Budget", legend: "Scope" },
-  { title: "Your details", legend: "Where we send the response" },
+  { title: "Budget & Submit", legend: "Scope" },
 ] as const;
 
 /** Which fields each step owns. Drives both validation and focus. */
 const STEP_FIELDS = [
+  ["name", "email", "phone", "company"],
   ["projectType"],
   ["existingSite"],
   ["budget"],
-  ["name", "email", "company", "phone"],
 ] as const;
 
 type FieldName =
@@ -107,12 +119,23 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
     );
   };
 
-  /** Validates one step against the server's own field schemas. */
+  /**
+   * Validates one step against the server's own field schemas, plus the
+   * front-end phone requirement on step 0.
+   */
   function validateStep(index: number) {
     const shape = estimatorSchema.shape;
     const next: Partial<Record<FieldName, string>> = {};
 
     for (const field of STEP_FIELDS[index]) {
+      /* Phone is required in the UI (step 0) even though the backend schema
+         uses optionalPhone. Add the check here before running the schema,
+         which would pass an empty string. */
+      if (field === "phone" && index === 0 && values.phone.trim() === "") {
+        next.phone = "Please enter your phone number.";
+        continue;
+      }
+
       const result = shape[field].safeParse(values[field]);
       if (!result.success) {
         next[field] = result.error.issues[0]?.message ?? "Please check this.";
@@ -266,7 +289,67 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
           form now sits in the first mobile screen, so its own rhythm
           tightens with the hero's. */}
       <div key={step} className="hero-rise mt-4 sm:mt-7">
+
+        {/* ---- Step 1: Contact Details ---- */}
         {step === 0 ? (
+          <div className="flex flex-col gap-1">
+            <p className="mb-4 text-sm leading-relaxed text-muted">
+              Tell us a little about yourself so we can get in touch regarding
+              your project.
+            </p>
+            {/*
+              Desktop: 2-column grid (Full Name + Email, then Phone + Company).
+              Mobile: single column, all fields stack vertically.
+            */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Full Name"
+                name="name"
+                autoComplete="name"
+                required
+                value={values.name}
+                onChange={(event) => set("name")(event.target.value)}
+                error={errors.name}
+              />
+              <TextField
+                label="Email Address"
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                required
+                value={values.email}
+                onChange={(event) => set("email")(event.target.value)}
+                error={errors.email}
+              />
+              <TextField
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="Include country code"
+                required
+                value={values.phone}
+                onChange={(event) => set("phone")(event.target.value)}
+                error={errors.phone}
+              />
+              <TextField
+                label="Company / Business Name"
+                name="company"
+                autoComplete="organization"
+                optional
+                value={values.company}
+                onChange={(event) => set("company")(event.target.value)}
+                error={errors.company}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* ---- Step 2: Project Type ---- */}
+        {step === 1 ? (
           <OptionGroup
             legend="What do you need?"
             name="projectType"
@@ -279,7 +362,8 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
           />
         ) : null}
 
-        {step === 1 ? (
+        {/* ---- Step 3: Requirements ---- */}
+        {step === 2 ? (
           <OptionGroup
             legend="Do you have an existing website?"
             name="existingSite"
@@ -292,25 +376,12 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
           />
         ) : null}
 
-        {step === 2 ? (
-          /* Four bands now, so the two-column grid fills evenly from `sm`. */
-          <OptionGroup
-            legend="What is your estimated budget?"
-            name="budget"
-            options={BUDGETS}
-            value={values.budget}
-            onChange={set("budget")}
-            error={errors.budget}
-            required
-            columns={2}
-          />
-        ) : null}
-
+        {/* ---- Step 4: Budget & Submit ---- */}
         {step === 3 ? (
           <div className="flex flex-col gap-5">
             {/*
-              The summary. Plainly what they chose — NOT a calculated price.
-              See the note at the top of this file.
+              The summary. Shows a recap of what was collected in the previous
+              steps — NOT a calculated price. See the note at the top.
             */}
             <div className="rounded-lg bg-paper p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -319,9 +390,10 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
               <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                 {(
                   [
+                    ["Name", values.name],
+                    ["Email", values.email],
                     ["Project", values.projectType],
                     ["Current site", values.existingSite],
-                    ["Budget", values.budget],
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label} className="flex gap-2">
@@ -332,50 +404,17 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
               </dl>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <TextField
-                label="Name"
-                name="name"
-                autoComplete="name"
-                required
-                value={values.name}
-                onChange={(event) => set("name")(event.target.value)}
-                error={errors.name}
-              />
-              <TextField
-                label="Business email"
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="you@company.com"
-                required
-                value={values.email}
-                onChange={(event) => set("email")(event.target.value)}
-                error={errors.email}
-              />
-              <TextField
-                label="Company"
-                name="company"
-                autoComplete="organization"
-                optional
-                value={values.company}
-                onChange={(event) => set("company")(event.target.value)}
-                error={errors.company}
-              />
-              <TextField
-                label="Phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                optional
-                placeholder="Include country code"
-                value={values.phone}
-                onChange={(event) => set("phone")(event.target.value)}
-                error={errors.phone}
-              />
-            </div>
+            {/* Four budget bands — even count lays out cleanly in two columns. */}
+            <OptionGroup
+              legend="What is your estimated budget?"
+              name="budget"
+              options={BUDGETS}
+              value={values.budget}
+              onChange={set("budget")}
+              error={errors.budget}
+              required
+              columns={2}
+            />
 
             <p className="text-xs leading-relaxed text-muted">
               {estimator.supportingText}

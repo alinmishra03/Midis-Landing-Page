@@ -25,6 +25,16 @@ import { site, whatsappHref } from "@/content/site";
  * what a screen reader announces and a crawler indexes. `.reveal-line` is
  * `display: block`, so it collapses and never renders.
  *
+ * DESCENDER FIX (2026-10-20). `.reveal-line` uses `overflow: hidden` with
+ * `padding-bottom: 0.12em` for the standard page scale. At cta-headline's
+ * larger font-size (clamp 2.5–6.5rem) and tight line-height (1.02), the
+ * bottom of "g" and "?" in "Something Better?" falls below the 0.12em
+ * clearance and is visibly clipped. The second reveal-line carries the class
+ * `cta-headline-line` which overrides padding-bottom to 0.28em on that line
+ * only — enough room for all descenders at every viewport width — while
+ * margin-bottom mirrors the override to keep the heading block height
+ * identical.
+ *
  * CONTRAST. White on #141518 is 15.8:1. The accent gradient runs white to
  * #EF8716, which is 7.26:1 at its orange end, so the treatment never costs
  * legibility — and an `@supports` fallback paints solid accent rather than
@@ -35,26 +45,34 @@ import { site, whatsappHref } from "@/content/site";
  * ends at the booking page. No magnetic displacement on either — the brief
  * rules it out, and a button that moves under the cursor is a liability
  * before it is a flourish.
+ *
+ * SEAMLESS JOIN WITH FOOTER. The section carries no bottom padding of its
+ * own. Instead, a transparent spacer div at the end provides breathing room
+ * while letting the ambient orange glow (positioned at 110% so it bleeds
+ * past the section edge) carry into the footer visually. The footer's own
+ * complementary gradient picks up the warmth at its top edge, completing
+ * the continuous composition.
  */
 
 export function FinalCta() {
   return (
     <section
       aria-labelledby="final-cta-heading"
-      className="on-dark relative overflow-hidden bg-ink pb-14 pt-[var(--space-section)] text-white sm:pb-16"
+      className="on-dark relative overflow-hidden bg-ink pt-[var(--space-section)] text-white"
     >
       {/*
-        Atmosphere, not decoration: one soft orange pool low and centred,
-        sitting directly beneath the buttons so the light leads the eye to
-        the action. A second, fainter wash lifts the upper edge away from
-        flat black. Both drift slowly and stop under reduced motion.
+        Two coordinated ambient washes. The lower pool is positioned at
+        110% Y so it bleeds past the section's bottom edge into the footer
+        above, creating a continuous glow rather than a hard cutoff. The
+        upper wash lifts the top from flat black. Both drift slowly under
+        ambient animation; stopped under reduced motion.
       */}
       <div
         aria-hidden="true"
         className="ambient pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            "radial-gradient(42rem 24rem at 50% 102%, rgba(239,135,22,0.28), transparent 68%), radial-gradient(52rem 20rem at 50% -6%, rgba(255,255,255,0.045), transparent 70%)",
+            "radial-gradient(52rem 34rem at 50% 112%, rgba(239,135,22,0.24), transparent 62%), radial-gradient(58rem 22rem at 50% -4%, rgba(255,255,255,0.04), transparent 68%)",
         }}
       />
 
@@ -69,6 +87,12 @@ export function FinalCta() {
             </Eyebrow>
           </Reveal>
 
+          {/*
+            DESCENDER FIX: The second reveal-line carries `cta-headline-line`
+            which increases padding-bottom from 0.12em to 0.28em so that
+            deep descenders ("g", "?") in "Something Better?" are never
+            clipped by the overflow:hidden mask at any viewport width.
+          */}
           <Reveal
             as="h2"
             id="final-cta-heading"
@@ -79,7 +103,7 @@ export function FinalCta() {
             <span className="reveal-line">
               <span className="reveal-line-inner">Ready to Build</span>
             </span>{" "}
-            <span className="reveal-line">
+            <span className="reveal-line cta-headline-line">
               <span
                 className="reveal-line-inner cta-accent-text"
                 style={{ "--line-delay": "110ms" } as React.CSSProperties}
@@ -90,7 +114,7 @@ export function FinalCta() {
           </Reveal>
 
           <Reveal delay={280}>
-            <p className="mx-auto mt-7 max-w-2xl text-base leading-relaxed text-muted-dark sm:text-lg">
+            <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-muted-dark sm:text-lg">
               {finalCta.subheadline}
             </p>
           </Reveal>
@@ -98,7 +122,7 @@ export function FinalCta() {
           <Reveal delay={370}>
             {/* `ButtonGroup` handles the stacking and the equal widths, so
                 the per-button `w-full sm:w-auto` overrides are gone. */}
-            <ButtonGroup align="center" className="mt-10">
+            <ButtonGroup align="center" className="mt-11">
               <Button href={finalCta.primaryCta.href} size="lg">
                 {finalCta.primaryCta.label}
                 <Arrow />
@@ -114,18 +138,21 @@ export function FinalCta() {
             </ButtonGroup>
           </Reveal>
 
+          {/* Contact line: flex-wrap so email + separator + WhatsApp stack
+              naturally on very narrow screens without awkward mid-word breaks.
+              The separator uses a centred dot (·) which reads better than a
+              forward slash at small sizes and doesn't need aria-hidden tricks
+              to disappear when the line wraps. */}
           <Reveal delay={460}>
-            <p className="mt-9 text-sm text-muted-dark">
-              Or reach us directly —{" "}
+            <p className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted-dark">
+              <span>Or reach us directly —</span>
               <a
                 href={`mailto:${site.email}`}
                 className="link-underline-accent font-medium text-white transition-colors"
               >
                 {site.email}
-              </a>{" "}
-              <span aria-hidden="true" className="px-1 text-white/25">
-                /
-              </span>{" "}
+              </a>
+              <span aria-hidden="true" className="text-white/30">·</span>
               <a
                 href={whatsappHref}
                 target="_blank"
@@ -136,15 +163,18 @@ export function FinalCta() {
               </a>
             </p>
           </Reveal>
-
-          {/* The single decorative detail — a thin orange rule drawing out
-              from the centre, closing the composition and carrying the eye
-              into the footer. */}
-          <Reveal delay={520} variant="fade">
-            <div aria-hidden="true" className="accent-rule mt-12" />
-          </Reveal>
         </div>
       </div>
+
+      {/*
+        Transparent spacer. This div has no background of its own — the
+        section's overflow:hidden is the only boundary. It gives the orange
+        glow (at 112% Y in the radial above) room to be visible before the
+        footer starts, creating the seamless gradient join without any
+        bottom padding on the section that would introduce a dark gap between
+        the CTA's glow and the footer's matching gradient.
+      */}
+      <div aria-hidden="true" className="h-20 sm:h-24" />
     </section>
   );
 }
