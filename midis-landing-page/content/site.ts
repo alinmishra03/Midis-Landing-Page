@@ -123,60 +123,59 @@ export const primaryPhone = site.phones[0] ?? null;
 export const callHref = primaryPhone ? `tel:${primaryPhone.e164}` : null;
 
 /**
- * Footer navigation, exactly as MIDIS.pdf pages 13–14 list it.
+ * Footer navigation — INTERNAL TO THIS LANDING PAGE, on MIDIS's instruction
+ * of 2026-10-20.
  *
- * These point at the existing midis.in site rather than at anchors on this
- * landing page, because that is where those pages live. Anchors on this page
- * are a separate list (see `sectionNav`), so a visitor is never sent to a
- * route that does not exist.
- */
-export const footerNav = [
-  { label: "Services", href: `${MAIN_SITE_URL}/services` },
-  { label: "Our Work", href: `${MAIN_SITE_URL}/work` },
-  { label: "Industries", href: `${MAIN_SITE_URL}/industries` },
-  { label: "About MIDIS", href: `${MAIN_SITE_URL}/about` },
-  { label: "Resources", href: `${MAIN_SITE_URL}/insights` },
-  { label: "Contact", href: `${MAIN_SITE_URL}/contact` },
-] as const;
-
-/**
- * The same six links, grouped into footer columns, plus the two conversion
- * routes this landing page owns.
+ * The footer originally carried the MIDIS.pdf pp.13–14 list (Services, Our
+ * Work, Industries, About MIDIS, Resources, Contact) pointing at the main
+ * MIDIS site. MIDIS then asked for the footer to navigate within this page
+ * only: Industries, Resources, About MIDIS and Contact were REMOVED — there
+ * is no corresponding section on this page for any of them — and the two
+ * remaining menus point at this page's own sections and forms. Nothing was
+ * added to fill the space they left.
  *
- * EVERY DESTINATION IS REAL. The six external ones are the MIDIS.pdf footer
- * list pointing at the pages that exist on midis.in; the three in "Start a
- * project" are this page's own estimator anchor, the audit route, and the
- * verified WhatsApp line. Nothing here is a placeholder, and no group was
- * padded out with an invented page to make the columns even — "Company" has
- * two links because two is how many exist.
+ * EVERY HREF IS WRITTEN `/#id`, NOT `#id`. The footer also renders on
+ * /free-website-audit, where a bare `#work` would scroll nowhere. With the
+ * leading slash the same link is a plain same-document scroll on the home
+ * page and a real navigation home from any other route, with the anchor,
+ * smooth scrolling, the sticky-header offset (`scroll-padding-top` in
+ * globals.css) and history behaviour all handled by the browser.
+ *
+ * The section ids are the ones the components actually render — the same
+ * set the header's `sectionNav` below scrolls to. "Get a Free Consultation"
+ * goes where the hero's identically-worded CTA goes: the estimator, which
+ * is the consultation request form. It is not a second copy of anything.
  */
 export const footerColumns = [
   {
     heading: "Explore",
     links: [
-      { label: "Services", href: `${MAIN_SITE_URL}/services` },
-      { label: "Our Work", href: `${MAIN_SITE_URL}/work` },
-      { label: "Industries", href: `${MAIN_SITE_URL}/industries` },
-      { label: "Resources", href: `${MAIN_SITE_URL}/insights` },
+      { label: "Our Work", href: "/#work" },
+      { label: "Services", href: "/#services" },
+      { label: "Process", href: "/#process" },
+      { label: "Pricing", href: "/#pricing" },
+      { label: "FAQs", href: "/#faqs" },
     ],
   },
   {
-    heading: "Company",
+    heading: "Get started",
     links: [
-      { label: "About MIDIS", href: `${MAIN_SITE_URL}/about` },
-      { label: "Contact", href: `${MAIN_SITE_URL}/contact` },
-    ],
-  },
-  {
-    heading: "Start a project",
-    links: [
-      { label: "Project estimator", href: "#estimator" },
-      { label: "Free website audit", href: "/free-website-audit" },
-      { label: "Message us on WhatsApp", href: whatsappHref, external: true },
+      { label: "Project Estimator", href: "/#estimator" },
+      { label: "Free Website Audit", href: "/free-website-audit" },
+      { label: "Get a Free Consultation", href: "/#estimator" },
     ],
   },
 ] as const;
 
+/**
+ * LEGAL LINKS — the one place the footer still leaves this project, and
+ * deliberately so. No Privacy Policy or Terms page exists inside this
+ * landing-page project, and inventing legal content is not an option, so
+ * these point at MIDIS's own live legal pages on the deployed MIDIS site —
+ * MIDIS's content, not an unrelated website. If MIDIS wants these routes
+ * to live inside this project, the pages' approved text is the missing
+ * dependency; once routes exist here, change these two hrefs.
+ */
 export const footerLegal = [
   { label: "Privacy Policy", href: `${MAIN_SITE_URL}/privacy` },
   { label: "Terms & Conditions", href: `${MAIN_SITE_URL}/terms` },

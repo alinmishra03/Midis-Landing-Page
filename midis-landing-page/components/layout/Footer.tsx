@@ -16,11 +16,13 @@ import {
  * no visible seam between the two. They are designed as one band that
  * resolves, not as two stacked blocks.
  *
- * NAVIGATION. The six links MIDIS.pdf lists (pages 13–14) grouped into three
- * columns, plus this page's own two conversion routes and the verified
- * WhatsApp line. Every destination is real — see the note in
- * content/site.ts. "Company" holds two links because two exist; no group was
- * padded with an invented page to make the columns even.
+ * NAVIGATION — INTERNAL ONLY, on MIDIS's instruction of 2026-10-20. Two
+ * menus: "Explore" scrolls to this page's own sections, "Get started" goes
+ * to this page's two forms. Industries, Resources, About MIDIS and Contact
+ * were removed — none has a section on this page — and nothing was added to
+ * fill the space. The only links that still leave the page are the contact
+ * actions (mailto:, tel:, WhatsApp, socials) and the two legal pages, which
+ * exist only on the main MIDIS site; see the notes in content/site.ts.
  *
  * THE WORDMARK. An oversized MIDIS across the full width, outlined at rest
  * and wiping to a fill when the footer is reached. The wrapper clips and the
@@ -83,34 +85,30 @@ export function Footer() {
             </div>
           </Reveal>
 
-          {/* ---- link columns ---- */}
-          <div className="grid gap-10 sm:grid-cols-3">
+          {/* ---- link columns ----
+              Two menus, both internal. Two-up from 420px — the labels are
+              short enough to pair on most phones — and a single column only
+              below that, where two tracks would squeeze the longest label.
+              Every row is `min-h-11` so the targets stay comfortably
+              tappable. No target="_blank": these links stay on this site. */}
+          <div className="grid grid-cols-1 gap-10 min-[420px]:grid-cols-2">
             {footerColumns.map((column, index) => (
               <Reveal key={column.heading} delay={80 + index * 80}>
                 <nav aria-labelledby={`footer-col-${index}`}>
                   <h2 id={`footer-col-${index}`} className="eyebrow text-accent">
                     {column.heading}
                   </h2>
-                  <ul className="mt-5 space-y-3 text-sm">
-                    {column.links.map((link) => {
-                      const external =
-                        ("external" in link && link.external) ||
-                        link.href.startsWith("http");
-
-                      return (
-                        <li key={link.href}>
-                          <a
-                            href={link.href}
-                            {...(external
-                              ? { target: "_blank", rel: "noopener noreferrer" }
-                              : {})}
-                            className="link-underline inline-flex min-h-6 items-center text-white/85 transition-colors hover:text-accent"
-                          >
-                            {link.label}
-                          </a>
-                        </li>
-                      );
-                    })}
+                  <ul className="mt-5 space-y-2 text-sm">
+                    {column.links.map((link) => (
+                      <li key={`${link.href}-${link.label}`}>
+                        <a
+                          href={link.href}
+                          className="link-underline inline-flex min-h-11 items-center text-white/85 transition-colors hover:text-accent"
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    ))}
                   </ul>
                 </nav>
               </Reveal>
