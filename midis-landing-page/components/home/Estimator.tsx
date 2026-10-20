@@ -1,28 +1,33 @@
 import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal, RevealText } from "@/components/ui/Reveal";
-import { EstimatorForm } from "@/components/forms/EstimatorForm";
-import { estimator } from "@/content/sections";
+import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
+import { estimator, hero } from "@/content/sections";
 import { site } from "@/content/site";
 
 /**
- * SECTION 5 — Website project estimator.
+ * SECTION 5 — the estimator's supporting band.
  *
- * The form sits in the right-hand column with the reassurance in the left,
- * so the visitor reads why they should fill it in before they reach the
- * first field. On a phone the copy comes first for the same reason.
+ * THE FORM ITSELF MOVED TO THE HERO on MIDIS's instruction of 2026-10-20,
+ * and `#estimator` — the anchor every CTA on the page targets — moved with
+ * it. Rendering the same four-step form twice would be worse than either
+ * placement alone, so this section now carries the case for filling it in:
+ * the approved headline and subheadline, the reassurance list, and one CTA
+ * that routes to the hero form. Nothing approved was dropped — the
+ * section's `supportingText` still renders inside the form's final step.
  *
- * The scroll target is this section, not the form, so landing here from a
- * CTA shows the heading rather than dropping straight onto step one with no
- * context.
+ * The section keeps its position in the page journey (work -> services ->
+ * ENQUIRY -> process), so a visitor who scrolled past the hero form while
+ * it was above the fold still meets the ask at the moment the original
+ * design chose for it.
  */
 
 export function Estimator() {
   return (
-    <Section id="estimator" tone="paper" labelledBy="estimator-heading">
+    <Section id="estimator-overview" tone="paper" labelledBy="estimator-heading">
       <div className="container-site">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-center lg:gap-16">
           {/* ---- the case for filling it in ---- */}
-          <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:self-start">
+          <div>
             <Reveal>
               <Eyebrow className="mb-5">Project estimator</Eyebrow>
             </Reveal>
@@ -37,10 +42,34 @@ export function Estimator() {
               <p className="mt-5 max-w-md text-base leading-relaxed text-muted sm:text-lg">
                 {estimator.subheadline}
               </p>
+              {/*
+                The hero's approved supporting line lives here now (MIDIS
+                compaction brief, 2026-10-20): in the mobile hero it was
+                pure height between the CTA and the form, and this band is
+                the same pitch the line was written for. It renders once on
+                the page.
+              */}
+              <p className="mt-5 max-w-md border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-muted-strong">
+                {hero.supportingLine}
+              </p>
             </Reveal>
 
-            <Reveal delay={100}>
-              <ul className="mt-8 flex flex-col gap-4 border-t border-line pt-8">
+            <Reveal delay={220}>
+              <ButtonGroup className="mt-8">
+                {/* Routes to the working form in the hero — one form on the
+                    page, one place every estimate CTA lands. */}
+                <Button href="#estimator" size="lg">
+                  {estimator.cta}
+                  <Arrow />
+                </Button>
+              </ButtonGroup>
+            </Reveal>
+          </div>
+
+          {/* ---- the reassurance ---- */}
+          <Reveal delay={120}>
+            <div className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
+              <ul className="flex flex-col gap-4">
                 {[
                   "Four short steps — about a minute.",
                   "No obligation, and no automated quote.",
@@ -76,7 +105,7 @@ export function Estimator() {
                 ))}
               </ul>
 
-              <p className="mt-8 text-sm text-muted">
+              <p className="mt-6 border-t border-line pt-6 text-sm text-muted">
                 Prefer to write to us?{" "}
                 <a
                   href={`mailto:${site.email}`}
@@ -85,12 +114,7 @@ export function Estimator() {
                   {site.email}
                 </a>
               </p>
-            </Reveal>
-          </div>
-
-          {/* ---- the form ---- */}
-          <Reveal delay={60}>
-            <EstimatorForm />
+            </div>
           </Reveal>
         </div>
       </div>

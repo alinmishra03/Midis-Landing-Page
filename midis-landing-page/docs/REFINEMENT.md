@@ -72,8 +72,8 @@ none.
 
 - **One container, one left edge.** Every section's content is inside
   `container-site`. Measured at all 13 widths: every `.container-site`
-  element reports an identical `left`. The only deliberate exception is the
-  full-bleed client logo rail.
+  element reports an identical `left`, with no exceptions — the client logo
+  wall sits inside the container like everything else.
 - **The FAQ section was genuinely misaligned** (reported during this pass and
   confirmed by measurement): the header sat left-aligned in the container
   while the accordion used `mx-auto`, so on any wide screen the two resolved
@@ -122,8 +122,8 @@ There is no scroll event handler anywhere in the project; everything uses
   the LCP element and must not wait on hydration.
 
 **Reduced motion** is verified, not assumed: under `reducedMotion: "reduce"`
-no `[data-reveal]` element is below 0.9 opacity and the marquee's
-`animationName` computes to `none`.
+no `[data-reveal]` element is below 0.9 opacity and the logo wall renders
+its static grid with no entrance transition.
 
 ---
 

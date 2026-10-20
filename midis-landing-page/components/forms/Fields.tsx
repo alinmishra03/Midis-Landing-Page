@@ -112,6 +112,102 @@ export function TextField({
 
 /* ========================================================================== */
 
+interface SelectFieldProps {
+  label: string;
+  name: string;
+  options: readonly string[];
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
+  /** Rendered as the disabled first option — the "choose one" prompt. */
+  placeholder?: string;
+}
+
+/**
+ * A native <select> styled like TextField.
+ *
+ * Exists for the popup's project-type question: five radio cards are the
+ * right control in the full estimator, but in a compact dialog they are
+ * most of the height. A native select keeps the same approved options in
+ * one 48px row, with the platform's own picker on touch devices.
+ */
+export function SelectField({
+  label,
+  name,
+  options,
+  value,
+  onChange,
+  error,
+  required,
+  placeholder = "Choose one…",
+}: SelectFieldProps) {
+  const id = useId();
+  const errorId = `${id}-error`;
+
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-fg">
+        {label}
+        {required ? (
+          <span className="ml-0.5 text-accent-ink" aria-hidden="true">
+            *
+          </span>
+        ) : null}
+      </label>
+
+      <div className="relative mt-2">
+        <select
+          id={id}
+          name={name}
+          required={required}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={cn(
+            "block w-full appearance-none rounded-lg border bg-surface py-3 pl-3.5 pr-10 text-base",
+            value === "" ? "text-muted/80" : "text-fg",
+            "transition-colors duration-[var(--dur-fast)]",
+            "focus:border-accent focus:outline-none",
+            error ? "border-danger" : "border-line hover:border-fg/25",
+          )}
+        >
+          <option value="" disabled>
+            {placeholder}
+          </option>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {/* The chevron the appearance-none reset removed. */}
+        <svg
+          viewBox="0 0 16 16"
+          width="14"
+          height="14"
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted"
+        >
+          <path
+            d="M3.5 6 8 10.5 12.5 6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      <FieldError id={errorId}>{error}</FieldError>
+    </div>
+  );
+}
+
+/* ========================================================================== */
+
 interface OptionGroupProps {
   legend: string;
   name: string;

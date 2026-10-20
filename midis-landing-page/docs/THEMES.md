@@ -40,10 +40,11 @@ meaning. That is the `text-ink` → `text-fg` rename across the components.
   7.26:1; white on it is **2.1:1** and fails. Fixed in both themes, because
   an orange button needs dark text whatever the page is doing. Used by the
   primary button, the open FAQ icon and the confirmation step badges.
-- **`.logo-chip-light` / `.logo-chip-dark`** — a light-on-transparent client
-  mark needs a dark chip in *both* themes and a dark mark needs a light one.
-  Letting the chip flip would make half the logos vanish, and recolouring or
-  inverting someone else's logo to avoid that is not ours to do.
+- **The client logo board** — the trust section's chessboard of dark tiles
+  keeps its fixed charcoals in *both* themes: a contrast block in light
+  mode, a bordered deepening of the page in dark. Dark marks that would
+  vanish on it sit on a small white plate behind the artwork, because
+  recolouring or inverting someone else's logo is not ours to do.
 - **Photo scrims** stay dark, so white text over the service photography
   keeps its contrast floor in both themes.
 

@@ -6,6 +6,7 @@ import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { estimatorSchema } from "@/lib/enquiry";
+import { markLeadSubmitted } from "@/lib/popups";
 import { estimator } from "@/content/sections";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +76,17 @@ const EMPTY = {
   phone: "",
 };
 
-export function EstimatorForm() {
+interface EstimatorFormProps {
+  /**
+   * `card` draws the form's own bordered surface — the standalone layout.
+   * `bare` renders only the form, for a host that provides the surface
+   * itself (the hero's glass shell). Logic, steps, validation and
+   * submission are identical in both; this touches one className.
+   */
+  variant?: "card" | "bare";
+}
+
+export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<Record<FieldName, string>>(EMPTY);
@@ -181,6 +192,9 @@ export function EstimatorForm() {
 
       /* Only now — the CMS has confirmed the record. Never before. */
       sent.current = true;
+      /* A lead has landed: the promotional popups stay away for the rest
+         of this session (see lib/popups.ts). */
+      markLeadSubmitted();
       router.push("/thank-you/project-enquiry");
     } catch {
       setStatus("idle");
@@ -196,7 +210,11 @@ export function EstimatorForm() {
     <form
       onSubmit={onSubmit}
       noValidate
-      className="relative rounded-2xl border border-line bg-surface p-5 sm:p-8"
+      className={cn(
+        "relative",
+        variant === "card" &&
+          "rounded-2xl border border-line bg-surface p-5 sm:p-8",
+      )}
     >
       <Honeypot value={honey} onChange={setHoney} />
 
@@ -224,7 +242,7 @@ export function EstimatorForm() {
         */}
         <div
           aria-hidden="true"
-          className="mt-3 flex gap-1.5"
+          className="mt-2 flex gap-1.5 sm:mt-3"
         >
           {STEPS.map((s, index) => (
             <span
@@ -244,7 +262,10 @@ export function EstimatorForm() {
         is what makes the transition read as movement between steps rather
         than content silently swapping in place.
       */}
-      <div key={step} className="hero-rise mt-7">
+      {/* mt-4 on phones, mt-7 from sm — part of the hero compaction: the
+          form now sits in the first mobile screen, so its own rhythm
+          tightens with the hero's. */}
+      <div key={step} className="hero-rise mt-4 sm:mt-7">
         {step === 0 ? (
           <OptionGroup
             legend="What do you need?"
@@ -380,7 +401,7 @@ export function EstimatorForm() {
       {/* `flex-col-reverse` keeps the forward action ABOVE Back on a phone —
           the primary path should not sit under the way out. twMerge lets it
           override ButtonGroup`s own flex-col. */}
-      <ButtonGroup align="between" className="mt-8 flex-col-reverse">
+      <ButtonGroup align="between" className="mt-6 flex-col-reverse sm:mt-8">
         {step > 0 ? (
           <Button
             type="button"

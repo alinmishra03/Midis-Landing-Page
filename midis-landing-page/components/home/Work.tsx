@@ -163,7 +163,14 @@ function ProjectRow({
 
 export function Work() {
   return (
-    <Section id="work" tone="paper" labelledBy="work-heading">
+    /* Top padding halved to meet Trust's halved bottom — see the note
+       there. */
+    <Section
+      id="work"
+      tone="paper"
+      labelledBy="work-heading"
+      className="pt-[calc(var(--space-section)*0.5)]"
+    >
       <SectionHeader
         eyebrow="Featured work"
         heading={work.headline}

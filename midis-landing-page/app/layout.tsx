@@ -99,22 +99,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           This runs synchronously in <head>, so `data-theme` is on <html>
           before the browser paints anything — which is the whole reason it
           is an inline string rather than a component. Deferring it to React
-          would mean painting the light theme first and correcting it after
+          would mean painting one theme first and correcting it after
           hydration, which is the flash this exists to prevent.
 
-          It only writes the attribute for an EXPLICIT stored choice. With no
-          stored choice it does nothing at all, and the `prefers-color-scheme`
-          block in globals.css takes over — so the system preference is
-          honoured on a first visit with no JavaScript involved.
+          LIGHT IS THE DEFAULT, on MIDIS's instruction of 2026-10-20: a
+          first-time visitor sees the light theme regardless of their OS
+          preference, and only an explicit stored "dark" choice (made with
+          the toggle, remembered in localStorage) switches the page. The
+          attribute is therefore ALWAYS written — "dark" for a stored dark
+          choice, "light" otherwise — and globals.css no longer consults
+          `prefers-color-scheme` at all.
 
           Wrapped in try/catch because reading localStorage throws outright
-          in some privacy modes, and a theme preference is not worth breaking
-          the page over.
+          in some privacy modes; the catch still pins the light default.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var t=localStorage.getItem("midis-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}',
+              'try{var t=localStorage.getItem("midis-theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}',
           }}
         />
         {/*

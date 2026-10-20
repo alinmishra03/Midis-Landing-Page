@@ -457,46 +457,402 @@ p {
 }
 
 /* ==========================================================================
-   Marquee — the client logo rail
+   Client logo board — the trust section's black chessboard
    --------------------------------------------------------------------------
-   Pure CSS. Two identical tracks translate by exactly -50% of the wrapper, so
-   the loop is seamless regardless of how many logos are in it.
+   A seamless grid of dark tiles. From 768px up it is a static board —
+   every logo visible at once, 3 then 6 columns, row-major. Below 768px
+   the SAME 18 tiles flow column-major into exactly three rows and scroll
+   horizontally. Either way: no marquee, no duplicated set, no autoplay.
+   18 divides evenly by 3 and by 6, so the board is a complete rectangle
+   in every layout and no run trails off ragged.
+
+   THE LINES ARE THE GAP. The board's background is the divider colour
+   showing through 1px gaps between tiles — one declaration draws every
+   connecting rule, horizontal and vertical, with no per-tile border
+   bookkeeping across the different layouts.
+
+   THE CHECKERBOARD IS COMPUTED PER LAYOUT. (row + column) parity depends
+   on how the grid currently flows, so each breakpoint range carries its
+   own nth-child formula — a single fixed pattern would scramble the
+   moment the flow changed. The ranges do not overlap, so no rule ever
+   needs resetting. The tone lives in `--tile` so the hover state can
+   override it by specificity instead of by ordering.
+
+   THE BOARD DOES NOT FOLLOW THE THEME, DELIBERATELY. In light mode it is
+   the section's strong contrast block; in dark mode it reads as a subtly
+   bordered deepening of the page. Every colour here is fixed.
    ========================================================================== */
 
-@keyframes midis-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
+/*
+ * MOBILE-FIRST: THE SCROLLER. Below 768px the list flows COLUMN-MAJOR into
+ * exactly three rows, and the columns extend past the right edge — a
+ * three-row board the visitor swipes through, not a single-row carousel.
+ * Native horizontal scrolling only: no library, no autoplay, no loop, no
+ * duplicated tiles. `proximity` snap settles columns gently after a swipe
+ * without fighting the finger. The scrollbar is hidden (the progress hint
+ * below the board does that job); `overscroll-behavior-x` keeps a swipe
+ * past the end from triggering browser navigation. The page itself never
+ * overflows — the scrolling is contained here.
+ *
+ * The background paints the scrollable overflow area, so the 1px divider
+ * lines travel with the tiles; the border and radius belong to the scroll
+ * container and stay put, so a half-visible column is cut by the frame —
+ * which is itself the "there is more" cue.
+ */
+.logo-wall {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  /* ~141px columns on the narrowest phones, capped at 156px. */
+  grid-auto-columns: clamp(8.5rem, 44vw, 9.75rem);
+  gap: 1px;
+  background: #353538;
+  border: 1px solid #353538;
+  border-radius: var(--radius-card);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.logo-wall::-webkit-scrollbar {
+  display: none;
+}
+
+/* From 768px: the static board. Row-major, every tile visible, nothing
+   scrolls. `clip` so the board can never become a scroll container. */
+@media (min-width: 768px) {
+  .logo-wall {
+    grid-auto-flow: row;
+    grid-template-rows: none;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: clip;
+    scroll-snap-type: none;
   }
 }
 
-.marquee-track {
+@media (min-width: 1024px) {
+  .logo-wall {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* ---- the alternating squares ------------------------------------------- */
+
+/*
+ * Below 1024px the checkerboard is a plain odd/even alternation, for two
+ * different reasons that land on the same formula: the mobile scroller is
+ * column-major with THREE rows, and the tablet board is row-major with
+ * THREE columns — an odd run length makes each new column (or row) start
+ * on the opposite tone by itself.
+ */
+@media (max-width: 1023.98px) {
+  .logo-wall > .logo-cell:nth-child(even) {
+    --tile: #202023;
+  }
+}
+
+/* 6 columns: the pattern repeats every two rows, i.e. every 12 tiles. */
+@media (min-width: 1024px) {
+  .logo-wall > .logo-cell:nth-child(12n + 2),
+  .logo-wall > .logo-cell:nth-child(12n + 4),
+  .logo-wall > .logo-cell:nth-child(12n + 6),
+  .logo-wall > .logo-cell:nth-child(12n + 7),
+  .logo-wall > .logo-cell:nth-child(12n + 9),
+  .logo-wall > .logo-cell:nth-child(12n + 11) {
+    --tile: #202023;
+  }
+}
+
+/*
+ * A tile. The FIXED HEIGHT is what reserves space before the images load —
+ * the board's final size is known from first paint, so logos arriving can
+ * never shift layout.
+ *
+ * TOUCH-FIRST LAYOUT: logo above, client name printed beneath it, because
+ * a hover reveal a touch visitor cannot trigger is a name they never see.
+ * The hover-capable block further down converts the name into a
+ * gradient-backed reveal and compacts the tile.
+ */
+.logo-cell {
+  position: relative;
   display: flex;
-  width: max-content;
-  animation: midis-marquee var(--marquee-duration, 60s) linear infinite;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  /* Mobile scroller tile: compact, three of these stack to ~300px. */
+  height: 6.25rem;
+  padding: 0.625rem 0.5rem 0.5rem;
+  scroll-snap-align: start;
+  background: var(--tile, #111113);
+  transition:
+    background-color 300ms var(--ease-out-quart),
+    box-shadow 300ms var(--ease-out-quart);
 }
 
-/* Pausing on hover lets someone actually look at a mark they recognise. */
-.marquee:hover .marquee-track,
-.marquee:focus-within .marquee-track {
-  animation-play-state: paused;
+/* The static board's roomier tile. */
+@media (min-width: 768px) {
+  .logo-cell {
+    gap: 0.5rem;
+    height: clamp(6.5rem, 15vw, 7.75rem);
+    padding: 0.875rem 0.625rem 0.75rem;
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-    /* Without the animation the track must not overflow; let it wrap. */
-    width: 100%;
-    flex-wrap: wrap;
+/* Subtle touch feedback — a brief brighten under the finger. */
+.logo-wall > .logo-cell:active {
+  --tile: #29292d;
+}
+
+/* The reveal target — a wrapper, NOT the image, so the entrance transition
+   and the image's own hover transition never fight over one element. */
+.logo-cell-media {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/*
+ * The frame around each mark. For most logos it is invisible; for the few
+ * dark marks that would vanish on a dark tile (navy, near-black or faint
+ * line-art — the PLATED set in Trust.tsx), `.logo-plate` gives the ARTWORK
+ * a small white backing while the tile itself stays on the board's dark
+ * scheme. Recolouring or inverting somebody else's logo is not ours to do;
+ * a plate is the one fix that keeps the brand's own colours.
+ */
+.logo-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-width: 0;
+  /* The hover lift lives HERE, not on .logo-cell-media: the media wrapper
+     is the entrance's reveal target, and its staggered transition-delay
+     would otherwise lag every hover by up to half a second. */
+  transition: transform 300ms var(--ease-out-quart);
+}
+
+.logo-plate {
+  background: #ffffff;
+  border-radius: 0.625rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.logo-img {
+  width: auto;
+  height: auto;
+  max-height: clamp(2rem, 4.5vw, 2.75rem);
+  max-width: min(100%, 13rem);
+  object-fit: contain;
+  opacity: 0.9;
+  transition: opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+/* Tall and square marks get a taller cap — see the note in Trust.tsx. */
+.logo-img-tall {
+  max-height: clamp(2.5rem, 6vw, 3.5rem);
+}
+
+/*
+ * The client's name. On touch layouts it is simply printed under the logo —
+ * compact, wrapping to two lines where it must. #c7c7c4 is ~10:1 on the
+ * darkest tile. This element is also the tile's ACCESSIBLE name: the image
+ * alt is empty so screen readers hear each client exactly once.
+ */
+.logo-name {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  color: #c7c7c4;
+}
+
+/* The orange accent: a short rule that draws out under the name on hover.
+   Positioned on the name so it travels with the reveal. */
+.logo-name::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 2.25rem;
+  height: 2px;
+  background: var(--color-accent);
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  transition: transform 300ms var(--ease-out-quart) 60ms;
+  /* Invisible on the touch layout, where the name has no hover state. */
+  display: none;
+}
+
+/* ---- hover-capable devices: the name becomes a reveal ------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+  .logo-cell {
+    height: clamp(5.75rem, 10vw, 7rem);
+    padding: 1rem;
+    gap: 0;
     justify-content: center;
   }
 
-  /* The duplicate half exists only to make the loop seamless — drop it, or
-     every client would be listed twice in the static grid. */
-  .marquee-track > [aria-hidden="true"] {
+  .logo-name {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    padding: 1.75rem 0.75rem 0.75rem;
+    font-size: 0.6875rem;
+    /* The gradient carries the text over whatever logo sits behind it. */
+    background: linear-gradient(
+      to top,
+      rgb(9 9 11 / 0.92),
+      rgb(9 9 11 / 0.5) 55%,
+      transparent
+    );
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 300ms var(--ease-out-quart),
+      transform 300ms var(--ease-out-quart);
+    pointer-events: none;
+  }
+
+  .logo-name::after {
+    display: block;
+  }
+
+  /* Brighten the square, lighten its edge, lift the logo clear of the
+     incoming name. The gap lines around the tile never move. */
+  .logo-wall > .logo-cell:hover {
+    --tile: #29292d;
+    box-shadow: inset 0 0 0 1px #4a4a50;
+  }
+
+  .logo-cell:hover .logo-frame {
+    transform: translateY(-5px);
+  }
+
+  .logo-cell:hover .logo-name {
+    opacity: 1;
+    transform: none;
+  }
+
+  .logo-cell:hover .logo-name::after {
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .logo-cell:hover .logo-img {
+    opacity: 1;
+  }
+}
+
+/*
+ * Entrance. The <Reveal> wrapper (.logo-board, which holds the scroller
+ * and the swipe hint) fades the whole board in; these rules add a short
+ * per-cell cascade on top, keyed off the SAME data-reveal attribute so
+ * there is exactly one observer for the board.
+ *
+ * The stagger is 24ms per cell — all 18 logos are fully on screen within
+ * about a second of the section arriving. This is an articulation of the
+ * entrance, not a slideshow: nobody waits to see the complete set.
+ *
+ * `--cell-i` is set inline per cell; `--reveal-delay` is inherited from the
+ * ul. The delay list pairs per property, so it can never leak onto a later
+ * hover transition.
+ */
+.logo-board[data-reveal="pending"] .logo-cell-media {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.logo-board[data-reveal="shown"] .logo-cell-media {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 500ms var(--ease-out-expo),
+    transform 500ms var(--ease-out-expo);
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--cell-i, 0) * 24ms);
+}
+
+/* ---- the mobile swipe hint ---------------------------------------------- */
+
+/*
+ * A thin track whose orange fill mirrors the scroll position — written by
+ * LogoBoard.tsx straight onto the bar's transform from a passive scroll
+ * listener, so it tracks the finger with no re-render and NO transition:
+ * an eased bar would lag the scroll it is supposed to represent. Colours
+ * are theme tokens, because the hint sits on the SECTION surface, which
+ * (unlike the board) flips with the theme.
+ */
+.logo-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 0.875rem;
+}
+
+/* From 768px everything is visible and nothing scrolls — no hint. The
+   `-off` class covers the odd case where JS finds nothing to scroll. */
+@media (min-width: 768px) {
+  .logo-scroll-hint {
     display: none;
+  }
+}
+
+.logo-scroll-hint-off {
+  display: none;
+}
+
+.logo-scroll-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-line);
+  overflow: hidden;
+}
+
+.logo-scroll-bar {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.logo-scroll-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-cell-media {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  /* The name still appears on hover — only the travel goes. */
+  .logo-cell:hover .logo-frame,
+  .logo-name {
+    transform: none !important;
+  }
+
+  .logo-name::after {
+    transition: none;
   }
 }
 
@@ -548,6 +904,54 @@ p {
   .hero-rise,
   .hero-settle {
     animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   The hero estimator's shell
+   --------------------------------------------------------------------------
+   A refined glass surface for the form column. It earns its blur: the hero
+   wash sits behind it, so there is genuinely something to diffuse (see the
+   GLASS section's rule about where backdrop-filter is allowed). Theme-aware
+   by explicit values rather than tokens because translucency needs a
+   different alpha recipe per theme, same as the glass utilities.
+
+   The shadow is a soft settling, far below the glass-dark elevation — the
+   form is part of the hero, not a card floating over it.
+   -------------------------------------------------------------------------- */
+
+.hero-form-shell {
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card-lg);
+  background: rgb(255 255 255 / 0.72);
+  /* Standard property only — Lightning CSS prefixes from browser targets;
+     see the warning in the GLASS section. */
+  backdrop-filter: blur(16px) saturate(120%);
+  box-shadow: 0 18px 44px -32px rgb(20 21 24 / 0.35);
+}
+
+:root[data-theme="dark"] .hero-form-shell {
+  background: rgb(24 24 27 / 0.66);
+  box-shadow: 0 18px 44px -32px rgb(0 0 0 / 0.7);
+}
+
+/* (No prefers-color-scheme fallback: data-theme is always set explicitly.) */
+
+/* Same mobile simplification as the glass utilities: the blur is the most
+   expensive effect on the page for a phone GPU, and below lg the shell sits
+   on a plain solid surface instead. The themed selectors are repeated so
+   this outranks the dark-theme translucency above; var(--color-surface)
+   already resolves per theme. */
+@media (max-width: 1023px) {
+  .hero-form-shell,
+  :root[data-theme="dark"] .hero-form-shell,
+  :root:not([data-theme="light"]) .hero-form-shell {
+    backdrop-filter: none;
+    background: var(--color-surface);
+    /* Flat on phones: the subtle border does the separating, so the card
+       reads as part of the hero rather than floating over it. */
+    box-shadow: none;
   }
 }
 
@@ -1744,16 +2148,486 @@ p {
 }
 
 /* ==========================================================================
+   FLOATING CTA GROUP — WhatsApp + estimator (MIDIS brief, 2026-10-20)
+   --------------------------------------------------------------------------
+   Pinned bottom-right, clear of safe areas. z-30: above all page content,
+   BELOW the mobile nav panel (40) and the header (50), far below the popup
+   layer (70) — so it can never sit on top of an open menu or dialog.
+
+   Hidden states use opacity + transform + pointer-events, never display,
+   so the hide/show transitions run and an invisible control cannot catch a
+   tap. FloatingCta.tsx drives them from two IntersectionObservers (the
+   estimator, the footer) and the focusin/focusout pair (any form field —
+   which is also the mobile-keyboard case).
+   ========================================================================== */
+
+@keyframes fab-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.floating-cta {
+  position: fixed;
+  right: clamp(1rem, 3vw, 1.5rem);
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  /* `backwards`, deliberately not `both`: a forwards fill would keep the
+     final keyframe applied forever and silently defeat the hide
+     transition below. */
+  animation: fab-rise 520ms var(--ease-out-expo) 500ms backwards;
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart);
+}
+
+.floating-cta[data-hidden] {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+
+/* While a lead popup (modal or the mobile reminder) is open, the whole
+   group stands down — LeadPopups keeps this attribute on <body>. */
+body[data-popup-open] .floating-cta {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+
+.floating-whatsapp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: calc(infinity * 1px);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  /* The one brand colour that is not ours: WhatsApp's own green, so the
+     glyph reads as the real thing in both themes. */
+  color: #21ba57;
+  box-shadow: 0 10px 28px -18px rgb(20 21 24 / 0.45);
+  transition:
+    transform var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .floating-whatsapp:hover {
+    transform: translateY(-2px);
+    border-color: rgb(33 186 87 / 0.5);
+  }
+}
+
+/* The tooltip. Pointer devices only — on touch the aria-label does the
+   explaining and a tooltip would just flash under a tap. ABOVE the button,
+   not beside it: the estimator pill now sits to its left. */
+.fab-tip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.625rem);
+  transform: translateY(4px);
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast) var(--ease-out-quart),
+    transform var(--dur-fast) var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .floating-whatsapp:hover .fab-tip,
+  .floating-whatsapp:focus-visible .fab-tip {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (hover: none) {
+  .fab-tip {
+    display: none;
+  }
+}
+
+/* The estimator pill — the same language as the primary Button: orange
+   fill, charcoal text, full-round, 48px. */
+.floating-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding-inline: 1.25rem;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 10px 28px -16px rgb(239 135 22 / 0.65);
+  transition:
+    opacity var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-base) var(--ease-out-quart),
+    background-color var(--dur-fast) var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .floating-pill:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-2px);
+  }
+}
+
+/* Hidden while the estimator itself is on screen. */
+.floating-pill[data-hidden] {
+  opacity: 0;
+  transform: translateX(10px);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   LEAD POPUPS — one dialog, three triggers (MIDIS brief, 2026-10-20)
+   --------------------------------------------------------------------------
+   The backdrop centres the panel from `sm`; below that the panel sits at
+   the bottom of the screen like a sheet. Both animate in with one gentle
+   fade-and-rise; `[data-closing]` plays the reverse before the component
+   unmounts. The reduced-motion kill switch at the top of this file flattens
+   all of it to an instant swap.
+   ========================================================================== */
+
+@keyframes popup-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes popup-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  background: rgb(9 9 11 / 0.55);
+  animation: popup-backdrop-in 240ms var(--ease-out-quart) both;
+  transition: opacity 180ms var(--ease-out-quart);
+}
+
+@media (min-width: 640px) {
+  .popup-backdrop {
+    align-items: center;
+    padding: 1.5rem;
+  }
+}
+
+.popup-panel {
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  animation: popup-panel-in 300ms var(--ease-out-expo) both;
+  transition:
+    opacity 180ms var(--ease-out-quart),
+    transform 180ms var(--ease-out-quart);
+}
+
+@media (min-width: 640px) {
+  .popup-panel {
+    padding: 1.75rem;
+  }
+}
+
+/* The panel receives programmatic focus when the dialog opens so the
+   title is announced — but it is a container, not a control, and the
+   global focus ring drawn around the whole dialog reads as a glitch. */
+.popup-panel:focus {
+  outline: none;
+}
+
+.popup-backdrop[data-closing] {
+  opacity: 0;
+}
+
+.popup-backdrop[data-closing] .popup-panel {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* The round close control. 40px with its padding box — comfortably
+   tappable without dominating the corner. */
+.popup-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: calc(infinity * 1px);
+  color: var(--color-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out-quart),
+    background-color var(--dur-fast) var(--ease-out-quart);
+}
+
+.popup-close:hover,
+.popup-close:focus-visible {
+  color: var(--color-fg);
+  background: rgb(127 127 127 / 0.12);
+}
+
+/* Pinned to the corner only inside the dialog; the reminder card lays its
+   copy of the control out in flow. */
+.popup-panel .popup-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+/* The quiet second action under the primary. */
+.popup-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: color var(--dur-fast) var(--ease-out-quart);
+}
+
+.popup-secondary:hover,
+.popup-secondary:focus-visible {
+  color: var(--color-fg);
+}
+
+/* --------------------------------------------------------------------------
+   The touch-device reminder — NON-modal by design: no backdrop, no focus
+   trap, the page stays fully usable. Sits above the floating CTA group.
+   -------------------------------------------------------------------------- */
+
+.popup-reminder {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: 0.875rem 0.75rem 0.875rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  box-shadow: 0 14px 36px -24px rgb(20 21 24 / 0.5);
+  animation: popup-panel-in 300ms var(--ease-out-expo) both;
+}
+
+/* ==========================================================================
+   SERVICES BENTO — cinematic cards (MIDIS brief, 2026-10-20)
+   --------------------------------------------------------------------------
+   Three cooperating pieces per card:
+
+     .service-media-wrap  the photograph's window. Carries the entrance's
+                          soft clip reveal AND the hover zoom — the img's
+                          own transform belongs to the scroll-drift
+                          animation, so the wrap is the one element whose
+                          transform is free to transition.
+     .service-img         only its FILTER transitions (hover brighten).
+     .service-accent      the orange rule above each heading: drawn in on
+                          hover where hover exists, quietly present on
+                          touch, always present on the featured card.
+
+   Everything animates transform, opacity, clip-path or filter — compositor
+   territory. The reduced-motion block at the end flattens all of it.
+   ========================================================================== */
+
+.service-media-wrap {
+  transition: transform 480ms var(--ease-out-quart);
+}
+
+.service-img {
+  transition: filter 420ms var(--ease-out-quart);
+}
+
+/*
+ * The gradient scrim. Bottom-weighted, never flat. On a phone the text
+ * block fills more of the compact card, so the charcoal has to reach
+ * higher (0.5 by mid-card); from `sm` the taller cards push the text down
+ * and the lighter, more cinematic curve leaves the upper half untouched.
+ */
+.service-scrim {
+  background: linear-gradient(
+    to top,
+    rgb(10 11 13 / 0.94) 0%,
+    rgb(10 11 13 / 0.8) 30%,
+    rgb(10 11 13 / 0.52) 55%,
+    rgb(10 11 13 / 0.14) 76%,
+    rgb(10 11 13 / 0) 88%
+  );
+}
+
+@media (min-width: 640px) {
+  .service-scrim {
+    background: linear-gradient(
+      to top,
+      rgb(10 11 13 / 0.92) 0%,
+      rgb(10 11 13 / 0.76) 24%,
+      rgb(10 11 13 / 0.38) 50%,
+      rgb(10 11 13 / 0.08) 70%,
+      rgb(10 11 13 / 0) 85%
+    );
+  }
+}
+
+.service-card h3 {
+  transition: transform 420ms var(--ease-out-quart);
+}
+
+/* The brief's "subtle text contrast treatment": a soft 1px shade under the
+   type, so a heading whose top line reaches into the lighter half of a
+   BRIGHT photograph (the SEO dashboard, the UI/UX desk) keeps its edge.
+   Invisible over the dark gradient; nowhere near a heavy drop shadow. */
+.service-card h3,
+.service-card p {
+  text-shadow: 0 1px 2px rgb(10 11 13 / 0.45);
+}
+
+.service-accent {
+  display: block;
+  width: 2.25rem;
+  height: 2px;
+  margin-bottom: 0.75rem;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transform-origin: left center;
+  transition:
+    transform 420ms var(--ease-out-quart),
+    opacity 420ms var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  /* Resting state on pointer devices: the rule waits to be drawn… */
+  .service-accent {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+
+  /* …except on the featured card, where it is part of the resting look. */
+  .service-reveal:first-child .service-accent {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  .service-card:hover .service-media-wrap {
+    transform: scale(1.045);
+  }
+
+  .service-card:hover .service-img {
+    filter: brightness(1.08);
+  }
+
+  .service-card:hover h3 {
+    transform: translateY(-3px);
+  }
+
+  .service-card:hover .service-accent {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Touch devices: no hover to draw it, so the accent simply sits there. */
+@media (hover: none) {
+  .service-accent {
+    opacity: 0.85;
+  }
+}
+
+/*
+ * Entrance: while the CARD is still pending (the <Reveal> li), its
+ * photograph waits behind a soft inset window; when the card is shown the
+ * window opens with a slight lag behind the card's own rise, so the card
+ * assembles — frame first, image blooming after. Per-property delays keep
+ * the lag off the transform channel, which the hover zoom needs instantly.
+ */
+.service-reveal[data-reveal="pending"] .service-media-wrap {
+  clip-path: inset(9% 9% 9% 9% round 1.5rem);
+  opacity: 0.35;
+}
+
+.service-reveal[data-reveal="shown"] .service-media-wrap {
+  clip-path: inset(0 0 0 0 round var(--radius-card-lg));
+  opacity: 1;
+  transition:
+    clip-path 800ms var(--ease-out-expo),
+    opacity 640ms var(--ease-out-quart),
+    transform 480ms var(--ease-out-quart);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 90ms),
+    calc(var(--reveal-delay, 0ms) + 90ms), 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-media-wrap {
+    clip-path: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .service-card h3,
+  .service-accent {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .service-accent {
+    opacity: 1 !important;
+  }
+}
+
+/* ==========================================================================
    DARK THEME
    --------------------------------------------------------------------------
-   Declared twice on purpose:
-
-     1. `:root[data-theme="dark"]`  — an explicit choice, set by the toggle
-        and replayed before first paint by the inline script in the layout.
-     2. the `prefers-color-scheme` block — the system preference, applied
-        only when the visitor has NOT chosen light explicitly. The
-        `:not([data-theme="light"])` guard is what makes an explicit light
-        choice survive a dark OS setting.
+   Applied ONLY through `:root[data-theme="dark"]` — an explicit choice, set
+   by the toggle, remembered in localStorage, and replayed before first
+   paint by the inline script in the layout. LIGHT IS THE DEFAULT (MIDIS
+   instruction, 2026-10-20): the OS preference is not consulted, so there is
+   no `prefers-color-scheme` block any more. The script always writes the
+   attribute, which also means `:not([data-theme="light"])` selectors that
+   remain elsewhere are simply equivalent to `[data-theme="dark"]`.
 
    Only Group 1 moves. The dark bands go deeper rather than lighter, so a
    section that was a dark band on a light page is still a distinct band on
@@ -1797,40 +2671,14 @@ p {
   --nav-panel-bg: rgb(17 17 19 / 0.97);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --color-paper: #111113;
-    --color-surface: #18181b;
-    --color-surface-2: #212125;
-    --color-fg: #f6f6f5;
-    --color-muted: #a8a8a4;
-    --color-muted-strong: #b8b8b4;
-    --color-line: #2b2b30;
-
-    --color-ink: #09090b;
-    --color-ink-soft: #141417;
-    --color-ink-raised: #161619;
-    --color-line-dark: #2b2b30;
-
-    --color-accent-ink: #ef8716;
-    --color-accent-soft: #2a1b0b;
-    --color-accent-line: #46300f;
-
-    --color-danger: #ff8f85;
-    --color-danger-soft: #2a1210;
-
-    /* The floating header. Deeper than the page so the shell still reads
-       as a distinct surface once content scrolls beneath it. */
-    --nav-bg: rgb(24 24 27 / 0.7);
-    --nav-bg-scrolled: rgb(24 24 27 / 0.9);
-    --nav-border: rgb(255 255 255 / 0.1);
-    --nav-border-scrolled: rgb(255 255 255 / 0.14);
-    --nav-shadow: 0 10px 34px -22px rgb(0 0 0 / 0.75);
-    --nav-panel-bg: rgb(17 17 19 / 0.97);
-  }
-}
+/*
+ * NO `prefers-color-scheme` BLOCK ANY MORE — deliberately. Light is the
+ * DEFAULT theme on MIDIS's instruction (2026-10-20): a first-time visitor
+ * sees light whatever their OS says, and only the toggle switches themes.
+ * The inline script in layout.tsx always writes `data-theme` ("dark" only
+ * for a stored dark choice), so the attribute selectors above are the whole
+ * mechanism.
+ */
 
 /* --------------------------------------------------------------------------
    The switch itself
@@ -1887,24 +2735,9 @@ p {
 }
 
 /*
- * The two logo chips in the trust rail.
- *
- * These must NOT follow the theme. A dark-on-transparent client mark needs a
- * light chip and a light-on-transparent mark needs a dark one — in both
- * themes. Letting the chip flip would make half the logos vanish, and
- * recolouring somebody else's logo is not ours to do.
+ * (The trust section's logo cells keep fixed light/dark tones in both
+ * themes — see "Client logo wall" above for why they do not flip here.)
  */
-.logo-chip-light {
-  background: #ffffff;
-  /* A real hairline, not a hint: in light mode this white chip sits on the
-     white trust section, so the edge is the only thing separating them. */
-  box-shadow: inset 0 0 0 1px rgb(20 21 24 / 0.13);
-}
-
-.logo-chip-dark {
-  background: #141518;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-}
 
 /*
  * The hero wash. The warm radial reads as light bleeding onto paper in light
@@ -1935,15 +2768,7 @@ p {
   display: block;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .logo-on-light {
-    display: none;
-  }
-
-  :root:not([data-theme="light"]) .logo-on-dark {
-    display: block;
-  }
-}
+/* (No prefers-color-scheme fallback: data-theme is always set explicitly.) */
 
 /* --------------------------------------------------------------------------
    Theme toggle icons
@@ -1976,17 +2801,7 @@ p {
   transform: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-icon-sun {
-    opacity: 0;
-    transform: rotate(70deg) scale(0.6);
-  }
-
-  :root:not([data-theme="light"]) .theme-icon-moon {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* (No prefers-color-scheme fallback: data-theme is always set explicitly.) */
 
 @media (prefers-reduced-motion: reduce) {
   .theme-icon-sun,

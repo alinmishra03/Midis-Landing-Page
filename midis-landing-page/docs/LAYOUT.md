@@ -110,19 +110,15 @@ Audited at 390px with touch emulation:
   vertical rise below `lg`, because a horizontal translate on a
   single-column layout pushes past the viewport — the cause of a 12px
   overflow earlier in this project.
-- **The hero screenshot stack is hidden below 768px**, and only there. The
-  `hidden md:block` is on the `TiltCard` — the mockup's own container — so
-  the whole stack (frames, chrome bars, dots, URLs) leaves the layout and
-  occupies no height. Hiding the images alone, or using `visibility`/
-  `opacity`, would keep the box and leave a gap under the CTAs. It is
-  deliberately **not** on the grid column: the client counts below it stay
-  visible, and the stats then take `mt-0 md:mt-7 xl:mt-0` so no orphaned
-  space is left behind. Measured at 360/390/430: the text column sits 48px
-  above the counts, which is exactly the grid row-gap.
+- **The hero screenshot stack was removed entirely** (MIDIS instruction,
+  2026-10-20): the hero's right column now holds the working Project
+  Estimator in a glass shell, carrying the page-wide `#estimator` anchor.
+  The split starts at `xl`; below 1280px the hero stacks content first,
+  form second — which is also the client-specified mobile order.
 - **The portfolio previews are never hidden.** Every project row below the
-  hero keeps its screenshot at every width, Country Kids included —
-  verified at 360/390/430/768/1440. The hero mockup and the portfolio
-  previews are separate things; only the hero one is a mobile concern.
+  hero keeps its screenshot at every width, Country Kids included. The
+  removed hero mockups and the portfolio previews are separate things;
+  only the hero stack was removed.
 
 ---
 

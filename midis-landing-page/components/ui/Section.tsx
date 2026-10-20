@@ -8,8 +8,7 @@ import { Reveal, RevealText } from "./Reveal";
  * ONE ALIGNMENT SYSTEM. Every section's content sits inside `container-site`,
  * so the left and right edges agree down the whole page — a heading in the
  * hero, a project row, a service card and the footer all start on the same
- * line at every breakpoint. Nothing opts out except the client logo rail,
- * which is full-bleed deliberately and says so.
+ * line at every breakpoint. Nothing opts out.
  *
  * ONE VERTICAL RHYTHM. `--space-section` is the padding above and below every
  * section; `--space-block` is the gap from a section header to the content

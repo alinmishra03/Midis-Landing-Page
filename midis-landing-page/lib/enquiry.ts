@@ -145,13 +145,47 @@ export const auditSchema = z.object({
   website: honeypot,
 });
 
+/**
+ * The lead-generation popups' concise form (MIDIS popup brief, 2026-10-20).
+ *
+ * Deliberately SHORTER than the estimator: a popup that demands the full
+ * four-step questionnaire is an estimator with a worse entrance. `source`
+ * records which trigger produced the lead — welcome, mid-page scroll or
+ * exit — so the MIDIS team can see where enquiries originate. It is an
+ * enum, not free text, because it reaches the CMS message verbatim.
+ */
+export const POPUP_SOURCES = [
+  "initial_popup",
+  "scroll_popup",
+  "exit_popup",
+] as const;
+
+export const popupSchema = z.object({
+  kind: z.literal("popup"),
+  source: z.enum(POPUP_SOURCES),
+  name,
+  email,
+  projectType: z.enum(PROJECT_TYPES, {
+    message: "Please choose what you need.",
+  }),
+  phone: optionalPhone,
+  /* Optional, so an empty string must pass — same shape as optionalCompany. */
+  message: z
+    .string()
+    .trim()
+    .max(1000, "Please keep the description under 1000 characters."),
+  website: honeypot,
+});
+
 export const enquirySchema = z.discriminatedUnion("kind", [
   estimatorSchema,
   auditSchema,
+  popupSchema,
 ]);
 
 export type EstimatorInput = z.input<typeof estimatorSchema>;
 export type AuditInput = z.input<typeof auditSchema>;
+export type PopupInput = z.input<typeof popupSchema>;
 export type EnquiryInput = z.infer<typeof enquirySchema>;
 
 /* ==========================================================================
@@ -232,7 +266,32 @@ function block(rows: [string, string][]): string {
     .join("\n");
 }
 
+/** Human-readable labels for the popup `source` identifiers. */
+const POPUP_SOURCE_LABELS: Record<(typeof POPUP_SOURCES)[number], string> = {
+  initial_popup: "Welcome popup",
+  scroll_popup: "Mid-page popup",
+  exit_popup: "Exit popup",
+};
+
 export function toStrapi(input: EnquiryInput): StrapiEnquiry {
+  if (input.kind === "popup") {
+    return {
+      name: input.name,
+      email: input.email,
+      phoneNumber: input.phone,
+      services: toStrapiService(input.projectType),
+      message: block([
+        [
+          "Source",
+          `Landing page — ${POPUP_SOURCE_LABELS[input.source]} (${input.source})`,
+        ],
+        ["What they need", input.projectType],
+        ["Project notes", input.message],
+        ["Phone", input.phone],
+      ]),
+    };
+  }
+
   if (input.kind === "estimator") {
     return {
       name: input.name,

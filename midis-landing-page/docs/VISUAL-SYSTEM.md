@@ -151,8 +151,8 @@ icon transitions, card illumination, process-step highlighting. Every one is
 ## Accessibility and performance
 
 - **Reduced motion is verified, not assumed**: ambient drift stops, tilt is
-  suppressed, scroll-driven drift unbinds, the marquee halts, and no
-  `[data-reveal]` element sits below 0.9 opacity.
+  suppressed, scroll-driven drift unbinds, the logo wall skips its entrance,
+  and no `[data-reveal]` element sits below 0.9 opacity.
 - **Touch devices** get no tilt and no backdrop blur — confirmed by test at
   390px with `hasTouch`.
 - **Keyboard**: skip link is still the first tab stop and visible on focus;

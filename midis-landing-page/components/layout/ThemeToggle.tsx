@@ -12,19 +12,17 @@ import { cn } from "@/lib/utils";
  * solved by the inline script in app/layout.tsx, which has already set the
  * attribute before this component mounts.
  *
- * WHY `useSyncExternalStore`. The current theme lives in two places React
- * does not own — the `data-theme` attribute and the OS preference — so it is
- * an external store, and this is the hook built for subscribing to one. It
- * also solves hydration for free: `getServerSnapshot` returns `null`, so the
- * server and the first client render agree, and the real value arrives on
- * the commit that follows. Reading it with `useState` + `useEffect` instead
- * means a synchronous setState inside an effect, which cascades a second
- * render and is what the React Compiler warns about.
+ * WHY `useSyncExternalStore`. The current theme lives in a place React does
+ * not own — the `data-theme` attribute — so it is an external store, and
+ * this is the hook built for subscribing to one. It also solves hydration
+ * for free: `getServerSnapshot` returns `null`, so the server and the first
+ * client render agree, and the real value arrives on the commit that
+ * follows.
  *
- * THREE STATES, NOT TWO. `null` is "no explicit choice — follow the system".
- * Choosing pins it, which is why an explicit light choice survives a dark OS
- * setting: the CSS guards on `:not([data-theme="light"])` rather than on the
- * attribute merely being absent.
+ * LIGHT IS THE DEFAULT (MIDIS instruction, 2026-10-20). The OS preference
+ * is no longer consulted anywhere: the inline script always writes the
+ * attribute ("dark" only for a stored dark choice), so this component reads
+ * the attribute alone and falls back to light if it is somehow absent.
  *
  * The ICONS are not derived from this value. Both are always rendered and
  * CSS shows one, so the correct icon is painted before any script runs. Only
@@ -38,20 +36,15 @@ const STORAGE_KEY = "midis-theme";
 const CHANGE_EVENT = "midis-theme-change";
 
 function subscribe(onChange: () => void) {
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", onChange);
   window.addEventListener(CHANGE_EVENT, onChange);
   return () => {
-    media.removeEventListener("change", onChange);
     window.removeEventListener(CHANGE_EVENT, onChange);
   };
 }
 
-/** The theme actually in force: an explicit choice, else the system. */
+/** The theme actually in force: the attribute, else the light default. */
 function getSnapshot(): Theme {
-  const attr = document.documentElement.getAttribute("data-theme");
-  if (attr === "light" || attr === "dark") return attr;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
+  return document.documentElement.getAttribute("data-theme") === "dark"
     ? "dark"
     : "light";
 }
@@ -66,12 +59,8 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   const toggle = useCallback(() => {
     const root = document.documentElement;
-    const current =
-      root.getAttribute("data-theme") ??
-      (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
-    const next: Theme = current === "dark" ? "light" : "dark";
+    const next: Theme =
+      root.getAttribute("data-theme") === "dark" ? "light" : "dark";
 
     /*
      * Colour transitions are enabled only for the length of the switch. A

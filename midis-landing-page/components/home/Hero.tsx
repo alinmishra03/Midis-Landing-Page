@@ -1,48 +1,64 @@
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
-import { BrowserFrame } from "@/components/ui/BrowserFrame";
 import { Eyebrow } from "@/components/ui/Section";
-import { TiltCard } from "@/components/ui/TiltCard";
+import { EstimateCta } from "./EstimateCta";
+import { EstimatorForm } from "@/components/forms/EstimatorForm";
 import { hero } from "@/content/sections";
-import { heroShowcase } from "@/content/work";
 import { verifiedCounts } from "@/content/clients";
 
 /**
  * SECTION 1 — Hero.
  *
- * COMPOSITION. An asymmetric split: a left column carrying the editorial
- * headline and both CTAs, and a right column holding three real project
- * screenshots in layered browser chrome. The layering is static depth — a
- * considered stack with real shadows — rather than a parallax effect, which
- * the brief rules out and which costs a scroll listener on the one part of
- * the page where jank is most visible.
+ * COMPOSITION — THE 2026-10-20 REVISIONS. The layered browser mockups are
+ * gone, on MIDIS's instruction: the right column holds the WORKING Project
+ * Estimator, so the hero's proof is the action itself. A second revision
+ * the same day compacted the mobile hero so the estimator starts inside
+ * the first phone screen: tighter rhythm below `xl`, the secondary CTA as
+ * a text link on phones, and the statistics as a one-line trust strip.
+ * Desktop keeps the two-button, two-column presentation.
  *
- * WHY THE HEADLINE STAYS THE FOCAL POINT. The showcase is capped at 46% of
- * the row and sits behind the headline in the stacking order on the widest
- * breakpoints, so the h1 is never the second thing the eye lands on.
+ * ONE FORM, ONE ANCHOR. The shell carries `id="estimator"` — the anchor
+ * every CTA on the page already points at (nav, Work, Process, Pricing,
+ * the final CTA, the footer) — so moving the form moved the destination
+ * with it and no link needed touching. The old estimator section is now a
+ * concise supporting band (see Estimator.tsx) that routes here too, so
+ * the page never shows the same long form twice.
  *
- * MOBILE. The stack is not the desktop composition squeezed down. Below
- * `lg` the showcase collapses to ONE screenshot at full width beneath the
- * CTAs — three overlapping frames at 360px would be mud — and the headline,
- * subheadline and primary CTA all sit above the fold.
+ * THE TRUST STRIP. "20+ Clients" is MIDIS's own figure, instructed on
+ * 2026-10-20 — it exceeds the 18 marks counted in content/clients.ts, so
+ * it rests on MIDIS's say-so rather than on a list this repo can recount
+ * (recorded in docs/open-questions.md style: confirm before launch).
+ * "6 Live Projects" is counted from content/work.ts. "Built Around Your
+ * Goals" is a positioning line, not a numeric claim. The third item hides
+ * below `sm`, where three items crowd the line.
  *
- * HEIGHT. Deliberately not `100vh`. The brief asks for a hero that is not
- * excessively tall, and a viewport-locked hero on a short laptop screen
- * pushes the subheadline and CTAs out of view entirely.
+ * THE SUPPORTING LINE ("From strategy and design…") moved to the
+ * estimator's supporting band (Estimator.tsx): on a phone it was pure
+ * height between the CTA and the form, and MIDIS asked for the estimator
+ * to be reachable without scrolling past it. It renders once, there.
+ *
+ * THE SPLIT STARTS AT `xl`, NOT `lg` — measured in the previous pass: at
+ * 1024 the text column came out 471px and the CTAs squashed to two-line
+ * buttons. Below 1280 the hero stacks content first, form second, which
+ * is exactly the client's required mobile order.
+ *
+ * GRID IS `items-start`, NOT `items-center`: the form's height changes
+ * between steps, and centring would make the headline drift every time.
+ *
+ * HEIGHT. Still not `100vh` — a viewport-locked hero on a short laptop
+ * pushes the CTAs and the form out of view entirely.
  */
 
 export function Hero() {
-  const [lead, ...rest] = heroShowcase;
-
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden bg-paper pt-[calc(var(--header-h)+2.5rem)] pb-16 sm:pb-20 lg:pt-[calc(var(--header-h)+5rem)] lg:pb-28"
+      className="relative overflow-hidden bg-paper pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-24"
     >
       {/*
         Background wash. A single very soft radial in the brand orange at 7%
         — enough to stop the paper reading as flat, nowhere near the "flashy
-        gradient" the brief rules out. Decorative, so it is hidden from
-        assistive technology and cannot be selected.
+        gradient" the brief rules out. It sits behind the form column, which
+        is also what gives the glass shell something real to blur.
       */}
       <div
         aria-hidden="true"
@@ -54,21 +70,7 @@ export function Hero() {
       />
 
       <div className="container-site">
-        {/*
-          THE SPLIT STARTS AT `xl`, NOT `lg`.
-
-          At 1024 the two-column version left the text column only 471px
-          wide. That is cramped for display type, and it was too narrow for
-          the two CTAs side by side — flex squashed them until their labels
-          broke onto a second line, then wrapped them to unequal widths.
-          Measured at 1024px before the change: both buttons 74px tall
-          instead of 52px.
-
-          Giving the whole hero the full width at 1024 fixes the buttons and
-          gives the headline room, and the layered showcase still gets its
-          own column from 1280 up where there is actually space for it.
-        */}
-        <div className="grid items-center gap-12 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)] xl:gap-20">
+        <div className="grid items-start gap-3.5 sm:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)] xl:gap-16">
           {/* ================= left: the message ================= */}
           <div className="relative z-10 max-w-2xl">
             {/* Uses the shared Eyebrow for identical markup to every other
@@ -89,7 +91,7 @@ export function Hero() {
             */}
             <h1
               id="hero-heading"
-              className="hero-rise mt-5 text-[length:var(--text-display-xl)] leading-[1.02]"
+              className="hero-rise mt-2 text-[length:var(--text-display-xl)] leading-[1.02] sm:mt-3 xl:mt-5"
               style={{ "--d": "90ms" } as React.CSSProperties}
             >
               Websites That Turn{" "}
@@ -104,144 +106,119 @@ export function Hero() {
               </span>
             </h1>
 
+            {/* 15px/1.5 on a phone — compact without dropping a word of the
+                approved description — opening to 18px from `sm`. */}
             <p
-              className="hero-rise mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
+              className="hero-rise mt-2.5 max-w-xl text-[0.9375rem] leading-[1.45] text-muted sm:mt-5 sm:text-lg sm:leading-relaxed xl:mt-6"
               style={{ "--d": "180ms" } as React.CSSProperties}
             >
               {hero.subheadline}
             </p>
 
             {/*
-              The magnetic wrapper that used to sit around the primary has
-              been removed. It was an `inline-flex` span, so in the stacked
-              mobile column the primary kept its natural 261px while the
-              secondary stretched to the full width — the mismatch was the
-              wrapper, not the buttons. `ButtonGroup` now owns the layout.
+              CTAs — two actions, one hierarchy: the ESTIMATE is the primary
+              orange action (it scrolls to the hero form and focuses its
+              first question — see EstimateCta), the CONSULTATION keeps its
+              existing action as the outlined secondary. The "Explore Our
+              Work" link was removed from the hero on MIDIS's instruction
+              (2026-10-20); the Work section keeps its header nav entry.
+
+              On a phone both stack full width at 48px with an 8px gap;
+              from `sm` they sit in a row at 52px.
             */}
             <ButtonGroup
-              className="hero-rise mt-9"
+              className="hero-rise mt-4 gap-2 sm:mt-7 sm:gap-3.5 xl:mt-9"
               style={{ "--d": "260ms" } as React.CSSProperties}
             >
-              <Button href={hero.primaryCta.href} size="lg">
+              <EstimateCta className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base" />
+              <Button
+                href={hero.primaryCta.href}
+                variant="secondary"
+                size="lg"
+                className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base"
+              >
                 {hero.primaryCta.label}
                 <Arrow />
               </Button>
-              <Button
-                href={hero.secondaryCta.href}
-                variant="secondary"
-                size="lg"
-              >
-                {hero.secondaryCta.label}
-              </Button>
             </ButtonGroup>
 
-            <p
-              className="hero-rise mt-8 max-w-md border-l-2 border-accent/40 pl-4 text-sm leading-relaxed text-muted-strong"
+            {/*
+              The trust strip: countable facts plus one positioning line —
+              not a block of statistic cards. On a phone it is ONE bordered
+              surface holding two EQUAL, CENTRED cells split by a hairline
+              exactly in the middle (MIDIS trust-strip redesign,
+              2026-10-20) — the same width as the CTAs and the estimator
+              card, so the column reads as one grid. From `sm` every
+              container style resets and it returns to the quiet inline
+              baseline row, where the third item also has room.
+            */}
+            <ul
+              className="hero-rise mt-3.5 grid grid-cols-2 items-stretch overflow-hidden rounded-xl border border-line bg-surface sm:mt-6 sm:flex sm:flex-wrap sm:items-center sm:gap-y-2 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent xl:mt-8"
               style={{ "--d": "340ms" } as React.CSSProperties}
             >
-              {hero.supportingLine}
-            </p>
+              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center sm:flex-row sm:items-baseline sm:justify-start sm:gap-1.5 sm:p-0 sm:text-left">
+                {/* MIDIS-instructed figure (2026-10-20), not derived from
+                    clientMarks.length — see the trust-strip note above. */}
+                <span className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-xl sm:leading-normal">
+                  20+
+                </span>
+                {/* text-fg on the phone strip — the label is a surface the
+                    charcoal has to read on; desktop keeps the quiet muted. */}
+                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-muted">
+                  Clients
+                </span>
+              </li>
+              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-line px-2 py-2.5 text-center sm:ml-4 sm:flex-row sm:items-baseline sm:justify-start sm:gap-1.5 sm:p-0 sm:pl-4 sm:text-left">
+                <span className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-xl sm:leading-normal">
+                  {verifiedCounts.projectsShown}
+                </span>
+                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-muted">
+                  Live Projects
+                </span>
+              </li>
+              <li className="hidden items-baseline border-l border-line pl-4 sm:ml-4 sm:flex">
+                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg">
+                  Built Around Your Goals
+                </span>
+              </li>
+            </ul>
           </div>
 
-          {/* ================= right: the proof ================= */}
-          <div className="relative">
-            {/*
-              Desktop: three frames, layered, on a shared tilt plane so the
-              whole stack turns very slightly toward the pointer. That is
-              what makes the composition read as depth rather than as three
-              overlapping pictures.
+          {/* ================= right: the estimator ================= */}
+          {/*
+            `id="estimator"` lives HERE — see the note at the top. The
+            `hero-settle` entrance is CSS-only (rise + settle), so the form
+            is visible and usable without waiting on hydration of anything
+            but its own fields.
 
-              `aria-hidden` is NOT used — these are real projects and their
-              alt text names them. But the two behind the lead frame are
-              hidden below `lg`, where they would only produce clutter.
-            */}
-            {/*
-              HIDDEN BELOW 768px, ON THE WRAPPER ONLY.
+            Capped at 36rem and pulled to the end of its column so the form
+            keeps a comfortable measure at 1920px instead of stretching to
+            750px-wide fields.
+          */}
+          <div
+            id="estimator"
+            className="hero-settle w-full xl:max-w-[36rem] xl:justify-self-end"
+            style={{ "--d": "240ms" } as React.CSSProperties}
+          >
+            <div className="hero-form-shell p-4 sm:p-7">
+              {/*
+                The form header. Wording from MIDIS's hero-estimator brief
+                of 2026-10-20 (SUPPORTING — it introduces the form; the
+                questions inside remain the approved estimator content).
+              */}
+              <Eyebrow className="mb-2 xl:mb-3">Start your project</Eyebrow>
+              <h2 className="text-[length:var(--text-display-sm)] leading-[1.1]">
+                Get Your Project Estimate
+              </h2>
+              <p className="mt-1.5 text-sm leading-snug text-muted sm:leading-relaxed">
+                Tell us a little about your project, and we&rsquo;ll help you
+                plan the next steps.
+              </p>
 
-              `hidden md:block` is on the TiltCard — the mockup's own
-              container — so the whole stack (frames, chrome bars, dots and
-              URLs) leaves the layout entirely on a phone and occupies no
-              height. Hiding the images alone, or using visibility/opacity,
-              would keep the box and leave a gap under the CTAs.
-
-              Deliberately NOT on the column: the client counts below stay
-              visible, and the portfolio previews further down the page are
-              untouched.
-            */}
-            <TiltCard
-              className="hero-settle relative hidden md:block xl:pb-16 xl:pl-14"
-              innerClassName="relative"
-            >
-              {/* back frame */}
-              {rest[1] ? (
-                <div className="absolute left-0 top-10 hidden w-[62%] xl:block">
-                  <BrowserFrame
-                    src={rest[1].preview}
-                    alt={`${rest[1].name} website homepage`}
-                    host={rest[1].host}
-                    sizes="(min-width: 1280px) 22vw, 26vw"
-                    compact
-                    className="opacity-70 saturate-[0.9]"
-                  />
-                </div>
-              ) : null}
-
-              {/* middle frame */}
-              {rest[0] ? (
-                <div className="absolute bottom-0 left-16 hidden w-[58%] xl:block">
-                  <BrowserFrame
-                    src={rest[0].preview}
-                    alt={`${rest[0].name} website homepage`}
-                    host={rest[0].host}
-                    sizes="(min-width: 1280px) 20vw, 24vw"
-                    compact
-                    className="opacity-90"
-                  />
-                </div>
-              ) : null}
-
-              {/* lead frame — the LCP image, so it loads eagerly.
-                  `tilt-lift` pushes it forward of the two behind it, which
-                  is what gives the stack real parallax as it turns. */}
-              <div className="tilt-lift relative xl:ml-auto xl:w-[86%]">
-                <BrowserFrame
-                  src={lead.preview}
-                  alt={`${lead.name} website homepage, built by MIDIS`}
-                  host={lead.host}
-                  priority
-                  sizes="(min-width: 1024px) 38vw, (min-width: 640px) 80vw, 92vw"
-                />
+              <div className="mt-3.5 sm:mt-6">
+                <EstimatorForm variant="bare" />
               </div>
-            </TiltCard>
-
-            {/*
-              A countable fact, not a performance claim.
-
-              Both numbers come from lists that exist in the repository and
-              can be recounted. No conversion uplift, no ROI multiple, no
-              "15+ years" — nothing that has not been verified.
-            */}
-            <dl
-              className="hero-rise mt-0 flex flex-wrap gap-x-8 gap-y-3 md:mt-7 xl:mt-0 xl:pl-14"
-              style={{ "--d": "460ms" } as React.CSSProperties}
-            >
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wider text-muted">
-                  Clients
-                </dt>
-                <dd className="mt-0.5 font-display text-2xl font-semibold">
-                  {verifiedCounts.clientsNamed}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wider text-muted">
-                  Live projects shown
-                </dt>
-                <dd className="mt-0.5 font-display text-2xl font-semibold">
-                  {verifiedCounts.projectsShown}
-                </dd>
-              </div>
-            </dl>
+            </div>
           </div>
         </div>
       </div>
