@@ -265,6 +265,98 @@ export const pricing = {
 } as const;
 
 /**
+ * PRICING PACKAGE CARDS — the package-style presentation MIDIS.pdf p.11
+ * shows as its visual reference, WITHOUT the reference's prices.
+ *
+ * The reference screenshot (another agency's "Website Design Pricing
+ * Package" page) establishes the LAYOUT the client wants: a prominent
+ * multi-column package composition with clear plan hierarchy. Its prices,
+ * plan names and feature claims belong to that other site and are not
+ * reproduced.
+ *
+ * MIDIS has no approved rate card, so these cards are SCOPE TIERS, not
+ * offers:
+ *
+ *   - The three tiers are the PDF's own project types — the p.7 estimator
+ *     reference's "Landing Page / Business Website / E-commerce" and the
+ *     estimator's approved "What do you need?" options. No package brand
+ *     name was invented.
+ *   - `scope` lines are SUPPORTING copy describing what that kind of
+ *     project typically involves, phrased with the same hedging as the
+ *     approved service descriptions and FAQ answers they are drawn from.
+ *     Nothing is promised as an included deliverable of a fixed package.
+ *   - Where the reference shows a price, these cards say "Tailored
+ *     estimate" and route to the estimator — which is the PDF's own
+ *     developer-note behaviour when no pricing model exists, and this
+ *     section's approved CTA ("Get a Project Estimate").
+ *
+ * If MIDIS later approves real packages, replace `priceNote` with the
+ * confirmed figures and the layout already holds them.
+ */
+export interface PricingTier {
+  readonly name: string;
+  readonly description: string;
+  /** Replaces the price slot until approved figures exist. */
+  readonly priceLabel: string;
+  readonly priceNote: string;
+  /** What this kind of project typically covers. Hedged, not promised. */
+  readonly scope: readonly string[];
+  /** Visually emphasised column, as the reference's hierarchy shows. */
+  readonly featured?: boolean;
+}
+
+export const pricingTiers: readonly PricingTier[] = [
+  {
+    name: "Landing Page",
+    description:
+      "A focused one-page site built to present a single offer clearly and turn visitors into enquiries.",
+    priceLabel: "Tailored estimate",
+    priceNote: "Scoped with you before any figure is quoted.",
+    scope: [
+      "Conversion-focused page structure",
+      "Responsive design across devices",
+      "Essential SEO foundations",
+      "Enquiry and contact integration",
+    ],
+  },
+  {
+    name: "Business Website",
+    description:
+      "A multi-page website that presents your services, strengthens your brand, and guides visitors to get in touch.",
+    priceLabel: "Tailored estimate",
+    priceNote: "Scoped with you before any figure is quoted.",
+    scope: [
+      "Multi-page structure and user journey",
+      "Design aligned with your brand",
+      "CMS options for content updates",
+      "SEO foundations and analytics",
+    ],
+    featured: true,
+  },
+  {
+    name: "E-commerce & Custom",
+    description:
+      "An online store or custom build with the functionality and integrations your business needs.",
+    priceLabel: "Tailored estimate",
+    priceNote: "Scoped with you before any figure is quoted.",
+    scope: [
+      "Storefront or custom functionality",
+      "Payment and system integrations",
+      "Smoother product-to-checkout journeys",
+      "Testing and refinement before launch",
+    ],
+  },
+] as const;
+
+/**
+ * SUPPORTING — the honest line the package grid stands on. States plainly
+ * that MIDIS quotes per project, so the absence of figures reads as a
+ * policy rather than an unfinished table.
+ */
+export const pricingTiersNote =
+  "MIDIS doesn't sell one-size-fits-all packages. Every project is scoped against your actual requirements, and the proposal breaks down exactly what drives the number.";
+
+/**
  * The five factors are the PDF subheadline's own list, split out.
  * `body` is SUPPORTING copy: it explains each factor without quoting a figure
  * or implying a band.

@@ -1,6 +1,6 @@
 # MIDIS Landing Page — implementation report
 
-Last updated: 2026-10-19.
+Last updated: 2026-10-20.
 
 All ten PDF sections, the Free Website Audit route and both confirmation
 routes are built. Nothing below is described as working unless it was
@@ -119,6 +119,19 @@ to, with an explicit line saying outcomes are published once verified.
 **No prices.** MIDIS has no confirmed rate card. §8 explains the five
 factors that move the number; the estimator summarises selections rather
 than calculating a figure, per the PDF's own developer note.
+
+**Package-style pricing layout, without prices (added 2026-10-20).** The
+PDF's p.11 visual reference is a multi-column pricing-package page, and the
+full-audit brief asked for that structure explicitly. §8 now opens with
+three scope-tier cards — Landing Page / Business Website / E-commerce &
+Custom, the PDF's own project types, middle card emphasised — whose price
+slot reads "Tailored estimate" and whose CTA is the section's approved
+"Get a Project Estimate". Scope lines are hedged supporting copy drawn
+from the approved service descriptions; nothing is presented as a fixed
+package or included deliverable. The five factor cards follow beneath,
+unchanged, under "What moves the number". If MIDIS approves real package
+prices, `pricingTiers` in `content/sections.ts` takes the figures without
+a layout change.
 
 **No invented counts.** The hero shows two numbers, both recounted from
 lists in the repo: 18 clients, 6 live projects.
