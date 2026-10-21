@@ -1,10 +1,12 @@
 import { Logo } from "./Logo";
 import { Reveal } from "@/components/ui/Reveal";
 import { Arrow } from "@/components/ui/Button";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
   footerColumns,
   footerLegal,
   site,
+  visibleSocials,
   whatsappHref,
 } from "@/content/site";
 
@@ -130,8 +132,13 @@ export function Footer() {
           <div className="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-dark">{site.footerStrapline}</p>
 
-            <ul className="flex flex-wrap gap-x-7 gap-y-2">
-              {site.socials.map((social) => (
+            {/* visibleSocials: the confirmed profiles, plus Medium once its
+                official URL is configured — YouTube was removed and Medium
+                has no verified URL yet, so no Medium link renders until one
+                is supplied (MIDIS instruction, 2026-10-21; see MEDIUM_URL
+                in content/site.ts). */}
+            <ul className="flex flex-wrap items-center gap-x-7 gap-y-2">
+              {visibleSocials.map((social) => (
                 <li key={social.url}>
                   <a
                     href={social.url}
@@ -144,12 +151,16 @@ export function Footer() {
                 </li>
               ))}
               <li>
+                {/* WhatsApp wears its own brand green here too (MIDIS
+                    WhatsApp-branding brief, 2026-10-21) — glyph + label,
+                    #25D366 on the ink ground reads at ~8:1. */}
                 <a
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="link-underline inline-flex min-h-6 items-center text-sm font-medium text-white/85 transition-colors hover:text-accent"
+                  className="link-underline inline-flex min-h-6 items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#1EBE5D]"
                 >
+                  <WhatsAppIcon className="size-4" />
                   WhatsApp
                 </a>
               </li>
@@ -178,9 +189,14 @@ export function Footer() {
       </Reveal>
 
       {/* ================= legal ================= */}
+      {/* The physical address line was REMOVED from this strip on MIDIS's
+          instruction (2026-10-21) — footer only; site.address still feeds
+          the Organization schema in lib/seo.ts, which is a business record,
+          not page furniture. The strip's bottom padding grew to carry the
+          spacing the address paragraph used to provide. */}
       <div className="container-site relative z-10">
         <div className="hairline" />
-        <div className="flex flex-col gap-4 py-7 text-sm text-muted-dark sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 pt-7 pb-10 text-sm text-muted-dark sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; MIDIS. All rights reserved.</p>
 
           <ul className="flex flex-wrap gap-x-7 gap-y-2">
@@ -198,11 +214,6 @@ export function Footer() {
             ))}
           </ul>
         </div>
-
-        <p className="pb-10 text-xs leading-relaxed text-muted-dark/75">
-          {site.address.street}, {site.address.locality}, {site.address.region}{" "}
-          {site.address.postalCode}, {site.address.countryName}
-        </p>
       </div>
     </footer>
   );

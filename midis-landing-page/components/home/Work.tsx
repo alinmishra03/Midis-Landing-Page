@@ -5,11 +5,7 @@ import { Section, SectionHeader } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { work } from "@/content/sections";
-import {
-  PORTFOLIO_PROJECT_COUNT,
-  PORTFOLIO_URL,
-  projects,
-} from "@/content/work";
+import { PORTFOLIO_PROJECT_COUNT, projects } from "@/content/work";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,14 +18,26 @@ import { cn } from "@/lib/utils";
  * design legible, and the text column sits in the remaining space with the
  * project number setting the rhythm down the page.
  *
- * WHERE THE CTA GOES, AND WHY IT IS NOT "VIEW CASE STUDY".
- * MIDIS.pdf specifies a "View Case Study" CTA. No verified case study exists
- * for any of these projects — the PDF's own case-study template ends with
- * "The Results: Add verified metrics", and no metric has been supplied. A
- * "View Case Study" link would therefore have to lead to a page of invented
- * outcomes, which the brief forbids. So each project links to its LIVE SITE
- * instead: real, checkable, and stronger proof than unsourced numbers. The
- * case-study structure itself is still presented, as a method, in Section 7.
+ * NO EXTERNAL LINKS (MIDIS lead-generation brief, 2026-10-21). This section
+ * used to link every project to its live site — chosen over the PDF's "View
+ * Case Study" CTA because no verified case study exists (the PDF's template
+ * ends "Add verified metrics", and none were supplied). MIDIS has now
+ * instructed that visitors must not leave the landing page while exploring
+ * the work, so the outbound links are gone:
+ *
+ *   - The screenshot and the project name are no longer links at all —
+ *     nothing here pretends to be clickable without doing anything.
+ *   - Each row's action is "Discuss a Similar Project", to the on-page
+ *     estimator.
+ *   - The live DOMAIN still shows in each BrowserFrame's chrome bar, so
+ *     the proof-of-reality the live links used to carry is still visible,
+ *     just not navigable.
+ *   - The portfolio gateway card became the section's conversion moment
+ *     (the brief's own "Like what you see?" pattern), also to the
+ *     estimator.
+ *
+ * There are still no case-study links, for the same reason as before: no
+ * verified case study exists to link to.
  *
  * The copy says "work" and "projects" and never "clients" or "we delivered",
  * because MIDIS has not confirmed which of these were delivered engagements.
@@ -62,14 +70,11 @@ function ProjectRow({
         )}
       >
         <TiltCard>
-          <a
-            href={project.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            tabIndex={-1}
-            aria-hidden="true"
-            className="card-lift block rounded-xl"
-          >
+          {/* A plain block, not a link — the live site is deliberately not
+              navigable (see the section note). The tilt, zoom and drift
+              stay: they are presentation, not affordance; card-lift went
+              with the link because a lift-on-hover says "clickable". */}
+          <div className="block rounded-xl">
             <BrowserFrame
               src={project.preview}
               alt={`${project.name} website homepage`}
@@ -78,7 +83,7 @@ function ProjectRow({
               zoomOnHover
               drift
             />
-          </a>
+          </div>
         </TiltCard>
       </Reveal>
 
@@ -109,22 +114,10 @@ function ProjectRow({
           </span>
         </div>
 
+        {/* Plain text since 2026-10-21 — the name used to open the live
+            site; the row's one action is now the estimator link below. */}
         <h3 className="mt-5 text-[length:var(--text-display-sm)] leading-tight">
-          {/*
-            The whole heading is the link, and it carries the accessible
-            name for the row — which is why the image link above is
-            aria-hidden and removed from the tab order. One stop per
-            project, not two pointing at the same URL.
-          */}
-          <a
-            href={project.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors duration-[var(--dur-fast)] hover:text-accent-ink"
-          >
-            {project.name}
-            <span className="sr-only"> — opens {project.host} in a new tab</span>
-          </a>
+          {project.name}
         </h3>
 
         <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted">
@@ -142,16 +135,15 @@ function ProjectRow({
           ))}
         </ul>
 
+        {/* The row's one action: on-page, to the estimator. The domain the
+            old link displayed still shows in the BrowserFrame's chrome. */}
         <p className="mt-7">
           <a
-            href={project.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#estimator"
             className="group/btn inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fg transition-colors hover:text-accent-ink"
           >
-            <span className="link-underline-accent">Visit the live site</span>
-            <span aria-hidden="true" className="text-muted">
-              {project.host}
+            <span className="link-underline-accent">
+              Discuss a Similar Project
             </span>
             <Arrow />
           </a>
@@ -185,26 +177,32 @@ export function Work() {
           ))}
         </div>
 
-        {/* ---- gateway to the full portfolio ---- */}
+        {/* ---- the conversion card ----
+            Until 2026-10-21 this card opened the external MIDIS portfolio.
+            The lead-generation brief keeps visitors on this page, so the
+            same dark card now carries the brief's own "Like what you see?"
+            moment and lands on the estimator. The portfolio screenshot
+            stays as the visual — it is real, and it says there is more work
+            than the six rows above — and PORTFOLIO_PROJECT_COUNT keeps the
+            "more to see" claim countable rather than invented. */}
         <Reveal className="mt-16 md:mt-24">
           <a
-            href={PORTFOLIO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#estimator"
             className="card-lift group grid items-center gap-8 rounded-2xl bg-ink p-6 text-white ring-1 ring-fg/10 hover:bg-ink-raised sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14"
           >
             <div>
-              <p className="eyebrow text-accent">The full portfolio</p>
+              <p className="eyebrow text-accent">Like what you see?</p>
               <p className="mt-5 text-[length:var(--text-display-sm)] font-semibold leading-tight font-display">
-                {PORTFOLIO_PROJECT_COUNT} projects, with their own
-                walkthroughs.
+                Let&rsquo;s build something similar for your business.
               </p>
               <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-muted-dark">
-                The six above are a selection. The rest of the work — and a
-                closer look at each build — lives on the MIDIS portfolio.
+                These six are a selection from {PORTFOLIO_PROJECT_COUNT}{" "}
+                projects. Tell us what you&rsquo;re planning, and we&rsquo;ll
+                help you understand the potential scope, timeline, and next
+                steps.
               </p>
               <span className="group/btn mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent">
-                Open the portfolio
+                Get a Project Estimate
                 <Arrow />
               </span>
             </div>
@@ -212,7 +210,7 @@ export function Work() {
             <div className="overflow-hidden rounded-xl ring-1 ring-white/10">
               <Image
                 src="/images/work/portfolio.jpg"
-                alt="The MIDIS portfolio site, showing its project showcase"
+                alt="The MIDIS portfolio, showing its project showcase"
                 width={1800}
                 height={1125}
                 loading="lazy"

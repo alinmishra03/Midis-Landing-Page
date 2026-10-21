@@ -1,78 +1,110 @@
 "use client";
 
-import Image from "next/image";
 import { useId, useRef, useState } from "react";
 import { Arrow } from "@/components/ui/Button";
 import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import { services, servicesSection } from "@/content/sections";
+import { preselectProjectType } from "@/lib/estimator-prefill";
 import { cn } from "@/lib/utils";
+import type { ProjectType } from "@/content/forms";
+import {
+  DemoAutomation,
+  DemoEcommerce,
+  DemoRedesign,
+  DemoSeo,
+  DemoUiux,
+  DemoWebDev,
+} from "./service-demos";
 
 /**
- * SECTION 4 — Core services. EDITORIAL SHOWCASE, 2026-10-20 (third pass).
+ * SECTION 4 — Core services. INTERACTIVE SHOWCASE, 2026-10-21 (fourth pass).
  *
- * NO CARDS, NO GRID — on MIDIS's explicit instruction. The section is now
- * typography-led:
+ * WHY THE EDITORIAL ROWS WENT. The third pass drew six near-identical rows
+ * with a shared photograph panel, and MIDIS's feedback was that every
+ * service looked and behaved the same. This pass keeps the section's
+ * typography-led identity but gives each service its own SIGNATURE
+ * DEMONSTRATION — a miniature product demo that plays on one shared stage
+ * (see service-demos.tsx for the six and the honesty rules they follow).
+ * The stock photographs are gone from this section; the demos SHOW the
+ * service instead of illustrating it.
  *
- * DESKTOP (lg+): six oversized service ROWS — number, title, description,
- * arrow — separated by hairline dividers that draw themselves on scroll
- * (the existing `line-draw` scroll-timeline utility). Beside them, a
- * DEDICATED PREVIEW PANEL: the brief offers a cursor-chasing floating
- * image or a designated region, and prefers the region — it can never
- * collide with the text, which the floating version always threatens to.
- * Hovering or keyboard-focusing a row crossfades the panel to that
- * service's photograph, full-colour, NO scrim — nothing sits on top of it,
- * so for the first time the imagery needs no darkening at all. A gentle
- * pointer parallax (±10px, skipped under reduced motion) keeps the panel
- * alive without chasing the cursor.
+ * STRUCTURE: real tabs. The service names are a `tablist` on the left
+ * (horizontal scrolling chips below `lg`, a numbered editorial list from
+ * `lg`), the active service's approved description + CTA is its `tabpanel`,
+ * and the stage swaps demos as the selection changes. Selection follows
+ * click/Enter and roving arrow keys — standard tabs keyboard behaviour.
+ * Nothing auto-advances; a demo plays when the VISITOR chooses it.
  *
- * MOBILE/TABLET (<lg): an editorial ACCORDION — number, title, plus icon —
- * one service open at a time, the first open by default so the pattern is
- * discoverable. Expanding reveals the photograph, the approved
- * description and the Explore link, through the site's existing
- * grid-template-rows accordion mechanics (globals.css), with real
- * aria-expanded/aria-controls semantics. Nothing depends on hover.
+ * SEO: all six approved names, descriptions and CTA labels are server-
+ * rendered in the markup (inactive panels carry `hidden`, they are not
+ * conditionally omitted), so the content is exactly what the rows carried.
  *
- * THE HEADING is hand-set in three masked lines ("lines" reveal variant,
- * same mechanism as the final CTA) so "Business Goals" can carry the
- * orange accent — the automatic splitter declines nested markup. The
- * words are servicesSection.headline VERBATIM, merely wrapped; the
- * whitespace text nodes between lines keep the accessible string intact.
+ * LEAD GENERATION (2026-10-21 brief, unchanged): every CTA stays on this
+ * page — `#estimator`, preselecting the matching approved project type via
+ * lib/estimator-prefill.ts where one exists. ESTIMATOR_TYPE maps only exact
+ * conceptual matches; the rest arrive at the form with nothing chosen.
  *
- * SERVICES, DESCRIPTIONS, CTAs AND LIVE midis.in LINKS are all unchanged.
- * Rows are real anchors, so keyboard users tab through them (focus also
- * drives the preview) and the focus ring comes from the global style.
+ * THE GRID HAS THREE CHILDREN for two layouts (same trick as the hero):
+ * tablist, stage, panels — stacked in that order on a phone so the chips
+ * sit directly above the stage they drive; from `lg` the stage spans both
+ * rows of the right column and the panels slot under the tablist.
  */
 
+/** Service slug → APPROVED estimator option (content/forms.ts). Only exact
+    conceptual matches; mapping the rest to "Other" would silently answer a
+    form question the visitor never saw. */
+const ESTIMATOR_TYPE: Partial<Record<string, ProjectType>> = {
+  "website-design-development": "New Website",
+  "ecommerce-shopify": "E-commerce",
+  "website-redesign": "Redesign",
+};
+
+/** The stage demo for each service. */
+const DEMOS: Record<string, () => React.JSX.Element> = {
+  "website-design-development": DemoWebDev,
+  "ui-ux-design": DemoUiux,
+  "ecommerce-shopify": DemoEcommerce,
+  "website-redesign": DemoRedesign,
+  "seo-organic-growth": DemoSeo,
+  "automation-optimisation": DemoAutomation,
+};
+
+/** Short labels for the phone chips ONLY — the full approved names render
+    in the `lg` tablist and in each panel; nothing approved is altered. */
+const SHORT_NAMES: Record<string, string> = {
+  "website-design-development": "Web Development",
+  "ui-ux-design": "UI/UX Design",
+  "ecommerce-shopify": "E-commerce",
+  "website-redesign": "Redesign",
+  "seo-organic-growth": "SEO",
+  "automation-optimisation": "Automation",
+};
+
 export function Services() {
-  /* Desktop preview: the row under the pointer (or keyboard focus). Starts
-     on the first service so the panel is never empty. */
   const [active, setActive] = useState(0);
-  /* Mobile accordion: index of the open row, -1 for none. First open by
-     default so the interaction is discoverable. */
-  const [open, setOpen] = useState(0);
-
-  const previewRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useRef<boolean | null>(null);
   const baseId = useId();
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  /* Gentle parallax: pointer position over the showcase nudges the preview
-     a few pixels. Direct style writes — no re-render per mousemove. */
-  function onPointerMove(event: React.MouseEvent<HTMLDivElement>) {
-    if (reduceMotion.current === null) {
-      reduceMotion.current = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
-    }
-    if (reduceMotion.current) return;
-    const panel = previewRef.current;
-    if (!panel) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
-    panel.style.setProperty("--px", x.toFixed(3));
-    panel.style.setProperty("--py", y.toFixed(3));
+  /* Standard tabs keyboard behaviour: arrows move AND select (selection is
+     cheap — a demo swap), Home/End jump. Roving tabindex below keeps one
+     tab stop for the whole list. */
+  function onTablistKeyDown(event: React.KeyboardEvent) {
+    const last = services.length - 1;
+    let next: number | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      next = active === last ? 0 : active + 1;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      next = active === 0 ? last : active - 1;
+    } else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = last;
+    if (next === null) return;
+    event.preventDefault();
+    setActive(next);
+    tabRefs.current[next]?.focus();
   }
+
+  const ActiveDemo = DEMOS[services[active].slug];
 
   return (
     <Section id="services" tone="surface" labelledBy="services-heading">
@@ -127,186 +159,127 @@ export function Services() {
         </div>
       </div>
 
-      {/* ================= desktop: rows + preview panel ================= */}
-      <div className="container-wide mt-[var(--space-block)] hidden lg:block">
-        <div
-          onMouseMove={onPointerMove}
-          className="grid grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] items-start gap-12 xl:gap-16"
-        >
-          {/* ---- the rows ---- */}
-          <div>
-            {/* The architecture's top rule. */}
-            <div aria-hidden="true" className="line-draw h-px bg-line" />
-            <ul>
-              {services.map((service, index) => (
-                <Reveal as="li" key={service.slug} delay={index * 60} className="service-item">
-                  <a
-                    href={service.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-active={active === index || undefined}
-                    onMouseEnter={() => setActive(index)}
-                    onFocus={() => setActive(index)}
-                    className="service-row grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-5 py-6 xl:py-7"
+      {/* ================= the showcase ================= */}
+      <div className="container-wide mt-[var(--space-block)]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-x-14 lg:gap-y-8">
+          {/* ---- 1. the service navigator (tablist) ---- */}
+          <Reveal className="min-w-0">
+            <div aria-hidden="true" className="line-draw hidden h-px bg-line lg:block" />
+            <div
+              role="tablist"
+              aria-label="MIDIS services"
+              onKeyDown={onTablistKeyDown}
+              className={cn(
+                /* phone: horizontally scrolling chips, edge to edge */
+                "-mx-[var(--gutter)] flex gap-2 overflow-x-auto px-[var(--gutter)] pb-1.5",
+                "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                /* lg: the numbered editorial list */
+                "lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0 lg:pb-0",
+              )}
+            >
+              {services.map((service, index) => {
+                const selected = active === index;
+                return (
+                  <button
+                    key={service.slug}
+                    ref={(element) => {
+                      tabRefs.current[index] = element;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`${baseId}-tab-${index}`}
+                    aria-selected={selected}
+                    aria-controls={`${baseId}-panel-${index}`}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => setActive(index)}
+                    data-active={selected || undefined}
+                    className={cn(
+                      /* phone chip */
+                      "svc-tab inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line px-4 py-2 text-sm font-semibold text-muted",
+                      /* lg row */
+                      "lg:w-full lg:shrink lg:whitespace-normal lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-0 lg:py-4 lg:text-left xl:py-5",
+                    )}
                   >
-                    <span className="service-row-number font-display text-sm font-semibold">
+                    <span className="svc-tab-number font-display text-xs font-semibold lg:w-7 lg:shrink-0 lg:text-sm">
                       0{index + 1}
                     </span>
-                    <span className="min-w-0">
-                      <span className="service-row-title block font-display text-[1.75rem] font-semibold leading-[1.12] xl:text-[2.125rem]">
-                        {service.name}
-                      </span>
-                      <span className="service-row-desc mt-1.5 block max-w-xl text-sm leading-relaxed text-muted">
-                        {service.description}
-                      </span>
+                    <span className="svc-tab-name lg:block lg:font-display lg:text-xl lg:font-semibold lg:leading-snug xl:text-[1.375rem]">
+                      <span className="lg:hidden">{SHORT_NAMES[service.slug]}</span>
+                      <span className="hidden lg:inline">{service.name}</span>
                     </span>
-                    <span className="service-row-arrow justify-self-end text-fg">
-                      <Arrow className="size-5" />
+                    <span className="svc-tab-arrow ml-auto hidden text-fg lg:inline-flex" aria-hidden="true">
+                      <Arrow className="size-4.5" />
                     </span>
-                  </a>
-                  {/* Divider: draws itself on scroll; its orange segment
-                      draws again, shorter, on the row's hover. */}
-                  <div aria-hidden="true" className="service-divider line-draw" />
-                </Reveal>
-              ))}
-            </ul>
-          </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Reveal>
 
-          {/* ---- the preview panel ----
-              Sticky so it rides alongside all six rows. aria-hidden: it is
-              a visual echo of the focused row, which already names and
-              describes its service in text. */}
-          <div
-            aria-hidden="true"
-            className="sticky top-[calc(var(--header-h)+1.5rem)]"
+          {/* ---- 2. the stage ---- */}
+          {/* NOT aria-hidden: the comparison slider, the cart and the
+              before/after toggle inside the demos are real controls with
+              their own names. The drawn artwork marks itself decorative. */}
+          <Reveal
+            variant="fade"
+            delay={140}
+            className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2"
           >
-            <Reveal variant="fade" delay={200}>
+            <div className="svc-stage relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-card-lg)] border border-line bg-surface-2 sm:aspect-[16/11] lg:aspect-[4/3]">
+              {/* one soft accent wash so the stage never reads flat */}
               <div
-                ref={previewRef}
-                className="service-preview relative aspect-[4/3] overflow-hidden rounded-[var(--radius-card-lg)] bg-surface-2 ring-1 ring-fg/10"
-              >
-                {services.map((service, index) => (
-                  <Image
-                    key={service.slug}
-                    src={service.image}
-                    alt=""
-                    width={1600}
-                    height={1200}
-                    /* The first preview is visible immediately; the rest
-                       swap in on hover, so they can load lazily. */
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="(min-width: 1024px) 42vw, 1px"
-                    className={cn(
-                      "service-preview-img absolute inset-0 size-full object-cover",
-                      active === index && "is-active",
-                    )}
-                  />
-                ))}
-                {/* The panel's one orange detail, echoing the active row. */}
-                <span className="absolute left-5 top-5 inline-flex items-center rounded-full bg-[rgb(10_11_13/0.55)] px-2.5 py-1 font-display text-xs font-semibold tracking-[0.14em] text-white">
-                  0{active + 1}
-                </span>
-                <span className="service-preview-accent absolute bottom-0 left-0 h-[3px] w-16 bg-accent" />
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(34rem 22rem at 70% 8%, rgb(239 135 22 / 0.07), transparent 65%)",
+                }}
+              />
+              {/* keyed remount = each demo plays from its first frame when
+                  chosen, and never while nobody is looking at it */}
+              <div key={services[active].slug} className="stage-scene absolute inset-0">
+                <ActiveDemo />
               </div>
-            </Reveal>
+              <span className="pointer-events-none absolute left-3.5 top-3.5 inline-flex items-center rounded-full bg-[rgb(10_11_13/0.55)] px-2.5 py-1 font-display text-xs font-semibold tracking-[0.14em] text-white">
+                0{active + 1}
+              </span>
+            </div>
+          </Reveal>
+
+          {/* ---- 3. the panels: approved description + CTA ---- */}
+          {/* All six render (SEO keeps every approved description in the
+              HTML); `hidden` shows only the selected one. */}
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+            {services.map((service, index) => (
+              <div
+                key={service.slug}
+                role="tabpanel"
+                id={`${baseId}-panel-${index}`}
+                aria-labelledby={`${baseId}-tab-${index}`}
+                hidden={active !== index}
+                className="svc-panel"
+              >
+                <h3 className="text-base font-semibold lg:sr-only">
+                  {service.name}
+                </h3>
+                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.9375rem] lg:mt-0">
+                  {service.description}
+                </p>
+                <a
+                  href="#estimator"
+                  onClick={() => {
+                    const type = ESTIMATOR_TYPE[service.slug];
+                    if (type) preselectProjectType(type);
+                  }}
+                  className="group/btn mt-3.5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
+                >
+                  <span className="link-underline-accent">{service.cta}</span>
+                  <Arrow />
+                </a>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* ================= mobile & tablet: the accordion ================= */}
-      <div className="container-site mt-[var(--space-block)] lg:hidden">
-        <div aria-hidden="true" className="h-px bg-line" />
-        {services.map((service, index) => {
-          const isOpen = open === index;
-          const buttonId = `${baseId}-svc-btn-${index}`;
-          const panelId = `${baseId}-svc-panel-${index}`;
-
-          return (
-            <Reveal as="div" key={service.slug} delay={index * 40} className="border-b border-line">
-              <h3>
-                <button
-                  type="button"
-                  id={buttonId}
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => setOpen(isOpen ? -1 : index)}
-                  className="flex min-h-14 w-full items-center gap-4 py-4 text-left"
-                >
-                  <span
-                    className={cn(
-                      "w-7 shrink-0 font-display text-xs font-semibold transition-colors duration-[var(--dur-fast)]",
-                      isOpen ? "text-accent-ink" : "text-muted",
-                    )}
-                  >
-                    0{index + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      "flex-1 font-display text-lg font-semibold leading-snug transition-colors duration-[var(--dur-fast)] sm:text-xl",
-                      isOpen && "text-accent-ink",
-                    )}
-                  >
-                    {service.name}
-                  </span>
-                  {/* Plus that turns into a close at 45°. */}
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "service-acc-icon shrink-0 text-fg",
-                      isOpen && "service-acc-icon-open",
-                    )}
-                  >
-                    <svg viewBox="0 0 16 16" width="16" height="16">
-                      <path
-                        d="M8 2.5v11M2.5 8h11"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </h3>
-
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={buttonId}
-                data-open={isOpen ? "true" : "false"}
-                className="accordion-panel"
-              >
-                <div className="overflow-hidden">
-                  <div className="pb-5">
-                    <div className="overflow-hidden rounded-xl">
-                      <Image
-                        src={service.image}
-                        alt=""
-                        aria-hidden="true"
-                        width={1600}
-                        height={1000}
-                        loading="lazy"
-                        sizes="92vw"
-                        className="h-44 w-full object-cover sm:h-56"
-                      />
-                    </div>
-                    <p className="mt-3.5 text-sm leading-relaxed text-muted">
-                      {service.description}
-                    </p>
-                    <a
-                      href={service.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group/btn mt-3.5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
-                    >
-                      {service.cta}
-                      <Arrow />
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          );
-        })}
       </div>
     </Section>
   );

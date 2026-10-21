@@ -1,5 +1,5 @@
 import { services } from "@/content/sections";
-import { site } from "@/content/site";
+import { site, visibleSocials } from "@/content/site";
 
 /**
  * Structured data.
@@ -65,7 +65,7 @@ export function buildJsonLd() {
           areaServed: phone.region,
           availableLanguage: "English",
         })),
-        sameAs: site.socials.map((social) => social.url),
+        sameAs: visibleSocials.map((social) => social.url),
       },
       {
         "@type": "WebSite",

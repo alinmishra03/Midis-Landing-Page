@@ -1,46 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Arrow } from "@/components/ui/Button";
-import { whatsappHref } from "@/content/site";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
+import { callHref, primaryPhone, whatsappHref } from "@/content/site";
 
 /**
- * THE FLOATING CTA GROUP (MIDIS brief, 2026-10-20).
+ * THE FLOATING CONTACT DOCK (MIDIS brief, 2026-10-21).
  *
- * Two actions pinned to the bottom-right: WhatsApp (circular, with the
- * official glyph and a hover tooltip) and the estimator pill (orange,
- * routes to the hero form's `#estimator` anchor — never a second form).
- * The WhatsApp destination is `whatsappHref` from content/site.ts, the one
- * verified MIDIS line; no number is written here.
+ * Three circular actions stacked vertically in the bottom-right corner —
+ * the page's ONE floating contact group (it replaces the 2026-10-20
+ * WhatsApp-circle-plus-estimator-pill pair; nothing else floats):
  *
- * SMART VISIBILITY, four independent signals:
- *   1. While the HERO is on screen, the estimator pill hides — the hero
- *      now carries its own "Get a Project Estimate" primary CTA and the
- *      form itself, so a floating copy there is pure noise (MIDIS brief,
- *      2026-10-20). It enters once the visitor scrolls past the hero.
- *      WhatsApp stays.
- *   2. While the FOOTER is on screen, the whole group hides, so it never
- *      sits on top of footer links.
- *   3. While ANY form field has focus, the whole group hides — which is
- *      also what keeps it clear of the mobile keyboard and guarantees it
- *      can never cover a form's submit button mid-entry.
- *   4. While a LEAD POPUP is open, the whole group hides — pure CSS, keyed
- *      off the `data-popup-open` attribute LeadPopups keeps on <body>.
+ *   01  WhatsApp   — WhatsApp's own green (#25D366), white official glyph
+ *   02  Call       — charcoal, white handset, orange hover accent
+ *   03  Estimate   — MIDIS orange, dark clipboard icon → #estimator
  *
- * All cheap: two IntersectionObservers, the bubbling focusin/focusout
- * pair, and one attribute selector. No scroll listener.
+ * Both destinations are the VERIFIED ones from content/site.ts — the
+ * WhatsApp-enabled line and `primaryPhone` — never written out here. If the
+ * phone list were emptied, the Call button simply does not render.
  *
- * Hidden state is opacity + transform + pointer-events (never display),
- * so the transitions run and a hidden group can never swallow a tap.
+ * Hovering or keyboard-focusing a button slides a compact label out to the
+ * left (pointer devices only — on touch the aria-labels do the work). The
+ * estimator button behaves exactly like the hero CTA: native anchor scroll
+ * to the ONE form, then focus its first radio after the glide settles
+ * (see EstimateCta for the full reasoning) — never a second form, never a
+ * reset of anything the visitor has typed.
+ *
+ * ALL THREE BUTTONS ARE CONSTANT (MIDIS follow-up, 2026-10-21): the
+ * estimator button no longer hides while the hero is on screen — the dock
+ * always shows the same three actions. What remains is the DOCK-level
+ * smart visibility, which is the brief's "must not overlap" list:
+ *   1. Below 768px the whole dock waits until the hero has scrolled past —
+ *      there the hero's form spans the full width, so even the circles
+ *      would sit on its fields.
+ *   2. While the FOOTER is on screen, the whole dock hides.
+ *   3. While ANY form field has focus, the whole dock hides — which also
+ *      keeps it clear of the mobile keyboard and every submit button.
+ *   4. While a LEAD POPUP is open, the whole dock hides (CSS, keyed off the
+ *      `data-popup-open` attribute LeadPopups keeps on <body>).
+ *
+ * All cheap: two IntersectionObservers, the bubbling focusin/focusout pair,
+ * one attribute selector. Hidden states are opacity + transform +
+ * pointer-events (never display), so transitions run and a hidden dock can
+ * never swallow a tap. Hidden buttons also leave the tab order.
  */
 
 export function FloatingCta() {
-  /* Starts true: the page opens on the hero, so on first paint the pill is
-     legitimately redundant — and this also serves as the "appear once the
-     visitor scrolls past the hero" entrance. `groupHidden` starts true for
-     the same reason on phones; the effect corrects it immediately where
-     the group may show. */
-  const [heroInView, setHeroInView] = useState(true);
+  /* Starts true: the page opens on the hero, where the dock may only show
+     from 768px up; the effect corrects it immediately where it may. */
   const [groupHidden, setGroupHidden] = useState(true);
 
   useEffect(() => {
@@ -48,21 +55,12 @@ export function FloatingCta() {
     let footerVisible = false;
     let typing = false;
     let heroVisible = true;
-    /* Below 768px the hero's form spans the full width, so even the
-       WhatsApp circle would sit ON the form — there the whole group waits
-       until the hero has been scrolled past ("keep the WhatsApp button
-       available IF it does not overlap content"). From 768 up the form
-       column never reaches the corner and WhatsApp may stay. */
     const wide = window.matchMedia("(min-width: 768px)");
     const apply = () => {
-      setHeroInView(heroVisible);
       setGroupHidden(footerVisible || typing || (heroVisible && !wide.matches));
     };
     wide.addEventListener("change", apply);
 
-    /* The HERO, not just the estimator shell: the hero contains both the
-       form and its own estimate CTA, so any part of it on screen makes the
-       floating copy redundant. */
     const heroSection = document.querySelector(
       "section[aria-labelledby='hero-heading']",
     );
@@ -116,51 +114,98 @@ export function FloatingCta() {
     };
   }, []);
 
-  return (
-    /*
-      ORDER: pill first, WhatsApp second — so WhatsApp OWNS the corner. The
-      hidden pill keeps its layout box (hidden by opacity, so the show/hide
-      can animate), and if WhatsApp sat to its right of nothing it would
-      drift ~200px out of the corner every time the pill hid.
-    */
-    <div className="floating-cta" data-hidden={groupHidden || undefined}>
-      <a
-        href="#estimator"
-        className="floating-pill group/btn"
-        data-hidden={heroInView || undefined}
-        aria-label="Get a project estimate"
-        /* When hidden it also leaves the tab order — a keyboard user should
-           not land on an invisible control. */
-        tabIndex={heroInView ? -1 : 0}
-      >
-        <span className="hidden sm:inline">Get a Project Estimate</span>
-        <span className="sm:hidden">Get Estimate</span>
-        <Arrow />
-      </a>
+  const hidden = groupHidden;
 
+  return (
+    <div className="floating-cta" data-hidden={hidden || undefined}>
+      {/* 01 — WhatsApp */}
       <a
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with MIDIS on WhatsApp"
-        className="floating-whatsapp"
+        className="fab fab-whatsapp"
+        style={{ "--d": "500ms" } as React.CSSProperties}
+        tabIndex={hidden ? -1 : 0}
       >
-        {/* Tooltip for pointer users; the aria-label carries the same text
-            for everyone else. Hidden where hover does not exist. */}
-        <span aria-hidden="true" className="fab-tip">
-          Chat with MIDIS
+        <span aria-hidden="true" className="fab-label">
+          Chat on WhatsApp
         </span>
-        <WhatsAppGlyph />
+        <WhatsAppIcon className="size-[22px]" />
+      </a>
+
+      {/* 02 — Call. Rendered only when a verified number exists. */}
+      {callHref && primaryPhone ? (
+        <a
+          href={callHref}
+          aria-label={`Call MIDIS on ${primaryPhone.display}`}
+          className="fab fab-call"
+          style={{ "--d": "580ms" } as React.CSSProperties}
+          tabIndex={hidden ? -1 : 0}
+        >
+          <span aria-hidden="true" className="fab-label">
+            Call MIDIS
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M6.3 3.5h2.4l1.5 3.7-1.8 1.3a11.3 11.3 0 0 0 5.1 5.1l1.3-1.8 3.7 1.5v2.4a2 2 0 0 1-2.2 2A15.6 15.6 0 0 1 4.3 5.7a2 2 0 0 1 2-2.2Z"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </a>
+      ) : null}
+
+      {/* 03 — Get a Project Estimate → the ONE form on this page.
+          Constant, like its two siblings (MIDIS follow-up, 2026-10-21). */}
+      <a
+        href="#estimator"
+        aria-label="Get a Project Estimate"
+        className="fab fab-estimate"
+        tabIndex={hidden ? -1 : 0}
+        style={{ "--d": "660ms" } as React.CSSProperties}
+        onClick={() => {
+          /* Same follow-up as the hero's EstimateCta: focus step one's
+             first RADIO after the native smooth scroll settles —
+             preventScroll so it cannot yank the page, a radio so the
+             mobile keyboard never opens mid-glide. */
+          window.setTimeout(() => {
+            document
+              .querySelector<HTMLInputElement>(
+                "#estimator form input[type='radio']",
+              )
+              ?.focus({ preventScroll: true });
+          }, 700);
+        }}
+      >
+        <span aria-hidden="true" className="fab-label">
+          Get a Project Estimate
+        </span>
+        {/* A clipboard with an estimate's line items — the document the
+            button leads to, not a generic star or chat glyph. */}
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="5" y="4.5" width="14" height="17" rx="2" />
+          <path d="M9 2.75h6v3.5H9z" />
+          <path d="M8.75 11h6.5M8.75 14.5h6.5M8.75 18h3.5" />
+        </svg>
       </a>
     </div>
-  );
-}
-
-/** The official WhatsApp speech-bubble glyph (simplified single path). */
-function WhatsAppGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor">
-      <path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2.05 22l5.3-1.39a9.87 9.87 0 0 0 4.69 1.19h.01c5.45 0 9.89-4.44 9.89-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2Zm0 18.13h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.17-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.24 8.22Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.97-.14.16-.29.18-.54.06-.25-.13-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29Z" />
-    </svg>
   );
 }

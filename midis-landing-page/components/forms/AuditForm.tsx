@@ -215,7 +215,7 @@ export function AuditForm() {
           type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder="you@company.com"
+          placeholder="yourname@gmail.com"
           required
           value={values.email}
           onChange={(event) => set("email")(event.target.value)}

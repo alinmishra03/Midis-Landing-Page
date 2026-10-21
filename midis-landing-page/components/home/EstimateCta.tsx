@@ -3,8 +3,11 @@
 import { Arrow, Button } from "@/components/ui/Button";
 
 /**
- * The hero's primary CTA: "Get a Project Estimate" (MIDIS brief,
- * 2026-10-20). A client component for ONE reason — after the native anchor
+ * The hero's primary CTA: "Get a Free Project Estimate" — the exact label
+ * from MIDIS's hero-redesign brief of 2026-10-21, which also removed the
+ * hero's secondary consultation button so this is the hero's ONE action.
+ * (The navbar consultation CTA and every other approved contact route are
+ * untouched.) A client component for ONE reason — after the native anchor
  * scroll to `#estimator`, it also moves focus to the form's first question,
  * so the visitor lands ready to answer rather than merely near the form.
  *
@@ -31,7 +34,7 @@ export function EstimateCta({ className }: { className?: string }) {
         }, 700);
       }}
     >
-      Get a Project Estimate
+      Get a Free Project Estimate
       <Arrow />
     </Button>
   );

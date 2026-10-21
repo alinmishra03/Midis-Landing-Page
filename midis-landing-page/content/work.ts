@@ -23,9 +23,17 @@
  *
  * There are no case studies here because no verified case study exists. The
  * "View Case Study" CTA that MIDIS.pdf specifies would have to link to a page
- * of invented outcomes, so each card links to the LIVE SITE instead — which
- * is real, checkable, and better proof than a page of numbers nobody can
+ * of invented outcomes, so each card used to link to the LIVE SITE instead —
+ * real, checkable, and better proof than a page of numbers nobody can
  * source. See docs/open-questions.md, item 3.
+ *
+ * NO LONGER RENDERED AS LINKS (MIDIS lead-generation brief, 2026-10-21):
+ * MIDIS instructed that visitors must not leave the landing page while
+ * exploring the work, so Work.tsx no longer navigates to `url` anywhere.
+ * `url` stays here as provenance (it is where each entry was verified), and
+ * `host` still renders — as the domain in each screenshot's browser-frame
+ * chrome, visible proof without navigation. Each row's action is now
+ * "Discuss a Similar Project" → the on-page estimator.
  */
 
 export const PORTFOLIO_URL = "https://midis-portfolio.vercel.app/";

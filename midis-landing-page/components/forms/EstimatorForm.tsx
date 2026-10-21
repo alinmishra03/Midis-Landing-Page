@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
+import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
 import { estimatorSchema } from "@/lib/enquiry";
 import { markLeadSubmitted } from "@/lib/popups";
 import { estimator } from "@/content/sections";
@@ -118,6 +119,33 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
       previous[field] ? { ...previous, [field]: undefined } : previous,
     );
   };
+
+  /*
+   * THE SERVICE → ESTIMATOR BRIDGE (see lib/estimator-prefill.ts). A
+   * Services row click lands here and preselects the matching step-2
+   * project type. Nothing else changes: the step order, the questions,
+   * validation and submission are exactly as they were — the visitor still
+   * walks through step 2 and can change the answer. A later click
+   * overwrites an earlier preselection, because the latest click is the
+   * visitor's latest intent. The value is accepted only if it is one of
+   * the APPROVED options — this listener cannot add a form option.
+   */
+  useEffect(() => {
+    const onPreselect = (event: Event) => {
+      const type = (event as CustomEvent<string>).detail;
+      if ((PROJECT_TYPES as readonly string[]).includes(type)) {
+        setValues((previous) => ({ ...previous, projectType: type }));
+        setErrors((previous) =>
+          previous.projectType
+            ? { ...previous, projectType: undefined }
+            : previous,
+        );
+      }
+    };
+    window.addEventListener(ESTIMATOR_PRESELECT_EVENT, onPreselect);
+    return () =>
+      window.removeEventListener(ESTIMATOR_PRESELECT_EVENT, onPreselect);
+  }, []);
 
   /**
    * Validates one step against the server's own field schemas, plus the
@@ -293,10 +321,6 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
         {/* ---- Step 1: Contact Details ---- */}
         {step === 0 ? (
           <div className="flex flex-col gap-1">
-            <p className="mb-4 text-sm leading-relaxed text-muted">
-              Tell us a little about yourself so we can get in touch regarding
-              your project.
-            </p>
             {/*
               Desktop: 2-column grid (Full Name + Email, then Phone + Company).
               Mobile: single column, all fields stack vertically.
@@ -317,7 +341,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                placeholder="you@company.com"
+                placeholder="yourname@gmail.com"
                 required
                 value={values.email}
                 onChange={(event) => set("email")(event.target.value)}

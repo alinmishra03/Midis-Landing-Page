@@ -3,6 +3,7 @@ import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { Logo } from "@/components/layout/Logo";
 import type { ThankYouContent } from "@/content/forms";
 import { site, whatsappHref } from "@/content/site";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 /**
  * PHASE 5 — the post-submission experience.
@@ -188,7 +189,16 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                       Email {site.email}
                       <Arrow />
                     </Button>
-                    <Button href={whatsappHref} variant="secondary" size="lg">
+                    {/* WhatsApp brand green with the official glyph (MIDIS
+                        instruction, 2026-10-21) — white-on-green is
+                        WhatsApp's own button convention. */}
+                    <Button
+                      href={whatsappHref}
+                      variant="secondary"
+                      size="lg"
+                      className="border-transparent bg-[#25D366] text-white hover:border-transparent hover:bg-[#1EBE5D] hover:text-white"
+                    >
+                      <WhatsAppIcon />
                       Message on WhatsApp
                     </Button>
                   </ButtonGroup>

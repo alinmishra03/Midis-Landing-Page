@@ -3,6 +3,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Eyebrow } from "@/components/ui/Section";
 import { finalCta } from "@/content/sections";
 import { site, whatsappHref } from "@/content/site";
+import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 /**
  * SECTION 10 — Final conversion CTA.
@@ -153,12 +154,15 @@ export function FinalCta() {
                 {site.email}
               </a>
               <span aria-hidden="true" className="text-white/30">·</span>
+              {/* Brand green + glyph (MIDIS WhatsApp-branding brief,
+                  2026-10-21); #25D366 on this ink band reads at ~8:1. */}
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link-underline-accent font-medium text-white transition-colors"
+                className="link-underline-accent inline-flex items-center gap-1.5 font-medium text-[#25D366] transition-colors hover:text-[#1EBE5D]"
               >
+                <WhatsAppIcon className="size-4" />
                 WhatsApp
               </a>
             </p>

@@ -95,16 +95,39 @@ export const site = {
     countryName: "India",
   },
 
+  /*
+   * YouTube was REMOVED on MIDIS's instruction (2026-10-21), to be replaced
+   * by Medium. Note this list also feeds the Organization schema's `sameAs`
+   * (lib/seo.ts), so the YouTube profile left both the footer and the
+   * structured data together.
+   */
   socials: [
     { name: "LinkedIn", url: "https://www.linkedin.com/company/midismarket/" },
     { name: "Instagram", url: "https://www.instagram.com/officialmidis/" },
-    { name: "YouTube", url: "https://www.youtube.com/@MidisOfficial" },
     {
       name: "Facebook",
       url: "https://www.facebook.com/people/Midis/61579354660327/",
     },
   ],
 } as const;
+
+/**
+ * MEDIUM — REQUIRED CONFIGURATION, NOT YET SUPPLIED.
+ *
+ * MIDIS asked (2026-10-21) for Medium to replace YouTube in the footer, but
+ * no official MIDIS Medium profile URL has been provided, and the brief
+ * forbids inventing one or substituting medium.com itself. Until the real
+ * profile URL is set — either here or via NEXT_PUBLIC_MEDIUM_URL — this is
+ * empty and the footer renders NO Medium link (a broken or misdirected
+ * social link is worse than a missing one). Once set, the link appears
+ * automatically alongside the other socials and in the schema's `sameAs`.
+ */
+export const MEDIUM_URL = process.env.NEXT_PUBLIC_MEDIUM_URL ?? "";
+
+/** The socials the page should actually render (and the schema should
+    assert): the confirmed list, plus Medium once its URL exists. */
+export const visibleSocials: readonly { name: string; url: string }[] =
+  MEDIUM_URL ? [...site.socials, { name: "Medium", url: MEDIUM_URL }] : site.socials;
 
 /** `tel:` / `wa.me` helpers, so the formatting lives in one place. */
 export const whatsappHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(

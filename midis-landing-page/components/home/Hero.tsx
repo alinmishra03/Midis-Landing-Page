@@ -1,4 +1,5 @@
-import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
+import { ButtonGroup } from "@/components/ui/Button";
+import { CountUp } from "@/components/ui/CountUp";
 import { Eyebrow } from "@/components/ui/Section";
 import { EstimateCta } from "./EstimateCta";
 import { EstimatorForm } from "@/components/forms/EstimatorForm";
@@ -23,13 +24,30 @@ import { verifiedCounts } from "@/content/clients";
  * concise supporting band (see Estimator.tsx) that routes here too, so
  * the page never shows the same long form twice.
  *
- * THE TRUST STRIP. "20+ Clients" is MIDIS's own figure, instructed on
- * 2026-10-20 — it exceeds the 18 marks counted in content/clients.ts, so
+ * THE 2026-10-21 REDESIGN (MIDIS hero brief of that date):
+ *
+ *   - ONE CTA. The hero's secondary "Get a Free Consultation" button is
+ *     gone; the single primary is relabelled "Get a Free Project Estimate"
+ *     (the brief's exact wording). The navbar consultation CTA and every
+ *     other contact route on the page are untouched.
+ *   - THE STATISTICS LEAD. From `sm` the two countable figures render as
+ *     large accent numerals (44px) with a once-only count-up (CountUp —
+ *     final values are server-rendered, reduced-motion skips the count).
+ *     The phone presentation keeps the approved 2-cell bordered strip,
+ *     byte-for-byte.
+ *   - THE MIDIS ADVANTAGE. A compact three-benefit strip fills the area
+ *     that used to sit empty under the statistics on desktop. Its copy
+ *     describes the approach (no invented metrics); "Built Around Your
+ *     Goals", the old third strip item, lives on as the first benefit's
+ *     description. On phones the strip renders AFTER the estimator, so the
+ *     approved first-screen form position is unchanged — see the grid
+ *     placement notes inline.
+ *
+ * THE TRUST STRIP FIGURES. "20+ Clients" is MIDIS's own figure, instructed
+ * on 2026-10-20 — it exceeds the 18 marks counted in content/clients.ts, so
  * it rests on MIDIS's say-so rather than on a list this repo can recount
  * (recorded in docs/open-questions.md style: confirm before launch).
- * "6 Live Projects" is counted from content/work.ts. "Built Around Your
- * Goals" is a positioning line, not a numeric claim. The third item hides
- * below `sm`, where three items crowd the line.
+ * "6 Live Projects" is counted from content/work.ts.
  *
  * THE SUPPORTING LINE ("From strategy and design…") moved to the
  * estimator's supporting band (Estimator.tsx): on a phone it was pure
@@ -52,7 +70,7 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden bg-paper pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-24"
+      className="relative overflow-hidden bg-paper pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
     >
       {/*
         Background wash. A single very soft radial in the brand orange at 7%
@@ -70,9 +88,28 @@ export function Hero() {
       />
 
       <div className="container-site">
-        <div className="grid items-start gap-3.5 sm:gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.86fr)] xl:gap-16">
+        {/*
+          DESKTOP PROPORTIONS (2026-10-21 refinement): 1.15fr/1fr with a
+          40px gap — roughly 53.5% / 46.5% — instead of the old 1fr/0.86fr
+          with a 64px gap, which left a wide hole between the copy and the
+          estimator on large displays. The columns stay inside the shared
+          container-site so the hero keeps the page's left and right edges.
+
+          THREE GRID CHILDREN, TWO ORDERS (2026-10-21). The children are
+          (1) the message, (2) the estimator, (3) the MIDIS Advantage strip.
+          In the stacked flow below xl that DOM order IS the layout: the
+          form stays directly after the trust strip, exactly where the
+          approved mobile hero puts it, and the benefits follow the form
+          instead of pushing it off the first screen. From xl the explicit
+          placements below re-compose it: the form spans both rows of the
+          right column, and the benefits land under the statistics in the
+          left column — filling the area that used to sit empty.
+        */}
+        <div className="grid items-start gap-3.5 sm:gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:gap-x-10 xl:gap-y-8">
           {/* ================= left: the message ================= */}
-          <div className="relative z-10 max-w-2xl">
+          {/* max-w-none from xl: the grid column is the constraint there,
+              and the heading needs the full column to hold its two lines. */}
+          <div className="relative z-10 max-w-2xl xl:max-w-none">
             {/* Uses the shared Eyebrow for identical markup to every other
                 section, wrapped in the hero's own CSS animation — the hero
                 must not depend on the JS observer. */}
@@ -88,10 +125,20 @@ export function Hero() {
               landing alone on line three is exactly that. `block` on the
               second span forces the break at a point that reads well, while
               `text-wrap: balance` (globals.css) evens the lines within each.
+
+              DESKTOP SIZE (2026-10-21): from xl the heading leaves the
+              shared --text-display-xl scale (which tops out at 100px and
+              pushed the CTAs below the fold next to the estimator) for its
+              own flatter clamp — ~51px at 1280 growing to 68px at 1920.
+              Measured against the 53.5% column, "Visitors Into Customers."
+              fits on one line at every width from 1280 up, so the heading
+              holds exactly two balanced lines. Tracking tightens a touch at
+              this size, as display type wants. Below xl nothing changes:
+              the mobile and tablet heading keep the shared scale.
             */}
             <h1
               id="hero-heading"
-              className="hero-rise mt-2 text-[length:var(--text-display-xl)] leading-[1.02] sm:mt-3 xl:mt-5"
+              className="hero-rise mt-2 text-[length:var(--text-display-xl)] leading-[1.02] sm:mt-3 xl:mt-4 xl:text-[length:clamp(3.1rem,1.1rem+2.6vw,4.25rem)] xl:tracking-[-0.036em]"
               style={{ "--d": "90ms" } as React.CSSProperties}
             >
               Websites That Turn{" "}
@@ -107,78 +154,77 @@ export function Hero() {
             </h1>
 
             {/* 15px/1.5 on a phone — compact without dropping a word of the
-                approved description — opening to 18px from `sm`. */}
+                approved description — opening to 18px from `sm`. From xl the
+                measure widens to 42rem so the approved sentence sits in
+                three balanced lines tight under the heading, flush with its
+                left edge, instead of wrapping into four. */}
             <p
-              className="hero-rise mt-2.5 max-w-xl text-[0.9375rem] leading-[1.45] text-muted sm:mt-5 sm:text-lg sm:leading-relaxed xl:mt-6"
+              className="hero-rise mt-2.5 max-w-xl text-[0.9375rem] leading-[1.45] text-muted sm:mt-5 sm:text-lg sm:leading-relaxed xl:mt-5 xl:max-w-[42rem]"
               style={{ "--d": "180ms" } as React.CSSProperties}
             >
               {hero.subheadline}
             </p>
 
             {/*
-              CTAs — two actions, one hierarchy: the ESTIMATE is the primary
-              orange action (it scrolls to the hero form and focuses its
-              first question — see EstimateCta), the CONSULTATION keeps its
-              existing action as the outlined secondary. The "Explore Our
-              Work" link was removed from the hero on MIDIS's instruction
-              (2026-10-20); the Work section keeps its header nav entry.
-
-              On a phone both stack full width at 48px with an 8px gap;
-              from `sm` they sit in a row at 52px.
+              ONE CTA (MIDIS brief, 2026-10-21): the primary orange estimate
+              action, which scrolls to the hero form and focuses its first
+              question — see EstimateCta. The secondary consultation button
+              was removed from the hero by the same brief (the navbar keeps
+              its consultation CTA). Still rendered through ButtonGroup so
+              the phone treatment — full column width at 48px — is the same
+              shared layout every other CTA row uses.
             */}
             <ButtonGroup
-              className="hero-rise mt-4 gap-2 sm:mt-7 sm:gap-3.5 xl:mt-9"
+              className="hero-rise mt-4 gap-2 sm:mt-7 sm:gap-3.5 xl:mt-7"
               style={{ "--d": "260ms" } as React.CSSProperties}
             >
               <EstimateCta className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base" />
-              <Button
-                href={hero.primaryCta.href}
-                variant="secondary"
-                size="lg"
-                className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base"
-              >
-                {hero.primaryCta.label}
-                <Arrow />
-              </Button>
             </ButtonGroup>
 
             {/*
-              The trust strip: countable facts plus one positioning line —
-              not a block of statistic cards. On a phone it is ONE bordered
-              surface holding two EQUAL, CENTRED cells split by a hairline
-              exactly in the middle (MIDIS trust-strip redesign,
-              2026-10-20) — the same width as the CTAs and the estimator
-              card, so the column reads as one grid. From `sm` every
-              container style resets and it returns to the quiet inline
-              baseline row, where the third item also has room.
+              The statistics: the page's two countable facts, promoted to a
+              display element (MIDIS brief, 2026-10-21) — large accent
+              numerals over small uppercase labels, split by one hairline.
+              No cards, no shadows: the numbers themselves are the visual.
+
+              ON A PHONE NOTHING CHANGES: the base classes are the approved
+              2026-10-20 2-cell bordered strip, byte-for-byte — the same
+              width as the CTA and the estimator card. From `sm` the
+              container resets to a quiet open row and the numerals take
+              the display scale. (The old third item, "Built Around Your
+              Goals", moved into the MIDIS Advantage strip below.)
+
+              The numerals render server-side at their FINAL values and
+              CountUp animates them once on load — see CountUp for the
+              reduced-motion and no-layout-shift reasoning.
             */}
             <ul
-              className="hero-rise mt-3.5 grid grid-cols-2 items-stretch overflow-hidden rounded-xl border border-line bg-surface sm:mt-6 sm:flex sm:flex-wrap sm:items-center sm:gap-y-2 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent xl:mt-8"
+              className="hero-rise mt-3.5 grid grid-cols-2 items-stretch overflow-hidden rounded-xl border border-line bg-surface sm:mt-7 sm:flex sm:items-center sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent xl:mt-7"
               style={{ "--d": "340ms" } as React.CSSProperties}
             >
-              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center sm:flex-row sm:items-baseline sm:justify-start sm:gap-1.5 sm:p-0 sm:text-left">
+              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center sm:items-start sm:justify-start sm:gap-1.5 sm:p-0 sm:text-left">
                 {/* MIDIS-instructed figure (2026-10-20), not derived from
                     clientMarks.length — see the trust-strip note above. */}
-                <span className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-xl sm:leading-normal">
-                  20+
-                </span>
+                <CountUp
+                  value={20}
+                  suffix="+"
+                  delay={520}
+                  className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-[2.75rem] sm:tracking-[-0.02em]"
+                />
                 {/* text-fg on the phone strip — the label is a surface the
                     charcoal has to read on; desktop keeps the quiet muted. */}
-                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-muted">
+                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-xs sm:text-muted">
                   Clients
                 </span>
               </li>
-              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-line px-2 py-2.5 text-center sm:ml-4 sm:flex-row sm:items-baseline sm:justify-start sm:gap-1.5 sm:p-0 sm:pl-4 sm:text-left">
-                <span className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-xl sm:leading-normal">
-                  {verifiedCounts.projectsShown}
-                </span>
-                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-muted">
+              <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-line px-2 py-2.5 text-center sm:ml-10 sm:items-start sm:justify-start sm:gap-1.5 sm:p-0 sm:pl-10 sm:text-left">
+                <CountUp
+                  value={verifiedCounts.projectsShown}
+                  delay={520}
+                  className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-[2.75rem] sm:tracking-[-0.02em]"
+                />
+                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg sm:text-xs sm:text-muted">
                   Live Projects
-                </span>
-              </li>
-              <li className="hidden items-baseline border-l border-line pl-4 sm:ml-4 sm:flex">
-                <span className="text-[0.6875rem] font-medium uppercase tracking-wider text-fg">
-                  Built Around Your Goals
                 </span>
               </li>
             </ul>
@@ -191,13 +237,16 @@ export function Hero() {
             is visible and usable without waiting on hydration of anything
             but its own fields.
 
-            Capped at 36rem and pulled to the end of its column so the form
-            keeps a comfortable measure at 1920px instead of stretching to
-            750px-wide fields.
+            Capped at 38rem and kept on the end of its column: the cap stops
+            the fields stretching to 750px at 1920, and end-justification
+            keeps the shell's right edge on the same line as the header and
+            every other section. Under the tighter 1.15fr/1fr grid the
+            column itself is barely wider than the cap until ~1700px, so the
+            form reads as part of the composition rather than exiled right.
           */}
           <div
             id="estimator"
-            className="hero-settle w-full xl:max-w-[36rem] xl:justify-self-end"
+            className="hero-settle w-full xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:max-w-[38rem] xl:justify-self-end"
             style={{ "--d": "240ms" } as React.CSSProperties}
           >
             <div className="hero-form-shell p-4 sm:p-7">
@@ -220,8 +269,100 @@ export function Hero() {
               </div>
             </div>
           </div>
+
+          {/* ================= the MIDIS Advantage ================= */}
+          {/*
+            Three one-line benefits (MIDIS brief, 2026-10-21): statements of
+            the APPROACH, drawn from the approved copy's own vocabulary —
+            strategy-led, responsive, conversion-focused — never performance
+            claims or invented metrics. "Built around your business goals"
+            carries forward the old trust-strip positioning line.
+
+            PLACEMENT — see the grid note at the top of the layout: third
+            in the DOM so phones read content → form → benefits (the form
+            keeps its approved first-screen position), re-placed under the
+            statistics in the left column from xl, where it fills the area
+            that used to end the column early.
+
+            One hairline above, hairlines between from `sm`, no cards, no
+            background, no shadows. Each item enters on the hero's own
+            CSS-only rise, staggered after the statistics.
+          */}
+          <ul className="grid gap-y-4 border-t border-line pt-5 sm:grid-cols-3 sm:gap-y-0 sm:divide-x sm:divide-line xl:col-start-1 xl:row-start-2 xl:self-start">
+            {advantages.map((item, index) => (
+              <li
+                key={item.title}
+                className="hero-rise flex items-start gap-2.5 sm:px-6 sm:first:pl-0 sm:last:pr-0"
+                style={{ "--d": `${420 + index * 80}ms` } as React.CSSProperties}
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="mt-0.5 h-[18px] w-[18px] shrink-0 text-accent-ink"
+                >
+                  {item.icon}
+                </svg>
+                <div className="min-w-0">
+                  <h3 className="text-sm leading-snug">{item.title}</h3>
+                  <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted">
+                    {item.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
   );
 }
+
+/**
+ * SUPPORTING copy (MIDIS brief, 2026-10-21) — descriptions of how MIDIS
+ * works, phrased like the approved service descriptions. Nothing here is a
+ * measurable claim. Icons are inline line-work on `currentColor`, sized and
+ * stroked to match the site's Arrow, so they read in both themes.
+ */
+const advantages = [
+  {
+    title: "Strategy-Led Design",
+    body: "Built around your business goals.",
+    /* A target: the goal, aimed at. */
+    icon: (
+      <>
+        <circle cx="8" cy="8" r="6.25" />
+        <circle cx="8" cy="8" r="2.75" />
+      </>
+    ),
+  },
+  {
+    title: "Responsive Experiences",
+    body: "Designed for every screen.",
+    /* A monitor and a phone. */
+    icon: (
+      <>
+        <rect x="1.25" y="2.75" width="9.5" height="6.5" rx="1" />
+        <path d="M4.25 12.5h3.5M6 9.25v3.25" />
+        <rect x="11.5" y="6.5" width="3.25" height="6.5" rx="0.9" />
+      </>
+    ),
+  },
+  {
+    title: "Conversion-Focused Development",
+    body: "Created to guide visitors toward action.",
+    /* A rising line with an arrowhead. */
+    icon: (
+      <>
+        <path d="M1.75 11.75 6 7.5l2.75 2.75 5.5-5.5" />
+        <path d="M10.25 4.75h4v4" />
+      </>
+    ),
+  },
+] as const;
