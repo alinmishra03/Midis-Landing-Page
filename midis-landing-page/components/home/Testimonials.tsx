@@ -1,60 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal, RevealText } from "@/components/ui/Reveal";
-import {
-  showingSamples,
-  testimonialsSection,
-  visibleTestimonials,
-} from "@/content/testimonials";
+import { Arrow, Button } from "@/components/ui/Button";
+import { clientStories, testimonialsSection } from "@/content/testimonials";
+import { cn } from "@/lib/utils";
 
 /**
- * SECTION — Words From Our Clients. CINEMATIC STORY, 2026-10-21.
+ * SECTION — Words From Our Clients. CLIENT FEEDBACK, 2026-10-21 (second
+ * pass, same day).
  *
- * WHY THE CARD GRID WENT. MIDIS's feedback called the three-up quote cards
- * basic and predictable. This pass presents ONE story at a time, as a
- * featured editorial spread: section header and navigation on the left,
- * a large-type quotation with its attribution on the right. No star
- * graphics, no stock portraits, no sliding card carousel — typography,
- * spacing and a word-cascade reveal do the work. The motion language is
- * deliberately different from the Services stage next door: Services
- * demonstrates, Testimonials narrates.
+ * NO LOGOS — removed on the user's instruction. The selector is a rail of
+ * company-name pills instead; the featured panel carries the quote mark,
+ * the content, and a text attribution. (This also sidesteps the open
+ * logo-permission question for this section entirely.)
  *
- * WHAT DID NOT CHANGE — THE AUTHENTICITY MACHINERY. The content still
- * comes from content/testimonials.ts exactly as before: approved quotes if
- * any exist, the labelled "Demo Client" samples otherwise, nothing at all
- * failing that. `showingSamples` still drives the Sample chip (now on the
- * attribution) and the section note, so placeholder copy can never appear
- * unmarked. As of 2026-10-21 the approved list is STILL EMPTY — what is on
- * the page is sample content, and real client quotes with written
- * permission remain required before launch.
+ * WHAT RENDERS. One client at a time. If that client's feedback draft has
+ * `approved: true` — the client has seen their exact words and okayed
+ * publication — it renders as a real <blockquote> with quotation marks
+ * under a "Client Feedback" label. Until then the panel shows the factual
+ * project spotlight as a plain paragraph under a "Project Spotlight"
+ * label, because publishing words a client never said, under their name,
+ * is a fabricated review no matter who wrote them. The drafts live in
+ * content/testimonials.ts ready to be sent for sign-off; flipping one
+ * flag per client publishes their quote with no code change.
  *
- * TRANSITIONS. Switching stories remounts the figure (key=index): the
- * quote re-reveals word by word (a cascade of per-word spans with
- * incremental delays), the attribution follows, and the soft accent wash
- * behind the quote drifts to a new position. Everything is opacity and
- * transform, capped under a second, removed entirely by reduced-motion
- * (globals.css). Nothing auto-advances; the story changes only when the
- * visitor asks.
+ * NAVIGATION. Every client is directly selectable from the pill rail,
+ * plus previous/next with wrap-around, a tabular "01 / 09" counter, a
+ * progress hairline and an aria-live announcement. Nothing auto-advances.
  *
- * NAVIGATION. Previous/next buttons (real buttons — keyboard-operable by
- * nature), wrap-around, a tabular "01 / 06" counter, a thin progress bar,
- * and an aria-live line announcing the position. One set of controls,
- * placed after the quote in the DOM (phones read heading → story →
- * controls) and re-placed under the header from `lg` by the same
- * three-children grid trick the hero and Services use.
+ * TRANSITIONS. Switching clients remounts the panel (key=index): the text
+ * re-reveals word by word (.t-word), the attribution follows (.t-attr),
+ * and the accent wash drifts per story. All opacity/transform, all
+ * removed by reduced-motion in globals.css.
  */
-
-/** First and last initial, e.g. "Priya Nair" -> "PN". */
-function initialsOf(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  const first = parts[0][0];
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase();
-}
 
 function QuoteMark() {
   return (
@@ -70,26 +50,24 @@ function QuoteMark() {
 }
 
 export function Testimonials() {
-  const items = visibleTestimonials;
   const [index, setIndex] = useState(0);
-  const count = items.length;
+  const count = clientStories.length;
+  const story = clientStories[index];
 
-  if (count === 0) return null;
-
-  const t = items[index];
-  /* Wrap around: the last story's "next" is the first — a reading loop,
-     not a dead end. */
+  /* Wrap around: the last story's "next" is the first. */
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
 
-  /* The attribution enters once the cascade has mostly landed. Capped so a
-     long quote never makes the name feel late. */
-  const words = t.quote.split(/\s+/);
-  const attributionDelay = Math.min(words.length * 14 + 250, 720);
+  const approved = story.feedback.approved;
+  const text = approved ? story.feedback.quote : story.spotlight;
+  const words = text.split(/\s+/);
+  /* The attribution enters once the cascade has mostly landed, capped so
+     a long quote never makes the name feel late. */
+  const tailDelay = Math.min(words.length * 12 + 220, 680);
 
   return (
     <Section id="testimonials" tone="surface" labelledBy="testimonials-heading">
       <div className="container-site">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-x-20 lg:gap-y-12">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-x-16 lg:gap-y-12">
           {/* ---- 1. the header ---- */}
           <div className="min-w-0">
             <Reveal>
@@ -108,137 +86,194 @@ export function Testimonials() {
                 {testimonialsSection.subheading}
               </p>
             </Reveal>
-
-            {showingSamples ? (
-              <Reveal delay={220}>
-                <p className="mt-5 flex max-w-md items-start gap-2.5 text-sm leading-relaxed text-muted">
-                  <span
-                    aria-hidden="true"
-                    className="mt-1.5 inline-block size-1.5 shrink-0 rounded-full bg-accent"
-                  />
-                  {testimonialsSection.sampleNote}
-                </p>
-              </Reveal>
-            ) : null}
           </div>
 
-          {/* ---- 2. the featured story ---- */}
+          {/* ---- 2. the featured story + the client rail ---- */}
           <Reveal delay={140} className="min-w-0 lg:row-span-2">
-            <figure key={index} className="relative">
-              {/* the wash that drifts as the stories change */}
+            <article key={index} className="relative" aria-label={story.name}>
+              {/* the accent wash that drifts as the stories change */}
               <div
                 aria-hidden="true"
                 className="t-wash pointer-events-none absolute -inset-x-8 -inset-y-10 -z-10"
                 style={{
-                  background: `radial-gradient(32rem 20rem at ${18 + (index % 3) * 28}% 14%, rgb(239 135 22 / 0.08), transparent 68%)`,
+                  background: `radial-gradient(32rem 20rem at ${14 + (index % 4) * 24}% 12%, rgb(239 135 22 / 0.08), transparent 68%)`,
                 }}
               />
 
-              <QuoteMark />
-
-              <blockquote className="mt-5 max-w-[34ch] font-display text-[1.375rem] font-medium leading-[1.4] tracking-[-0.015em] text-fg sm:text-[1.625rem] lg:mt-6 lg:text-[1.9rem] lg:leading-[1.38]">
-                {/* the cascade: every word arrives on its own beat */}
-                {words.map((word, wordIndex) => (
-                  <span key={`${index}-${wordIndex}`}>
-                    <span
-                      className="t-word"
-                      style={{ "--wd": `${Math.min(wordIndex * 14, 560)}ms` } as React.CSSProperties}
-                    >
-                      {word}
-                    </span>{" "}
-                  </span>
-                ))}
-              </blockquote>
-
-              <figcaption
-                className="t-attr mt-7 flex items-center gap-3.5 lg:mt-9"
-                style={{ "--wd": `${attributionDelay}ms` } as React.CSSProperties}
+              <div
+                className="t-attr flex flex-wrap items-center justify-between gap-4"
+                style={{ "--wd": "0ms" } as React.CSSProperties}
               >
-                <span aria-hidden="true" className="h-px w-8 bg-accent" />
-                {t.logo ? (
-                  <Image
-                    src={t.logo}
-                    alt=""
-                    aria-hidden="true"
-                    width={t.logoWidth ?? 120}
-                    height={t.logoHeight ?? 40}
-                    className="h-7 w-auto max-w-24 shrink-0 object-contain"
-                  />
-                ) : (
-                  /* Initials, not a stock portrait — the brief forbids
-                     implying customer photographs that do not exist. */
-                  <span
-                    aria-hidden="true"
-                    className="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-xs font-semibold tracking-wide text-accent-ink"
-                  >
-                    {initialsOf(t.name)}
-                  </span>
-                )}
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-fg">
-                    {t.name}
-                  </span>
-                  <span className="block truncate text-xs text-muted">
-                    {t.role}
-                    {t.company ? ` · ${t.company}` : ""}
-                  </span>
-                </span>
-                {showingSamples ? (
-                  <span className="ml-auto shrink-0 rounded-full border border-line px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">
-                    Sample
-                  </span>
-                ) : null}
-              </figcaption>
-            </figure>
-          </Reveal>
-
-          {/* ---- 3. the controls ---- */}
-          {count > 1 ? (
-            <Reveal delay={220} className="min-w-0 lg:col-start-1 lg:row-start-2">
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => go(-1)}
-                  aria-label="Previous testimonial"
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
-                >
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
-                    <path d="M10 3 5 8l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => go(1)}
-                  aria-label="Next testimonial"
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
-                >
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
-                    <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-
-                {/* 01 / 06 — the visitor always knows where they are */}
-                <span className="font-display text-sm font-semibold tabular-nums" aria-hidden="true">
-                  <span className="text-accent-ink">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-muted"> / {String(count).padStart(2, "0")}</span>
-                </span>
-
-                {/* the reading-progress hairline */}
-                <span aria-hidden="true" className="relative h-px flex-1 overflow-hidden bg-line">
-                  <span
-                    className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-[var(--dur-base)] ease-[var(--ease-out-quart)]"
-                    style={{ width: `${((index + 1) / count) * 100}%` }}
-                  />
+                <QuoteMark />
+                {/* The reader knows what they are reading BEFORE they read
+                    it: a client's words, or MIDIS's factual description. */}
+                <span className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted">
+                  {approved
+                    ? testimonialsSection.testimonialLabel
+                    : testimonialsSection.spotlightLabel}
                 </span>
               </div>
 
-              <span aria-live="polite" className="sr-only">
-                {`Testimonial ${index + 1} of ${count}: ${t.name}, ${t.role}`}
+              {/* THE DISTINCTION, STRUCTURALLY: approved feedback is a
+                  blockquote with quotation marks; the fallback spotlight
+                  is a plain paragraph MIDIS wrote. */}
+              {approved ? (
+                <blockquote className="mt-6 max-w-[38ch] font-display text-[1.375rem] font-medium leading-[1.4] tracking-[-0.015em] text-fg sm:text-[1.625rem] lg:text-[1.8rem] lg:leading-[1.38]">
+                  {"“"}
+                  {words.map((word, wordIndex) => (
+                    <span key={`${index}-${wordIndex}`}>
+                      <span
+                        className="t-word"
+                        style={{ "--wd": `${Math.min(wordIndex * 12, 560)}ms` } as React.CSSProperties}
+                      >
+                        {word}
+                      </span>
+                      {wordIndex < words.length - 1 ? " " : ""}
+                    </span>
+                  ))}
+                  {"”"}
+                </blockquote>
+              ) : (
+                <p className="mt-6 max-w-[48ch] text-base leading-relaxed text-muted sm:text-lg">
+                  {words.map((word, wordIndex) => (
+                    <span key={`${index}-${wordIndex}`}>
+                      <span
+                        className="t-word"
+                        style={{ "--wd": `${Math.min(wordIndex * 12, 560)}ms` } as React.CSSProperties}
+                      >
+                        {word}
+                      </span>{" "}
+                    </span>
+                  ))}
+                </p>
+              )}
+
+              {/* the attribution: company and industry, text only */}
+              <div
+                className="t-attr mt-7 flex items-center gap-3.5"
+                style={{ "--wd": `${tailDelay}ms` } as React.CSSProperties}
+              >
+                <span aria-hidden="true" className="h-px w-8 bg-accent" />
+                <span className="min-w-0">
+                  <span className="block truncate font-display text-base font-semibold text-fg">
+                    {story.name}
+                  </span>
+                  <span className="block truncate text-xs font-semibold uppercase tracking-wider text-accent-ink">
+                    {story.industry}
+                  </span>
+                </span>
+              </div>
+
+              {!approved && story.services ? (
+                /* Only the three portfolio-documented engagements carry a
+                   services line — content/testimonials.ts explains why. */
+                <ul
+                  className="t-attr mt-6 flex flex-wrap gap-2"
+                  style={{ "--wd": `${tailDelay + 90}ms` } as React.CSSProperties}
+                  aria-label={`Services MIDIS provided for ${story.name}`}
+                >
+                  {story.services.map((service) => (
+                    <li
+                      key={service}
+                      className="rounded-full bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent-ink"
+                    >
+                      {service}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </article>
+
+            {/* the client rail: all nine, each directly selectable.
+                Name pills, no logos. */}
+            <div className="mt-9 border-t border-line pt-6">
+              <ul
+                className={cn(
+                  /* Phones: one native horizontal scroll strip, no page
+                     overflow. Desktop: wrap. shrink-0 on the items is
+                     load-bearing — a flex item in the strip may shrink
+                     to min-content and squash its label. */
+                  "-mx-1 flex snap-x gap-2.5 overflow-x-auto px-1 pb-1",
+                  "lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0",
+                )}
+                aria-label="Choose a client story"
+              >
+                {clientStories.map((s, i) => (
+                  <li key={s.id} className="shrink-0 snap-start">
+                    <button
+                      type="button"
+                      onClick={() => setIndex(i)}
+                      aria-label={`Show ${s.short} story`}
+                      aria-current={i === index}
+                      className={cn(
+                        "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition-[color,border-color,background-color] duration-[var(--dur-fast)]",
+                        i === index
+                          ? "border-accent bg-accent-soft text-accent-ink"
+                          : "border-line text-muted hover:border-fg/40 hover:text-fg",
+                      )}
+                    >
+                      {s.short}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+
+          {/* ---- 3. sequential controls + the one internal CTA ---- */}
+          <Reveal delay={220} className="min-w-0 lg:col-start-1 lg:row-start-2">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous client"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
+              >
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
+                  <path d="M10 3 5 8l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next client"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
+              >
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
+                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              {/* 01 / 09 — the visitor always knows where they are */}
+              <span className="font-display text-sm font-semibold tabular-nums" aria-hidden="true">
+                <span className="text-accent-ink">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="text-muted"> / {String(count).padStart(2, "0")}</span>
               </span>
-            </Reveal>
-          ) : null}
+
+              {/* the reading-progress hairline */}
+              <span aria-hidden="true" className="relative h-px flex-1 overflow-hidden bg-line">
+                <span
+                  className="absolute inset-y-0 left-0 bg-accent transition-[width] duration-[var(--dur-base)] ease-[var(--ease-out-quart)]"
+                  style={{ width: `${((index + 1) / count) * 100}%` }}
+                />
+              </span>
+            </div>
+
+            <span aria-live="polite" className="sr-only">
+              {`Client ${index + 1} of ${count}: ${story.name}, ${story.industry}`}
+            </span>
+
+            {/* ONE internal CTA, to the existing estimator — visitors stay
+                on this page; no external links anywhere in the section. */}
+            <div className="mt-8">
+              <Button href="#estimator" size="lg">
+                {testimonialsSection.cta}
+                <Arrow />
+              </Button>
+            </div>
+          </Reveal>
         </div>
       </div>
     </Section>

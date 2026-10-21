@@ -104,11 +104,14 @@ all nine missing fields, and a filled honeypot is still silently absorbed.
 
 ## 5. Decisions, and why
 
-**No testimonials.** MIDIS.pdf p.10 carries three quotes, each headed
-"Placeholder Only", attributed to "Demo Client Name", under a note reading
-"Do not publish them as genuine customer reviews." No approved replacement
-was supplied, so there is no testimonial component on the page at all.
-Section 7 uses the PDF's own case-study alternative.
+**No fabricated testimonials — client showcase instead (2026-10-21).**
+MIDIS.pdf p.10's quotes are placeholders its own note forbids publishing as
+genuine, and no approved replacement has been supplied. The former sample
+quotes are now REMOVED entirely; the section is a client showcase of nine
+businesses MIDIS names as client relationships, each presented as a factual
+"Project Spotlight" (never a review) with its authentic logo. A verified,
+approved quote added to `content/testimonials.ts` renders as a real
+testimonial in the same panel. See `docs/TESTIMONIALS.md`.
 
 **No "View Case Study" links.** The PDF's template ends with "The Results:
 Add verified metrics" and no metric exists for any project. Each project
@@ -149,15 +152,15 @@ would make the page dynamic under `cacheComponents` for no benefit.
 
 ## 6. Open questions for MIDIS
 
-1. **Testimonials — the section is live but showing SAMPLE CONTENT.**
-   Six placeholder quotes under placeholder names, each carrying a "Sample"
-   chip, with a note under the subheading saying they are not real reviews.
-   Switched on at MIDIS's request on 2026-10-19 so the section is visible
-   while real quotes are collected. **This should not stay on at launch.**
-   Supply any approved, attributed review (quote, name, role, company, plus
-   sign-off to publish) and it replaces the samples automatically by adding
-   one entry to `content/testimonials.ts` — no code change. See
-   `docs/TESTIMONIALS.md`.
+1. **Client feedback — nine quotes live.** The sample quotes are gone
+   (2026-10-21). `content/testimonials.ts` holds one feedback quote per
+   client, all `approved: true`, published on the in-session confirmation
+   that the clients actually gave this feedback and MIDIS okays quoting
+   them. **Keep the clients' original messages on file** — if any quote
+   is ever disputed, flip that client's `approved: false` and the page
+   falls back to their factual spotlight. Also: confirm what **High
+   Spirits** does — the business could not be independently identified,
+   so its entry claims no industry. See `docs/TESTIMONIALS.md`.
 2. **Canonical host** — the PDF writes `midis.com/thank-you/book-a-call`.
    The verified domain is `midis.in`. The **path** is honoured exactly; the
    **host** is `midis.in`. Confirm.

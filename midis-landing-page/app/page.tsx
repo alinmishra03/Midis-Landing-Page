@@ -76,8 +76,9 @@ export default function HomePage() {
         <Estimator />
         <Process />
         <CaseStudies />
-        {/* Renders nothing until an approved, attributed client quote
-            exists in content/testimonials.ts — see that file. */}
+        {/* The client showcase: nine named client businesses as factual
+            project spotlights. Verified quotes, when they exist in
+            content/testimonials.ts, render in place of the spotlights. */}
         <Testimonials />
         <Pricing />
         <Faqs />
