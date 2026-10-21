@@ -112,17 +112,14 @@ export const site = {
 } as const;
 
 /**
- * MEDIUM — REQUIRED CONFIGURATION, NOT YET SUPPLIED.
- *
- * MIDIS asked (2026-10-21) for Medium to replace YouTube in the footer, but
- * no official MIDIS Medium profile URL has been provided, and the brief
- * forbids inventing one or substituting medium.com itself. Until the real
- * profile URL is set — either here or via NEXT_PUBLIC_MEDIUM_URL — this is
- * empty and the footer renders NO Medium link (a broken or misdirected
- * social link is worse than a missing one). Once set, the link appears
- * automatically alongside the other socials and in the schema's `sameAs`.
+ * MEDIUM — profile URL confirmed in chat on 2026-10-21: the user picked
+ * medium.com/@officialmidis (matching the Instagram handle) when asked
+ * directly. NEXT_PUBLIC_MEDIUM_URL still overrides it, so a rename never
+ * needs a code change. With the URL set, the link renders in the footer
+ * and joins the Organization schema's `sameAs` automatically.
  */
-export const MEDIUM_URL = process.env.NEXT_PUBLIC_MEDIUM_URL ?? "";
+export const MEDIUM_URL =
+  process.env.NEXT_PUBLIC_MEDIUM_URL ?? "https://medium.com/@officialmidis";
 
 /** The socials the page should actually render (and the schema should
     assert): the confirmed list, plus Medium once its URL exists. */
