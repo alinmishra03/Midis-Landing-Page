@@ -3427,6 +3427,173 @@ body[data-popup-open] .floating-cta {
 }
 
 /* ==========================================================================
+   PROCESS ROADMAP — the project journey (MIDIS brief, 2026-10-21)
+   --------------------------------------------------------------------------
+   Process.tsx measures the five milestone badges and generates the four
+   S-path legs through their real centres; this block only styles and
+   choreographs them. Three board states, set as data-anim on .pr-board:
+
+     static   everything visible — the SSR state, and the resting state
+              after the sequence has played once;
+     pending  hidden, entered only client-side when motion is allowed and
+              the board is still below the viewport;
+     play     the journey: milestone -> leg draws -> next milestone,
+              finishing with one pulse on Launch & Grow.
+
+   Legs carry pathLength="1", so the draw-on is a normalised
+   stroke-dashoffset — identical timing at every viewport width.
+   Reduced-motion force-finishes everything at the bottom of the block.
+   ========================================================================== */
+
+.pr-leg-base {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-fg) 22%, transparent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 0.5 7;
+}
+
+.pr-leg-ink {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition:
+    stroke 280ms var(--ease-out-quart),
+    stroke-width 280ms var(--ease-out-quart);
+}
+
+.pr-leg-hot {
+  stroke: var(--color-accent-ink);
+  stroke-width: 3.5;
+}
+
+.pr-arrowhead {
+  fill: none;
+  stroke: var(--color-accent-ink);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pr-badge {
+  box-shadow: 0 10px 24px -18px rgb(20 21 24 / 0.5);
+  transition:
+    transform 360ms var(--ease-out-expo),
+    border-color 280ms var(--ease-out-quart),
+    box-shadow 360ms var(--ease-out-expo);
+}
+
+.pr-title {
+  transition: color 280ms var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .pr-stone:hover .pr-badge {
+    transform: translateY(-3px) scale(1.06);
+    border-color: var(--color-accent);
+    box-shadow: 0 16px 30px -18px rgb(239 135 22 / 0.55);
+  }
+
+  .pr-stone:hover .pr-title {
+    color: var(--color-accent-ink);
+  }
+}
+
+/* ---- the choreography ---- */
+
+@keyframes pr-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pr-stone-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pr-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The ring Launch & Grow sends out once the journey arrives. */
+@keyframes pr-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(239 135 22 / 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 22px rgb(239 135 22 / 0);
+  }
+}
+
+.pr-board[data-anim="pending"] .pr-stone {
+  opacity: 0;
+}
+
+.pr-board[data-anim="pending"] .pr-leg-ink,
+.pr-board[data-anim="pending"] .pr-arrowhead {
+  opacity: 0;
+}
+
+.pr-board[data-anim="play"] .pr-stone {
+  animation: pr-stone-in 640ms var(--ease-out-expo) both;
+  animation-delay: calc(var(--stone) * 680ms);
+}
+
+.pr-board[data-anim="play"] .pr-leg-ink {
+  animation: pr-draw 760ms var(--ease-out-quart) both;
+  animation-delay: calc(var(--leg) * 680ms + 320ms);
+}
+
+.pr-board[data-anim="play"] .pr-arrowhead {
+  animation: pr-fade-in 400ms var(--ease-out-quart) both;
+  animation-delay: calc(var(--leg) * 680ms + 860ms);
+}
+
+.pr-board[data-anim="play"] [data-last] .pr-badge {
+  animation: pr-pulse 950ms var(--ease-out-quart) calc(4 * 680ms + 680ms) 1 both;
+}
+
+/* ---- reduced motion: the finished journey, still ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-board .pr-stone,
+  .pr-board .pr-leg-ink,
+  .pr-board .pr-arrowhead,
+  .pr-board .pr-badge {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none;
+  }
+
+  .pr-board .pr-leg-ink {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .pr-stone:hover .pr-badge {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
    TESTIMONIALS — the cinematic story (MIDIS brief, 2026-10-21)
    --------------------------------------------------------------------------
    A different motion language from the Services stage on purpose: Services
