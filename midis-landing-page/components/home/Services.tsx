@@ -1,54 +1,54 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import Image from "next/image";
 import { Arrow } from "@/components/ui/Button";
 import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import { services, servicesSection } from "@/content/sections";
 import { preselectProjectType } from "@/lib/estimator-prefill";
-import { cn } from "@/lib/utils";
 import type { ProjectType } from "@/content/forms";
-import {
-  DemoAutomation,
-  DemoEcommerce,
-  DemoRedesign,
-  DemoSeo,
-  DemoUiux,
-  DemoWebDev,
-} from "./service-demos";
 
 /**
- * SECTION 4 — Core services. INTERACTIVE SHOWCASE, 2026-10-21 (fourth pass).
+ * SECTION 4 — Core services. IMAGE-LED SHOWCASE GRID, 2026-10-21 (fifth
+ * pass).
  *
- * WHY THE EDITORIAL ROWS WENT. The third pass drew six near-identical rows
- * with a shared photograph panel, and MIDIS's feedback was that every
- * service looked and behaved the same. This pass keeps the section's
- * typography-led identity but gives each service its own SIGNATURE
- * DEMONSTRATION — a miniature product demo that plays on one shared stage
- * (see service-demos.tsx for the six and the honesty rules they follow).
- * The stock photographs are gone from this section; the demos SHOW the
- * service instead of illustrating it.
+ * WHY THE TABS WENT. The fourth pass was a tablist driving one shared
+ * demo stage — six text rows on the left, one visual on the right. MIDIS
+ * rejected it: too much unused space, services hidden behind clicks, one
+ * generic illustration carrying the whole section. This pass shows ALL
+ * SIX services simultaneously as an editorial card grid — no tabs, no
+ * accordion, no carousel, no internal scrolling, nothing revealed only by
+ * interaction. The visitor reads the section top to bottom and has seen
+ * every service.
  *
- * STRUCTURE: real tabs. The service names are a `tablist` on the left
- * (horizontal scrolling chips below `lg`, a numbered editorial list from
- * `lg`), the active service's approved description + CTA is its `tabpanel`,
- * and the stage swaps demos as the selection changes. Selection follows
- * click/Enter and roving arrow keys — standard tabs keyboard behaviour.
- * Nothing auto-advances; a demo plays when the VISITOR chooses it.
+ * SIX DISTINCT VISUALS. Each card's media area is its own composition
+ * (globals.css, "SERVICES SHOWCASE"):
+ *   01 layered browser + phone mockups carrying REAL portfolio
+ *      screenshots (Gulf Connect, Country Kids — content/work.ts, live
+ *      sites verified 2026-10-14);
+ *   02 a design-workspace still life — wireframe, type specimen,
+ *      swatches, a built component;
+ *   03 a storefront built on the real AlinKriti screenshot with an
+ *      illustrative product card;
+ *   04 a before/after split, both sides drawn and labelled as an
+ *      illustration — no real site is shown as "before";
+ *   05 a search-results panel, skeleton bars only — no invented
+ *      rankings, no fake traffic numbers;
+ *   06 a four-node automation workflow: Enquiry → CRM → Notification →
+ *      Follow-up.
+ * Honesty rules carried over from the demos: real screenshots are real
+ * and credited by their address bars; everything else is wireframe-
+ * abstract or labelled "Illustration"; no metric appears anywhere.
  *
- * SEO: all six approved names, descriptions and CTA labels are server-
- * rendered in the markup (inactive panels carry `hidden`, they are not
- * conditionally omitted), so the content is exactly what the rows carried.
+ * HOVER IS SEASONING, NEVER THE MEAL. Every card animates differently on
+ * hover (zoom, drift, sweep, signal pulse), but each visual is complete
+ * and legible at rest: touch visitors and reduced-motion visitors miss
+ * an effect, not information. All effects are transform/opacity/
+ * clip-path under @media (hover:hover), removed by reduced-motion.
  *
- * LEAD GENERATION (2026-10-21 brief, unchanged): every CTA stays on this
- * page — `#estimator`, preselecting the matching approved project type via
- * lib/estimator-prefill.ts where one exists. ESTIMATOR_TYPE maps only exact
- * conceptual matches; the rest arrive at the form with nothing chosen.
- *
- * THE GRID HAS THREE CHILDREN for two layouts (same trick as the hero):
- * tablist, stage, panels — stacked in that order on a phone so the chips
- * sit directly above the stage they drive; from `lg` the stage spans both
- * rows of the right column and the panels slot under the tablist.
+ * LEAD GENERATION (unchanged): every CTA goes to #estimator,
+ * preselecting the matching approved project type where one exists.
+ * No external links.
  */
 
 /** Service slug → APPROVED estimator option (content/forms.ts). Only exact
@@ -60,92 +60,287 @@ const ESTIMATOR_TYPE: Partial<Record<string, ProjectType>> = {
   "website-redesign": "Redesign",
 };
 
-/** The stage demo for each service. */
-const DEMOS: Record<string, () => React.JSX.Element> = {
-  "website-design-development": DemoWebDev,
-  "ui-ux-design": DemoUiux,
-  "ecommerce-shopify": DemoEcommerce,
-  "website-redesign": DemoRedesign,
-  "seo-organic-growth": DemoSeo,
-  "automation-optimisation": DemoAutomation,
+const CARD_IMG_SIZES = "(min-width:1024px) 31vw, (min-width:768px) 46vw, 94vw";
+
+/* ======================================================================
+   The six visual compositions. All decorative (aria-hidden): the card's
+   text carries every fact. Skeleton bars stand in for copy so nothing
+   fictional is ever readable; the only real content is real portfolio
+   screenshots, credited by their address bars.
+   ====================================================================== */
+
+/** Skeleton line — the honest stand-in for text that does not exist. */
+function Bar({ className }: { className?: string }) {
+  return <span className={`sv-bar ${className ?? ""}`} />;
+}
+
+function VisualWebDev() {
+  return (
+    <div aria-hidden="true" className="sv sv-web">
+      {/* the desktop mockup: a real MIDIS project, named in its chrome */}
+      <div className="sv-browser">
+        <div className="sv-browser-bar">
+          <span className="sv-dots">
+            <i /><i /><i />
+          </span>
+          <span className="sv-addr">gulfconnectconsultancy.com</span>
+        </div>
+        <Image
+          src="/images/work/gulf-connect.jpg"
+          alt=""
+          width={1800}
+          height={1125}
+          sizes={CARD_IMG_SIZES}
+          loading="lazy"
+          className="sv-browser-img"
+        />
+      </div>
+      {/* the phone mockup: a second real project, layered for depth */}
+      <div className="sv-phone">
+        <Image
+          src="/images/work/country-kids.jpg"
+          alt=""
+          fill
+          sizes="120px"
+          loading="lazy"
+          className="object-cover object-left-top"
+        />
+      </div>
+    </div>
+  );
+}
+
+function VisualUiux() {
+  return (
+    <div aria-hidden="true" className="sv sv-uiux">
+      {/* wireframe panel */}
+      <div className="sv-wire">
+        <span className="sv-wire-media" />
+        <Bar className="w-4/5" />
+        <Bar className="w-3/5" />
+        <Bar className="w-2/5" />
+      </div>
+      {/* type specimen */}
+      <div className="sv-type">
+        <span className="sv-type-aa">Aa</span>
+        <Bar className="w-10" />
+      </div>
+      {/* colour swatches */}
+      <div className="sv-swatches">
+        <i /><i /><i /><i />
+      </div>
+      {/* a built component the wireframe becomes */}
+      <div className="sv-component">
+        <span className="sv-component-cta">Get Started</span>
+        <span className="sv-toggle"><i /></span>
+      </div>
+      {/* the designer's cursor */}
+      <svg className="sv-cursor" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 3l14 7.6-6.2 1.6L9.4 18 5 3Z"
+          fill="var(--color-accent)"
+          stroke="#fff"
+          strokeWidth="1.4"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function VisualEcommerce() {
+  return (
+    <div aria-hidden="true" className="sv sv-shop">
+      {/* the storefront: a real MIDIS e-commerce project */}
+      <Image
+        src="/images/work/alinkriti.jpg"
+        alt=""
+        fill
+        sizes={CARD_IMG_SIZES}
+        loading="lazy"
+        className="sv-shop-img object-cover"
+      />
+      <span className="sv-shop-scrim" />
+      <span className="sv-addr sv-shop-host">alinkriti.com</span>
+      {/* illustrative product card — bars, not invented products */}
+      <div className="sv-product">
+        <Bar className="w-3/4" />
+        <Bar className="w-1/3" />
+        <span className="sv-cart-cta">
+          <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
+            <path
+              d="M3 5h10l-.8 7.2a1.4 1.4 0 0 1-1.4 1.3H5.2a1.4 1.4 0 0 1-1.4-1.3L3 5Zm2.6 0V4a2.4 2.4 0 0 1 4.8 0v1"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Add to Cart
+        </span>
+      </div>
+      {/* the bag that answers the add-to-cart */}
+      <span className="sv-bag">
+        <svg viewBox="0 0 16 16" fill="none" className="size-4">
+          <path
+            d="M3 5h10l-.8 7.2a1.4 1.4 0 0 1-1.4 1.3H5.2a1.4 1.4 0 0 1-1.4-1.3L3 5Zm2.6 0V4a2.4 2.4 0 0 1 4.8 0v1"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="sv-bag-badge">1</span>
+      </span>
+    </div>
+  );
+}
+
+function VisualRedesign() {
+  return (
+    <div aria-hidden="true" className="sv sv-redesign">
+      {/* the dated site — deliberately clumsy, clearly drawn */}
+      <div className="sv-before">
+        <span className="sv-before-head" />
+        <span className="sv-before-title" />
+        <div className="sv-before-cols">
+          <span /><span /><span />
+        </div>
+        <span className="sv-tag">Before</span>
+      </div>
+      {/* the modern rebuild sweeps in over it */}
+      <div className="sv-after">
+        <div className="sv-after-inner">
+          <span className="sv-after-nav" />
+          <Bar className="sv-after-h1" />
+          <Bar className="sv-after-sub" />
+          <span className="sv-after-cta" />
+        </div>
+        <span className="sv-tag sv-tag-accent">After</span>
+      </div>
+      <span className="sv-split" />
+      <span className="sv-chip">Illustration</span>
+    </div>
+  );
+}
+
+function VisualSeo() {
+  return (
+    <div aria-hidden="true" className="sv sv-seo">
+      <div className="sv-search">
+        <div className="sv-search-bar">
+          <svg viewBox="0 0 16 16" fill="none" className="size-3.5 shrink-0">
+            <circle cx="7" cy="7" r="4.4" stroke="currentColor" strokeWidth="1.4" />
+            <path d="m10.4 10.4 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <Bar className="w-1/2" />
+          <span className="sv-caret" />
+        </div>
+        {/* three illustrative results; the highlight marks the one
+            climbing, and climbs a place itself on hover */}
+        <div className="sv-results">
+          {[0, 1, 2].map((row) => (
+            <div key={row} className="sv-result">
+              <span className="sv-favicon" />
+              <span className="sv-result-lines">
+                <Bar className="w-2/3" />
+                <Bar className="w-full" />
+              </span>
+              <svg viewBox="0 0 12 12" fill="none" className="sv-up">
+                <path d="M6 9.5v-7M3 5.2 6 2.3l3 2.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* organic growth, drawn — no numbers, no invented traffic */}
+      <div className="sv-bars">
+        <i /><i /><i /><i />
+      </div>
+    </div>
+  );
+}
+
+const FLOW_NODES = [
+  { label: "Enquiry", x: "6%", y: "14%" },
+  { label: "CRM", x: "56%", y: "8%" },
+  { label: "Notification", x: "12%", y: "58%" },
+  { label: "Follow-up", x: "58%", y: "64%" },
+] as const;
+
+function VisualAutomation() {
+  return (
+    <div aria-hidden="true" className="sv sv-flow">
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 62" preserveAspectRatio="none">
+        <path className="sv-flow-line" d="M24 14 C 40 14, 48 12, 60 12" />
+        <path className="sv-flow-line" d="M66 18 C 66 34, 44 32, 30 38" style={{ "--fd": "0.5s" } as React.CSSProperties} />
+        <path className="sv-flow-line" d="M32 44 C 44 48, 50 44, 62 42" style={{ "--fd": "1s" } as React.CSSProperties} />
+      </svg>
+      {FLOW_NODES.map((node, index) => (
+        <span
+          key={node.label}
+          className="sv-node"
+          style={{ left: node.x, top: node.y, "--nd": `${index * 120}ms` } as React.CSSProperties}
+        >
+          <span className="sv-node-dot" />
+          {node.label}
+          <span className="sv-node-status" />
+        </span>
+      ))}
+      <span className="sv-signal" />
+    </div>
+  );
+}
+
+const VISUALS: Record<string, () => React.JSX.Element> = {
+  "website-design-development": VisualWebDev,
+  "ui-ux-design": VisualUiux,
+  "ecommerce-shopify": VisualEcommerce,
+  "website-redesign": VisualRedesign,
+  "seo-organic-growth": VisualSeo,
+  "automation-optimisation": VisualAutomation,
 };
 
-/** Short labels for the phone chips ONLY — the full approved names render
-    in the `lg` tablist and in each panel; nothing approved is altered. */
-const SHORT_NAMES: Record<string, string> = {
-  "website-design-development": "Web Development",
-  "ui-ux-design": "UI/UX Design",
-  "ecommerce-shopify": "E-commerce",
-  "website-redesign": "Redesign",
-  "seo-organic-growth": "SEO",
-  "automation-optimisation": "Automation",
-};
+/* ====================================================================== */
 
 export function Services() {
-  const [active, setActive] = useState(0);
-  const baseId = useId();
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  /* Standard tabs keyboard behaviour: arrows move AND select (selection is
-     cheap — a demo swap), Home/End jump. Roving tabindex below keeps one
-     tab stop for the whole list. */
-  function onTablistKeyDown(event: React.KeyboardEvent) {
-    const last = services.length - 1;
-    let next: number | null = null;
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      next = active === last ? 0 : active + 1;
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      next = active === 0 ? last : active - 1;
-    } else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = last;
-    if (next === null) return;
-    event.preventDefault();
-    setActive(next);
-    tabRefs.current[next]?.focus();
-  }
-
-  const ActiveDemo = DEMOS[services[active].slug];
-
   return (
     <Section id="services" tone="surface" labelledBy="services-heading">
       {/* ================= the editorial header ================= */}
+      {/* Tighter than the last pass on MIDIS's note: two masked lines
+          instead of three, column widths that keep the paragraph beside
+          the heading from lg, no dead band above the grid. */}
       <div className="container-site">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-end lg:gap-16">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end lg:gap-14">
           <div>
             <Reveal>
               <Eyebrow className="mb-5">What we do</Eyebrow>
             </Reveal>
             {/*
-              servicesSection.headline, verbatim, hand-set as three masked
-              lines so the closing words can carry the accent. The " "
-              text nodes between lines are load-bearing: .reveal-line is
-              display:block, so they never render, but without them the
-              accessible string reads "SolutionsBuilt".
+              servicesSection.headline, verbatim, hand-set as two masked
+              lines so the closing words carry the accent. The " " text
+              node between lines is load-bearing: .reveal-line is
+              display:block so it never renders, but without it the
+              accessible string reads "AroundYour".
             */}
             <Reveal
               as="h2"
               id="services-heading"
               variant="lines"
               delay={60}
-              className="text-[length:var(--text-display-lg)] leading-[1.05]"
+              className="max-w-[24ch] text-[length:var(--text-display-lg)] leading-[1.05]"
             >
               <span className="reveal-line">
-                <span className="reveal-line-inner">Digital Solutions</span>
+                <span className="reveal-line-inner">
+                  Digital Solutions Built
+                </span>
               </span>{" "}
               <span className="reveal-line">
                 <span
                   className="reveal-line-inner"
                   style={{ "--line-delay": "90ms" } as React.CSSProperties}
                 >
-                  Built Around Your
-                </span>
-              </span>{" "}
-              <span className="reveal-line">
-                <span
-                  className="reveal-line-inner text-accent-ink"
-                  style={{ "--line-delay": "180ms" } as React.CSSProperties}
-                >
-                  Business Goals
+                  Around Your{" "}
+                  <span className="text-accent-ink">Business Goals</span>
                 </span>
               </span>
             </Reveal>
@@ -159,127 +354,51 @@ export function Services() {
         </div>
       </div>
 
-      {/* ================= the showcase ================= */}
+      {/* ================= the showcase grid ================= */}
+      {/* All six cards in document flow: 1 column on phones, 2 from md,
+          3 from lg. Nothing scrolls inside the section, nothing hides. */}
       <div className="container-wide mt-[var(--space-block)]">
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-x-14 lg:gap-y-8">
-          {/* ---- 1. the service navigator (tablist) ---- */}
-          <Reveal className="min-w-0">
-            <div aria-hidden="true" className="line-draw hidden h-px bg-line lg:block" />
-            <div
-              role="tablist"
-              aria-label="MIDIS services"
-              onKeyDown={onTablistKeyDown}
-              className={cn(
-                /* phone: horizontally scrolling chips, edge to edge */
-                "-mx-[var(--gutter)] flex gap-2 overflow-x-auto px-[var(--gutter)] pb-1.5",
-                "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                /* lg: the numbered editorial list */
-                "lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0 lg:pb-0",
-              )}
-            >
-              {services.map((service, index) => {
-                const selected = active === index;
-                return (
-                  <button
-                    key={service.slug}
-                    ref={(element) => {
-                      tabRefs.current[index] = element;
-                    }}
-                    type="button"
-                    role="tab"
-                    id={`${baseId}-tab-${index}`}
-                    aria-selected={selected}
-                    aria-controls={`${baseId}-panel-${index}`}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setActive(index)}
-                    data-active={selected || undefined}
-                    className={cn(
-                      /* phone chip */
-                      "svc-tab inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line px-4 py-2 text-sm font-semibold text-muted",
-                      /* lg row */
-                      "lg:w-full lg:shrink lg:whitespace-normal lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-0 lg:py-4 lg:text-left xl:py-5",
-                    )}
-                  >
-                    <span className="svc-tab-number font-display text-xs font-semibold lg:w-7 lg:shrink-0 lg:text-sm">
-                      0{index + 1}
-                    </span>
-                    <span className="svc-tab-name lg:block lg:font-display lg:text-xl lg:font-semibold lg:leading-snug xl:text-[1.375rem]">
-                      <span className="lg:hidden">{SHORT_NAMES[service.slug]}</span>
-                      <span className="hidden lg:inline">{service.name}</span>
-                    </span>
-                    <span className="svc-tab-arrow ml-auto hidden text-fg lg:inline-flex" aria-hidden="true">
-                      <Arrow className="size-4.5" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Reveal>
-
-          {/* ---- 2. the stage ---- */}
-          {/* NOT aria-hidden: the comparison slider, the cart and the
-              before/after toggle inside the demos are real controls with
-              their own names. The drawn artwork marks itself decorative. */}
-          <Reveal
-            variant="fade"
-            delay={140}
-            className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2"
-          >
-            <div className="svc-stage relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-card-lg)] border border-line bg-surface-2 sm:aspect-[16/11] lg:aspect-[4/3]">
-              {/* one soft accent wash so the stage never reads flat */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(34rem 22rem at 70% 8%, rgb(239 135 22 / 0.07), transparent 65%)",
-                }}
-              />
-              {/* keyed remount = each demo plays from its first frame when
-                  chosen, and never while nobody is looking at it */}
-              <div key={services[active].slug} className="stage-scene absolute inset-0">
-                <ActiveDemo />
-              </div>
-              <span className="pointer-events-none absolute left-3.5 top-3.5 inline-flex items-center rounded-full bg-[rgb(10_11_13/0.55)] px-2.5 py-1 font-display text-xs font-semibold tracking-[0.14em] text-white">
-                0{active + 1}
-              </span>
-            </div>
-          </Reveal>
-
-          {/* ---- 3. the panels: approved description + CTA ---- */}
-          {/* All six render (SEO keeps every approved description in the
-              HTML); `hidden` shows only the selected one. */}
-          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-            {services.map((service, index) => (
-              <div
+        <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {services.map((service, index) => {
+            const Visual = VISUALS[service.slug];
+            return (
+              <Reveal
                 key={service.slug}
-                role="tabpanel"
-                id={`${baseId}-panel-${index}`}
-                aria-labelledby={`${baseId}-tab-${index}`}
-                hidden={active !== index}
-                className="svc-panel"
+                as="li"
+                variant="up"
+                delay={index * 70}
+                className="min-w-0"
               >
-                <h3 className="text-base font-semibold lg:sr-only">
-                  {service.name}
-                </h3>
-                <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted sm:text-[0.9375rem] lg:mt-0">
-                  {service.description}
-                </p>
-                <a
-                  href="#estimator"
-                  onClick={() => {
-                    const type = ESTIMATOR_TYPE[service.slug];
-                    if (type) preselectProjectType(type);
-                  }}
-                  className="group/btn mt-3.5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
-                >
-                  <span className="link-underline-accent">{service.cta}</span>
-                  <Arrow />
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
+                <article className="svc-card group">
+                  <div className="svc-media">
+                    <Visual />
+                    <span className="svc-num">0{index + 1}</span>
+                  </div>
+
+                  <div className="svc-body">
+                    <h3 className="font-display text-lg font-semibold leading-snug tracking-[-0.01em] text-fg xl:text-xl">
+                      {service.name}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
+                      {service.description}
+                    </p>
+                    <a
+                      href="#estimator"
+                      onClick={() => {
+                        const type = ESTIMATOR_TYPE[service.slug];
+                        if (type) preselectProjectType(type);
+                      }}
+                      className="group/btn mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
+                    >
+                      <span className="link-underline-accent">{service.cta}</span>
+                      <Arrow />
+                    </a>
+                  </div>
+                </article>
+              </Reveal>
+            );
+          })}
+        </ul>
       </div>
     </Section>
   );

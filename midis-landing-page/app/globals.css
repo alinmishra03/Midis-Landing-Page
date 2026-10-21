@@ -2528,86 +2528,19 @@ body[data-popup-open] .floating-cta {
 }
 
 /* ==========================================================================
-   SERVICES SHOWCASE — interactive stage + six signature demos (MIDIS brief,
-   2026-10-21, fourth pass: one stage, six distinct demonstrations)
+   SERVICES SHOWCASE — six-card image-led grid (MIDIS brief, 2026-10-21,
+   fifth pass: every service visible at once, six distinct compositions)
    --------------------------------------------------------------------------
-   Services.tsx holds the tabs/stage structure; service-demos.tsx draws the
-   six demonstrations. Everything here is transform, opacity or clip-path
-   (plus one dashoffset loop in the workflow SVG).
-
-   THE ONE-SHOT PATTERN, repeated from hero-rise: every animated demo
-   element is styled in its FINISHED state and animates FROM hidden with
-   fill-mode both. Reduced motion then only has to remove the animations
-   (bottom of this block) and every demo renders complete.
+   Services.tsx draws the grid and the six visuals; everything here is
+   presentation. Each visual is COMPLETE AT REST — hover adds delight,
+   never information — so touch and reduced-motion visitors miss an
+   effect, not a fact. All hover rules sit under @media (hover: hover)
+   and animate transform / opacity / clip-path only; reduced-motion
+   strips the lot at the bottom of this block.
    ========================================================================== */
 
-/* ---- the service tabs ---- */
-
-.svc-tab {
-  transition:
-    color 320ms var(--ease-out-quart),
-    background-color 320ms var(--ease-out-quart),
-    border-color 320ms var(--ease-out-quart);
-}
-
-/* Phone chips: the selected service fills warm. */
-@media (max-width: 1023px) {
-  .svc-tab[data-active] {
-    border-color: rgb(239 135 22 / 0.55);
-    background: var(--color-accent-soft);
-    color: var(--color-accent-ink);
-  }
-}
-
-/* Desktop rows: number warms, name slides, arrow turns diagonal — the same
-   gestures the old editorial rows used, now driving a selection. */
-@media (min-width: 1024px) {
-  .svc-tab-number {
-    color: var(--color-muted);
-    transition: color 320ms var(--ease-out-quart);
-  }
-
-  .svc-tab-name {
-    color: var(--color-fg);
-    transition:
-      transform 380ms var(--ease-out-quart),
-      color 380ms var(--ease-out-quart);
-  }
-
-  .svc-tab-arrow {
-    opacity: 0;
-    transform: translateX(-6px);
-    transition:
-      opacity 320ms var(--ease-out-quart),
-      transform 380ms var(--ease-out-quart),
-      color 320ms var(--ease-out-quart);
-  }
-
-  .svc-tab:hover .svc-tab-number,
-  .svc-tab[data-active] .svc-tab-number {
-    color: var(--color-accent-ink);
-  }
-
-  .svc-tab:hover .svc-tab-name {
-    transform: translateX(6px);
-  }
-
-  .svc-tab[data-active] .svc-tab-name {
-    transform: translateX(10px);
-    color: var(--color-accent-ink);
-  }
-
-  .svc-tab:hover .svc-tab-arrow,
-  .svc-tab[data-active] .svc-tab-arrow {
-    opacity: 1;
-    transform: translateX(0) rotate(-45deg);
-    color: var(--color-accent-ink);
-  }
-}
-
-/* ---- the stage ---- */
-
-/* A chosen demo enters as one piece, then plays its own sequence. */
+/* Kept from the previous pass: the testimonials attribution (.t-attr)
+   animates with these keyframes. */
 @keyframes stage-in {
   from {
     opacity: 0;
@@ -2619,53 +2552,81 @@ body[data-popup-open] .floating-cta {
   }
 }
 
-.stage-scene {
-  animation: stage-in 480ms var(--ease-out-expo) both;
+/* ---- the card shell ---- */
+
+.svc-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  transition:
+    transform 420ms var(--ease-out-expo),
+    border-color 320ms var(--ease-out-quart),
+    box-shadow 420ms var(--ease-out-expo);
 }
 
-/* The active panel's description settles in under the tabs. */
-.svc-panel:not([hidden]) {
-  animation: stage-in 420ms var(--ease-out-expo) both;
+.svc-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface-2);
 }
 
-/* ---- demo primitives ---- */
-
-@keyframes demo-pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.svc-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.1rem 1.25rem 1.25rem;
 }
 
-.demo-pop {
-  animation: demo-pop-in 480ms var(--ease-out-expo) both;
-  animation-delay: var(--d, 0ms);
+.svc-body > a {
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
-/* Headline bars draw across instead of popping — two motions, one build. */
-@keyframes demo-grow-in {
-  from {
-    opacity: 0;
-    transform: scaleX(0);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.svc-num {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: calc(infinity * 1px);
+  background: rgb(10 11 13 / 0.55);
+  font-family: var(--font-display, inherit);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #fff;
 }
 
-.demo-grow {
-  transform-origin: left center;
-  animation: demo-grow-in 520ms var(--ease-out-expo) both;
-  animation-delay: var(--d, 0ms);
+/* ---- shared primitives inside the visuals ---- */
+
+.sv {
+  position: absolute;
+  inset: 0;
 }
 
-/* The honesty labels every fictional interface wears. */
-.demo-chip {
+/* The honest stand-in for text that does not exist. */
+.sv-bar {
+  display: block;
+  height: 0.4rem;
+  border-radius: calc(infinity * 1px);
+  background: color-mix(in srgb, var(--color-fg) 14%, transparent);
+}
+
+/* The honesty label every drawn interface wears. */
+.sv-chip {
+  position: absolute;
+  right: 0.7rem;
+  top: 0.7rem;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.55rem;
@@ -2679,201 +2640,789 @@ body[data-popup-open] .floating-cta {
   color: var(--color-muted);
 }
 
-/* ---- 02: the wireframe/UI comparison ---- */
+.sv-addr {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: calc(infinity * 1px);
+  background: color-mix(in srgb, var(--color-paper) 85%, transparent);
+  padding: 0.14rem 0.5rem;
+  text-align: center;
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
 
-/* The real control: a full-bleed range input. Invisible but focusable and
-   draggable everywhere on the board; the wrapper shows its focus. */
-.demo-compare-input {
+.sv-dots {
+  display: flex;
+  gap: 0.22rem;
+}
+
+.sv-dots i {
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 50%;
+}
+
+.sv-dots i:nth-child(1) { background: #e5685c; }
+.sv-dots i:nth-child(2) { background: #e6b14c; }
+.sv-dots i:nth-child(3) { background: #5ec16a; }
+
+/* ---- 01: layered website mockups (real portfolio screenshots) ---- */
+
+.sv-web {
+  background:
+    radial-gradient(22rem 14rem at 18% 0%, rgb(239 135 22 / 0.1), transparent 65%);
+}
+
+.sv-browser {
+  position: absolute;
+  left: 6%;
+  top: 9%;
+  width: 76%;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  box-shadow: 0 18px 36px -26px rgb(20 21 24 / 0.55);
+}
+
+.sv-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.38rem 0.55rem;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface-2);
+}
+
+.sv-browser-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: top;
+  transition: transform 800ms var(--ease-out-expo);
+}
+
+.sv-phone {
+  position: absolute;
+  right: 5%;
+  bottom: 8%;
+  width: 22%;
+  aspect-ratio: 9 / 17;
+  overflow: hidden;
+  border-radius: 0.8rem;
+  border: 2px solid rgb(20 21 24 / 0.9);
+  background: #141518;
+  box-shadow: 0 20px 34px -20px rgb(20 21 24 / 0.6);
+  transition: transform 600ms var(--ease-out-expo);
+}
+
+/* ---- 02: the design workspace ---- */
+
+.sv-uiux {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--color-fg) 10%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
+}
+
+.sv-wire {
+  position: absolute;
+  left: 6%;
+  top: 10%;
+  width: 42%;
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  border: 1px dashed color-mix(in srgb, var(--color-fg) 30%, transparent);
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-paper) 80%, transparent);
+  rotate: -2deg;
+  transition: rotate 500ms var(--ease-out-expo);
+}
+
+.sv-wire-media {
+  display: block;
+  height: 2.1rem;
+  border-radius: 0.35rem;
+  border: 1px dashed color-mix(in srgb, var(--color-fg) 22%, transparent);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--color-fg) 5%, transparent) 6px 12px
+  );
+}
+
+.sv-type {
+  position: absolute;
+  right: 7%;
+  top: 10%;
+  width: 24%;
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.6rem;
+  background: var(--color-paper);
+  box-shadow: 0 12px 24px -20px rgb(20 21 24 / 0.5);
+}
+
+.sv-type-aa {
+  font-family: var(--font-display, inherit);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-fg);
+}
+
+.sv-swatches {
+  position: absolute;
+  left: 8%;
+  bottom: 13%;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.sv-swatches i {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-line);
+  transition: transform 420ms var(--ease-out-expo);
+}
+
+.sv-swatches i:nth-child(1) { background: #ef8716; }
+.sv-swatches i:nth-child(2) { background: #141518; }
+.sv-swatches i:nth-child(3) { background: #f6f1e7; }
+.sv-swatches i:nth-child(4) { background: #aa5a0a; }
+
+.sv-component {
+  position: absolute;
+  right: 8%;
+  bottom: 14%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sv-component-cta {
+  display: inline-flex;
+  padding: 0.36rem 0.62rem;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--color-on-accent);
+}
+
+.sv-toggle {
+  position: relative;
+  width: 1.6rem;
+  height: 0.9rem;
+  border-radius: calc(infinity * 1px);
+  background: color-mix(in srgb, var(--color-fg) 20%, transparent);
+  transition: background-color 360ms var(--ease-out-quart);
+}
+
+.sv-toggle i {
+  position: absolute;
+  left: 0.12rem;
+  top: 50%;
+  width: 0.66rem;
+  height: 0.66rem;
+  border-radius: 50%;
+  background: #fff;
+  translate: 0 -50%;
+  transition: left 360ms var(--ease-out-quart);
+}
+
+.sv-cursor {
+  position: absolute;
+  left: 46%;
+  top: 56%;
+  width: 1.05rem;
+  filter: drop-shadow(0 4px 8px rgb(20 21 24 / 0.35));
+  transition:
+    left 700ms var(--ease-out-expo),
+    top 700ms var(--ease-out-expo);
+}
+
+/* ---- 03: the storefront (real AlinKriti screenshot) ---- */
+
+.sv-shop-img {
+  transition: transform 900ms var(--ease-out-expo);
+}
+
+.sv-shop-scrim {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: ew-resize;
-  touch-action: pan-y;
+  background: linear-gradient(to top, rgb(10 11 13 / 0.5), transparent 55%);
 }
 
-.demo-compare:focus-within {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.demo-compare-divider {
+.sv-shop-host {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--pos, 55%);
-  width: 2px;
+  left: auto;
+  right: 3.3rem;
+  top: 0.78rem;
+  z-index: 2;
+  flex: none;
+  max-width: 45%;
+}
+
+.sv-product {
+  position: absolute;
+  left: 6%;
+  bottom: 9%;
+  width: 52%;
+  display: grid;
+  justify-items: start;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-paper) 94%, transparent);
+  box-shadow: 0 16px 32px -22px rgb(20 21 24 / 0.55);
+  transition: transform 500ms var(--ease-out-expo);
+}
+
+.sv-cart-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+  padding: 0.4rem 0.62rem;
+  border-radius: calc(infinity * 1px);
   background: var(--color-accent);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.5);
-  pointer-events: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--color-on-accent);
 }
 
-.demo-compare-divider::after {
-  content: "\2194";
+.sv-bag {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  right: 0.7rem;
+  top: 0.7rem;
+  z-index: 2;
   display: grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: calc(infinity * 1px);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
   border: 1px solid var(--color-line);
   background: var(--color-paper);
-  box-shadow: 0 6px 16px -8px rgb(20 21 24 / 0.5);
-  font-size: 0.8rem;
-  line-height: 1;
-  color: var(--color-accent-ink);
+  color: var(--color-fg);
+  transition: transform 360ms var(--ease-out-quart);
 }
 
-/* ---- 03: the cart badge ---- */
-
-@keyframes cart-badge-in {
-  0% {
-    transform: scale(0);
-  }
-  60% {
-    transform: scale(1.3);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.demo-cart-badge {
+.sv-bag-badge {
   position: absolute;
-  top: -0.45rem;
-  right: -0.55rem;
+  right: -0.3rem;
+  top: -0.3rem;
   display: grid;
   place-items: center;
   min-width: 1rem;
   height: 1rem;
-  padding-inline: 0.2rem;
+  padding-inline: 0.18rem;
   border-radius: calc(infinity * 1px);
   background: var(--color-accent);
-  font-size: 0.625rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: var(--color-on-accent);
-  animation: cart-badge-in 360ms var(--ease-out-quart) both;
+  transform: scale(0);
+  transition: transform 320ms var(--ease-out-quart) 120ms;
 }
 
-/* ---- 04: the before/after wipe ---- */
+/* ---- 04: before / after (drawn, and labelled as an illustration) ---- */
 
-.redesign-layer {
+/* Fixed colours on purpose: this is a picture of two websites, not a
+   surface of this site, so it reads identically in both themes. */
+
+.sv-before {
   position: absolute;
   inset: 0;
-  clip-path: inset(0 0 0 0);
-  opacity: 1;
-  transition:
-    clip-path 560ms var(--ease-out-expo),
-    opacity 420ms var(--ease-out-quart);
+  background: #eae3d3;
+  padding: 8% 8%;
 }
 
-.redesign-layer-hidden {
-  clip-path: inset(0 0 0 100%);
-  opacity: 0;
+.sv-before-head {
+  display: block;
+  height: 0.85rem;
+  border-radius: 0.18rem;
+  background: #8e3b2f;
 }
 
-/* ---- 05: the search sequence ---- */
-
-@keyframes seo-type-in {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
+.sv-before-title {
+  display: block;
+  width: 62%;
+  height: 0.5rem;
+  margin-top: 0.55rem;
+  background: #6f6757;
 }
 
-.seo-query {
-  white-space: nowrap;
-  overflow: hidden;
-  animation: seo-type-in 1.1s steps(26) 400ms both;
+.sv-before-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  width: 86%;
 }
 
-@keyframes seo-caret-blink {
-  0%,
-  45% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
+.sv-before-cols span {
+  height: 2.5rem;
+  border: 1px solid #bfb49a;
+  background: #d9d0ba;
 }
 
-.seo-caret {
+.sv-after {
+  position: absolute;
+  inset: 0;
+  background: #17181b;
+  clip-path: inset(0 0 0 52%);
+  transition: clip-path 600ms var(--ease-out-expo);
+}
+
+.sv-after-inner {
+  position: absolute;
+  left: 52%;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.5rem;
+  padding: 9% 8%;
+  transition: transform 600ms var(--ease-out-expo);
+}
+
+.sv-after-nav {
+  display: block;
+  width: 58%;
+  height: 0.42rem;
+  border-radius: calc(infinity * 1px);
+  background: rgb(255 255 255 / 0.2);
+}
+
+.sv-bar.sv-after-h1 {
+  width: 84%;
+  height: 0.58rem;
+  background: rgb(255 255 255 / 0.88);
+}
+
+.sv-bar.sv-after-sub {
+  width: 62%;
+  background: rgb(255 255 255 / 0.4);
+}
+
+.sv-after-cta {
+  display: block;
+  width: 3rem;
+  height: 0.95rem;
+  margin-top: 0.15rem;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+}
+
+.sv-split {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 52%;
+  z-index: 2;
+  width: 2px;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.45);
+  transition: left 600ms var(--ease-out-expo);
+}
+
+.sv-tag {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0.6rem;
+  display: inline-flex;
+  padding: 0.18rem 0.5rem;
+  border-radius: calc(infinity * 1px);
+  background: rgb(10 11 13 / 0.55);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.sv-tag-accent {
+  left: auto;
+  right: 0.6rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* ---- 05: search visibility ---- */
+
+.sv-seo {
+  background:
+    radial-gradient(20rem 13rem at 85% 100%, rgb(239 135 22 / 0.09), transparent 65%);
+}
+
+.sv-search {
+  position: absolute;
+  left: 7%;
+  top: 10%;
+  width: 70%;
+}
+
+.sv-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.52rem 0.7rem;
+  border: 1px solid var(--color-line);
+  border-radius: calc(infinity * 1px);
+  background: var(--color-paper);
+  color: var(--color-muted);
+  box-shadow: 0 12px 26px -20px rgb(20 21 24 / 0.5);
+}
+
+.sv-caret {
   width: 1.5px;
-  height: 1rem;
+  height: 0.85rem;
   flex-shrink: 0;
   background: var(--color-accent);
-  animation: seo-caret-blink 900ms step-end 6;
 }
 
-/* ---- 06: the workflow ---- */
-
-.demo-node {
-  animation: demo-pop-in 520ms var(--ease-out-expo) both;
-  animation-delay: var(--d, 0s);
+.sv-results {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
 }
 
-.flow-line {
+.sv-result {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--color-paper) 72%, transparent);
+  transition:
+    border-color 420ms var(--ease-out-quart),
+    box-shadow 420ms var(--ease-out-quart);
+}
+
+.sv-favicon {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex-shrink: 0;
+  border-radius: 0.22rem;
+  background: color-mix(in srgb, var(--color-fg) 16%, transparent);
+}
+
+.sv-result-lines {
+  flex: 1;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.sv-result-lines .sv-bar {
+  height: 0.32rem;
+}
+
+.sv-up {
+  width: 0.8rem;
+  flex-shrink: 0;
+  color: var(--color-accent-ink);
+  opacity: 0;
+  transition: opacity 420ms var(--ease-out-quart);
+}
+
+/* At rest the SECOND result carries the highlight — mid-climb. */
+.sv-result:nth-child(2) {
+  border-color: rgb(239 135 22 / 0.55);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.sv-result:nth-child(2) .sv-up {
+  opacity: 1;
+}
+
+.sv-bars {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 26%;
+}
+
+.sv-bars i {
+  width: 0.55rem;
+  border-radius: 0.2rem 0.2rem 0 0;
+  background: color-mix(in srgb, var(--color-accent) 30%, var(--color-line));
+  transform-origin: bottom;
+  transition: transform 520ms var(--ease-out-expo);
+  transition-delay: var(--bd, 0ms);
+}
+
+.sv-bars i:nth-child(1) { height: 38%; }
+.sv-bars i:nth-child(2) { height: 58%; --bd: 60ms; }
+.sv-bars i:nth-child(3) { height: 76%; --bd: 120ms; }
+.sv-bars i:nth-child(4) { height: 100%; background: var(--color-accent); --bd: 180ms; }
+
+/* ---- 06: the automation workflow ---- */
+
+.sv-flow {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--color-fg) 8%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
+}
+
+.sv-flow-line {
   fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 1.5;
-  stroke-dasharray: 4 7;
-  opacity: 0.65;
-  animation: flow-dash 1.5s linear infinite;
+  stroke: color-mix(in srgb, var(--color-accent) 55%, var(--color-line));
+  stroke-width: 1.4;
+  stroke-dasharray: 3 5;
+  opacity: 0.85;
+  vector-effect: non-scaling-stroke;
 }
 
 @keyframes flow-dash {
   to {
-    stroke-dashoffset: -11;
+    stroke-dashoffset: -8;
   }
 }
 
-.flow-check {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: cart-badge-in 420ms var(--ease-out-quart) both;
-  animation-delay: var(--d, 0s);
+.sv-node {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.6rem;
+  background: var(--color-paper);
+  box-shadow: 0 12px 24px -20px rgb(20 21 24 / 0.5);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-fg);
+  white-space: nowrap;
 }
 
-/* ---- reduced motion: every demo renders finished and still ---- */
+.sv-node-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent-soft);
+}
 
-@media (prefers-reduced-motion: reduce) {
-  .stage-scene,
-  .svc-panel:not([hidden]),
-  .demo-pop,
-  .demo-grow,
-  .demo-cart-badge,
-  .demo-node,
-  .flow-line,
-  .flow-check,
-  .seo-query,
-  .seo-caret {
-    animation: none;
+.sv-node-status {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-fg) 22%, transparent);
+  transition: background-color 360ms var(--ease-out-quart);
+  transition-delay: var(--nd, 0ms);
+}
+
+@keyframes sv-signal-travel {
+  0% {
+    left: 12%;
+    top: 19%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  33% {
+    left: 60%;
+    top: 14%;
+  }
+  66% {
+    left: 18%;
+    top: 63%;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    left: 62%;
+    top: 69%;
+    opacity: 0;
+  }
+}
+
+.sv-signal {
+  position: absolute;
+  left: 12%;
+  top: 19%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 3px rgb(239 135 22 / 0.22);
+  opacity: 0;
+}
+
+/* ---- hover: one signature move per card, pointer devices only ---- */
+
+@media (hover: hover) {
+  .svc-card:hover {
+    transform: translateY(-4px);
+    border-color: rgb(239 135 22 / 0.45);
+    box-shadow: 0 22px 44px -30px rgb(20 21 24 / 0.45);
   }
 
-  .seo-caret {
+  /* 01 — the mockups lean in */
+  .svc-card:hover .sv-browser-img {
+    transform: scale(1.05);
+  }
+
+  .svc-card:hover .sv-phone {
+    transform: translateY(-7px) rotate(-2deg);
+  }
+
+  /* 02 — the workspace comes alive: wireframe straightens, swatches
+     lift, the toggle flips, the cursor rides to the component */
+  .svc-card:hover .sv-wire {
+    rotate: 0deg;
+  }
+
+  .svc-card:hover .sv-swatches i {
+    transform: translateY(-4px);
+  }
+
+  .svc-card:hover .sv-swatches i:nth-child(2) { transition-delay: 50ms; }
+  .svc-card:hover .sv-swatches i:nth-child(3) { transition-delay: 100ms; }
+  .svc-card:hover .sv-swatches i:nth-child(4) { transition-delay: 150ms; }
+
+  .svc-card:hover .sv-toggle {
+    background: var(--color-accent);
+  }
+
+  .svc-card:hover .sv-toggle i {
+    left: 0.82rem;
+  }
+
+  .svc-card:hover .sv-cursor {
+    left: 68%;
+    top: 70%;
+  }
+
+  /* 03 — the product scales, the card lifts, the bag answers */
+  .svc-card:hover .sv-shop-img {
+    transform: scale(1.05);
+  }
+
+  .svc-card:hover .sv-product {
+    transform: translateY(-4px);
+  }
+
+  .svc-card:hover .sv-bag {
+    transform: rotate(-8deg);
+  }
+
+  .svc-card:hover .sv-bag-badge {
+    transform: scale(1);
+  }
+
+  /* 04 — the redesign claims more of the frame */
+  .svc-card:hover .sv-after {
+    clip-path: inset(0 0 0 38%);
+  }
+
+  .svc-card:hover .sv-after-inner {
+    transform: translateX(-16%);
+  }
+
+  .svc-card:hover .sv-split {
+    left: 38%;
+  }
+
+  /* 05 — the highlighted result climbs a place, growth bars stretch */
+  .svc-card:hover .sv-result:nth-child(2) {
+    border-color: var(--color-line);
+    box-shadow: none;
+  }
+
+  .svc-card:hover .sv-result:nth-child(2) .sv-up {
     opacity: 0;
   }
 
-  .svc-tab-name,
-  .svc-tab-arrow {
-    transform: none !important;
-    transition: none !important;
+  .svc-card:hover .sv-result:nth-child(1) {
+    border-color: rgb(239 135 22 / 0.55);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
   }
 
-  .svc-tab-arrow {
+  .svc-card:hover .sv-result:nth-child(1) .sv-up {
     opacity: 1;
   }
 
-  .redesign-layer {
-    transition: opacity 1ms linear;
+  .svc-card:hover .sv-bars i {
+    transform: scaleY(1.14);
+  }
+
+  @keyframes sv-caret-blink {
+    0%, 45% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  .svc-card:hover .sv-caret {
+    animation: sv-caret-blink 900ms step-end infinite;
+  }
+
+  /* 06 — a signal runs the workflow, statuses confirm in sequence */
+  .svc-card:hover .sv-flow-line {
+    animation: flow-dash 1.1s linear infinite;
+  }
+
+  .svc-card:hover .sv-signal {
+    animation: sv-signal-travel 2.6s var(--ease-out-quart) infinite;
+  }
+
+  .svc-card:hover .sv-node-status {
+    background: #46a758;
+  }
+}
+
+/* ---- reduced motion: everything rendered finished and still ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .svc-card,
+  .sv-browser-img,
+  .sv-phone,
+  .sv-wire,
+  .sv-swatches i,
+  .sv-toggle,
+  .sv-toggle i,
+  .sv-cursor,
+  .sv-shop-img,
+  .sv-product,
+  .sv-bag,
+  .sv-bag-badge,
+  .sv-after,
+  .sv-after-inner,
+  .sv-split,
+  .sv-result,
+  .sv-up,
+  .sv-bars i,
+  .sv-caret,
+  .sv-flow-line,
+  .sv-signal,
+  .sv-node-status {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .svc-card:hover {
+    transform: none;
   }
 }
 
