@@ -2,152 +2,278 @@ import Image from "next/image";
 import { Arrow, Button } from "@/components/ui/Button";
 import { BrowserFrame } from "@/components/ui/BrowserFrame";
 import { Section, SectionHeader } from "@/components/ui/Section";
-import { Reveal } from "@/components/ui/Reveal";
-import { TiltCard } from "@/components/ui/TiltCard";
+import { Reveal, RevealText } from "@/components/ui/Reveal";
 import { work } from "@/content/sections";
-import { PORTFOLIO_PROJECT_COUNT, projects } from "@/content/work";
+import { caseStudies, industries, type CaseStudy } from "@/content/case-studies";
 import { cn } from "@/lib/utils";
 
 /**
- * SECTION 3 — Featured projects.
+ * SECTION 3 — Featured work. INDUSTRY CASE STUDIES, 2026-10-21 (full
+ * redesign on MIDIS's brief).
  *
- * LAYOUT. Editorial rows that alternate side, not a four-column card grid —
- * the brief rules that out, and a grid would shrink six website screenshots
- * to the point where none of them could be read. Each row gives the
- * screenshot roughly 58% of the width at `lg`, which is enough to make the
- * design legible, and the text column sits in the remaining space with the
- * project number setting the rhythm down the page.
+ * WHAT CHANGED. The alternating side-by-side rows are gone — MIDIS
+ * rejected image-beside-text outright. Every project is now a vertical
+ * editorial case study: ALL the project information first (number,
+ * prominent industry badge, client name, project type on the left;
+ * overview, "What we delivered", website features and the internal CTA
+ * on the right), and below it ONE wide, clean browser preview spanning
+ * the full content width. The same order holds on every device.
  *
- * NO EXTERNAL LINKS (MIDIS lead-generation brief, 2026-10-21). This section
- * used to link every project to its live site — chosen over the PDF's "View
- * Case Study" CTA because no verified case study exists (the PDF's template
- * ends "Add verified metrics", and none were supplied). MIDIS has now
- * instructed that visitors must not leave the landing page while exploring
- * the work, so the outbound links are gone:
+ * INDUSTRY-FIRST. An "Industries we've worked with" strip sits between
+ * the section header and the projects — one chip per case study, derived
+ * from the same data so it cannot drift, each anchoring down to its
+ * project. No carousel, no filtering that hides anything: all projects
+ * render, always.
  *
- *   - The screenshot and the project name are no longer links at all —
- *     nothing here pretends to be clickable without doing anything.
- *   - Each row's action is "Discuss a Similar Project", to the on-page
- *     estimator.
- *   - The live DOMAIN still shows in each BrowserFrame's chrome bar, so
- *     the proof-of-reality the live links used to carry is still visible,
- *     just not navigable.
- *   - The portfolio gateway card became the section's conversion moment
- *     (the brief's own "Like what you see?" pattern), also to the
- *     estimator.
+ * WHO IS SHOWN, AND WHAT IS CLAIMED. Eight of the brief's nine clients;
+ * High Spirits is reported out (unverifiable business — see
+ * content/case-studies.ts, which also records the provenance rules:
+ * deliverables only where supportable, features phrased as what the
+ * LIVE SITE shows, screenshots all genuine captures, no metrics, no
+ * invented outcomes).
  *
- * There are still no case-study links, for the same reason as before: no
- * verified case study exists to link to.
+ * NO EXTERNAL LINKS, unchanged: screenshots and names are not links,
+ * each study's action is "Discuss a Similar Project" → #estimator, and
+ * the live domain appears only as text in the browser chrome.
  *
- * The copy says "work" and "projects" and never "clients" or "we delivered",
- * because MIDIS has not confirmed which of these were delivered engagements.
- * See content/work.ts for the full provenance note.
+ * SCREENSHOTS carry no overlays and no dark filters in either theme —
+ * the frame is theme-aware, the image is the image. The one phone
+ * overlay (MTC) exists because the mobile experience IS that business's
+ * story; it sits over the screenshot's quiet corner, and no other study
+ * repeats the composition.
  */
 
-function ProjectRow({
-  project,
-  index,
-}: {
-  project: (typeof projects)[number];
-  index: number;
-}) {
-  /* Odd rows put the screenshot on the right. Below `lg` everything stacks
-     image-first, so the reading order stays consistent on a phone. */
-  const flipped = index % 2 === 1;
+/* ---- industry strip icons (lucide-style, drawn inline) ---- */
 
+const INDUSTRY_ICONS: Record<string, React.JSX.Element> = {
+  education: (
+    <>
+      <path d="m22 9.5-10-5-10 5 10 5 10-5Z" />
+      <path d="M6 11.8V17c3.2 2.7 8.8 2.7 12 0v-5.2" />
+    </>
+  ),
+  briefcase: (
+    <>
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+    </>
+  ),
+  compass: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m14.9 9.1-1.8 4.6-4.6 1.8 1.8-4.6z" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14.5 14.5 0 0 1 0 18 14.5 14.5 0 0 1 0-18z" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+      <circle cx="7.5" cy="17" r="2" />
+      <circle cx="16.5" cy="17" r="2" />
+    </>
+  ),
+  gem: (
+    <>
+      <path d="M6 3h12l4 6-10 13L2 9l4-6Z" />
+      <path d="M2 9h20" />
+      <path d="m11 3-2 6 3 13 3-13-2-6" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  news: (
+    <>
+      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V9" />
+      <path d="M10 6h8v4h-8z" />
+      <path d="M10 14h8M10 18h5" />
+    </>
+  ),
+};
+
+function IndustryIcon({ icon, className }: { icon: string; className?: string }) {
   return (
-    <article className="group grid items-center gap-8 lg:grid-cols-12 lg:gap-14">
-      {/* ---- screenshot ----
-          Its own reveal, using the clip wipe: the screenshot is uncovered
-          rather than floated in, which suits a flat rectangle of UI far
-          better than a fade-and-rise. The frame is also a tilt plane, so on
-          a desktop pointer it turns very slightly toward the cursor. */}
-      <Reveal
-        variant="clip"
-        className={cn(
-          "lg:col-span-7",
-          flipped ? "lg:order-2 lg:col-start-6" : "lg:order-1",
-        )}
-      >
-        <TiltCard>
-          {/* A plain block, not a link — the live site is deliberately not
-              navigable (see the section note). The tilt, zoom and drift
-              stay: they are presentation, not affordance; card-lift went
-              with the link because a lift-on-hover says "clickable". */}
-          <div className="block rounded-xl">
-            <BrowserFrame
-              src={project.preview}
-              alt={`${project.name} website homepage`}
-              host={project.host}
-              sizes="(min-width: 1024px) 56vw, 92vw"
-              zoomOnHover
-              drift
-            />
-          </div>
-        </TiltCard>
-      </Reveal>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      {INDUSTRY_ICONS[icon]}
+    </svg>
+  );
+}
 
-      {/* ---- text ----
-          Enters from the side it occupies, so a row reads as two halves
-          closing together rather than two things fading in place. */}
-      <Reveal
-        variant={flipped ? "side-left" : "side-right"}
-        delay={120}
-        className={cn(
-          "lg:col-span-5",
-          flipped ? "lg:order-1 lg:col-start-1 lg:row-start-1" : "lg:order-2",
-        )}
-      >
-        <div className="flex items-center gap-4">
-          <span
-            aria-hidden="true"
-            className="font-display text-sm font-semibold tabular-nums text-accent-ink"
+/* ---- one case study ---- */
+
+function CaseStudyBlock({ study, index }: { study: CaseStudy; index: number }) {
+  return (
+    <article
+      id={`work-${study.slug}`}
+      className={cn(
+        "scroll-mt-28",
+        index > 0 && "border-t border-line pt-16 md:pt-24",
+      )}
+    >
+      {/* ============ 1. the project information — ALWAYS first ============ */}
+      <div className="grid gap-x-14 gap-y-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+        {/* ---- identity: number / industry / client / type ---- */}
+        <div className="min-w-0">
+          <Reveal>
+            <p className="flex flex-wrap items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="font-display text-xl font-semibold tabular-nums text-accent-ink sm:text-2xl"
+              >
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span aria-hidden="true" className="h-px w-7 bg-accent" />
+              <span className="inline-flex items-center rounded-full bg-accent-soft px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-accent-ink">
+                {study.industry}
+              </span>
+            </p>
+          </Reveal>
+
+          <RevealText
+            as="h3"
+            delay={70}
+            className="mt-5 text-[length:var(--text-display-sm)] leading-[1.08] lg:text-[length:var(--text-display-md)]"
           >
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <span
-            aria-hidden="true"
-            className="h-px flex-1 bg-line"
-          />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted">
-            {project.category}
-          </span>
+            {study.client}
+          </RevealText>
+
+          <Reveal delay={150}>
+            <p className="mt-3 text-sm font-semibold uppercase tracking-wider text-muted">
+              {study.projectType}
+            </p>
+          </Reveal>
         </div>
 
-        {/* Plain text since 2026-10-21 — the name used to open the live
-            site; the row's one action is now the estimator link below. */}
-        <h3 className="mt-5 text-[length:var(--text-display-sm)] leading-tight">
-          {project.name}
-        </h3>
+        {/* ---- the story: overview, deliverables, features, CTA ---- */}
+        <div className="min-w-0">
+          <Reveal delay={120}>
+            <p className="max-w-xl text-[0.9375rem] leading-relaxed text-muted sm:text-base">
+              {study.overview}
+            </p>
+          </Reveal>
 
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-muted">
-          {project.summary}
-        </p>
+          <Reveal delay={200}>
+            <div className="mt-6 grid gap-x-10 gap-y-5 border-t border-line pt-6 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-fg">
+                  What we delivered
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {study.delivered.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-center gap-2.5 text-sm font-medium text-fg"
+                    >
+                      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-accent-soft">
+                        <svg
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          aria-hidden="true"
+                          className="size-3 text-accent-ink"
+                        >
+                          <path
+                            d="m2.5 6.3 2.3 2.4 4.7-5.4"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-        <ul className="mt-6 flex flex-wrap gap-2">
-          {project.services.map((service) => (
-            <li
-              key={service}
-              className="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-ink"
-            >
-              {service}
-            </li>
-          ))}
-        </ul>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-fg">
+                  On the website
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {study.features.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-2.5 text-sm leading-snug text-muted"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="mt-[0.4rem] size-1.5 shrink-0 rounded-full bg-accent"
+                      />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Reveal>
 
-        {/* The row's one action: on-page, to the estimator. The domain the
-            old link displayed still shows in the BrowserFrame's chrome. */}
-        <p className="mt-7">
-          <a
-            href="#estimator"
-            className="group/btn inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fg transition-colors hover:text-accent-ink"
-          >
-            <span className="link-underline-accent">
-              Discuss a Similar Project
-            </span>
-            <Arrow />
-          </a>
-        </p>
+          <Reveal delay={260}>
+            <p className="mt-6">
+              <a
+                href="#estimator"
+                className="group/btn inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
+              >
+                <span className="link-underline-accent">
+                  Discuss a Similar Project
+                </span>
+                <Arrow />
+              </a>
+            </p>
+          </Reveal>
+        </div>
+      </div>
+
+      {/* ============ 2. the website — wide, clean, below ============ */}
+      <Reveal variant="clip" delay={140} className="group mt-8 md:mt-10">
+        <div
+          className={cn(
+            "relative transition-transform duration-[var(--dur-slow)] ease-[var(--ease-out-expo)]",
+            "hover:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none",
+          )}
+        >
+          <BrowserFrame
+            src={study.preview}
+            alt={`${study.client} website homepage`}
+            host={study.host}
+            sizes="(min-width: 1360px) 1280px, 94vw"
+            zoomOnHover
+          />
+          {study.phone ? (
+            /* A second REAL capture — the phone view, for the one client
+               whose business happens on the roadside. Sits over the
+               screenshot's quiet corner; no other study repeats this. */
+            <div className="absolute -bottom-5 right-4 w-[17%] min-w-[88px] max-w-[150px] overflow-hidden rounded-[0.9rem] border-[3px] border-[#141518] bg-[#141518] shadow-[0_18px_36px_-18px_rgb(20_21_24/0.6)] sm:right-7">
+              <Image
+                src={study.phone}
+                alt={`${study.client} website on a phone`}
+                width={780}
+                height={1688}
+                loading="lazy"
+                sizes="150px"
+                className="block h-auto w-full"
+              />
+            </div>
+          ) : null}
+        </div>
       </Reveal>
     </article>
   );
@@ -170,21 +296,46 @@ export function Work() {
         sub={work.subheadline}
       />
 
+      {/* ============ the industries strip ============ */}
+      {/* Derived from the case studies themselves (content/case-studies),
+          so the strip can never advertise an industry the section does
+          not show. Chips anchor to their project — nothing is filtered,
+          nothing hides. */}
+      <div className="container-site mt-10">
+        <Reveal>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+            Industries we&rsquo;ve worked with
+          </p>
+        </Reveal>
+        <Reveal delay={90}>
+          <ul className="mt-4 flex flex-wrap gap-2.5">
+            {industries.map((industry) => (
+              <li key={industry.slug}>
+                <a
+                  href={`#work-${industry.slug}`}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
+                >
+                  <IndustryIcon
+                    icon={industry.icon}
+                    className="size-4 shrink-0 text-accent-ink"
+                  />
+                  {industry.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </div>
+
+      {/* ============ the case studies ============ */}
       <div className="container-wide mt-[var(--space-block)]">
         <div className="flex flex-col gap-16 md:gap-24">
-          {projects.map((project, index) => (
-            <ProjectRow key={project.slug} project={project} index={index} />
+          {caseStudies.map((study, index) => (
+            <CaseStudyBlock key={study.slug} study={study} index={index} />
           ))}
         </div>
 
-        {/* ---- the conversion card ----
-            Until 2026-10-21 this card opened the external MIDIS portfolio.
-            The lead-generation brief keeps visitors on this page, so the
-            same dark card now carries the brief's own "Like what you see?"
-            moment and lands on the estimator. The portfolio screenshot
-            stays as the visual — it is real, and it says there is more work
-            than the six rows above — and PORTFOLIO_PROJECT_COUNT keeps the
-            "more to see" claim countable rather than invented. */}
+        {/* ---- the conversion card ---- */}
         <Reveal className="mt-16 md:mt-24">
           <a
             href="#estimator"
@@ -196,10 +347,9 @@ export function Work() {
                 Let&rsquo;s build something similar for your business.
               </p>
               <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-muted-dark">
-                These six are a selection from {PORTFOLIO_PROJECT_COUNT}{" "}
-                projects. Tell us what you&rsquo;re planning, and we&rsquo;ll
-                help you understand the potential scope, timeline, and next
-                steps.
+                Eight industries, eight different problems to solve. Tell us
+                what you&rsquo;re planning, and we&rsquo;ll help you understand
+                the potential scope, timeline, and next steps.
               </p>
               <span className="group/btn mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent">
                 Get a Project Estimate
