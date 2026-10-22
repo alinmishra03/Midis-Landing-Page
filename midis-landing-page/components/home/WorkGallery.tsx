@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Arrow, Button } from "@/components/ui/Button";
 import { caseStudies, industries, type CaseStudy } from "@/content/case-studies";
 import { cn } from "@/lib/utils";
@@ -104,6 +104,14 @@ const INDUSTRY_ICONS: Record<string, React.JSX.Element> = {
       <path d="M10 14h8M10 18h5" />
     </>
   ),
+  /* The mobile selector's "all industries" mark — three stacked layers. */
+  all: (
+    <>
+      <path d="m12 2.5 9 5-9 5-9-5 9-5Z" />
+      <path d="m3 12 9 5 9-5" />
+      <path d="m3 16.5 9 5 9-5" />
+    </>
+  ),
 };
 
 function IndustryIcon({ icon, className }: { icon: string; className?: string }) {
@@ -120,6 +128,227 @@ function IndustryIcon({ icon, className }: { icon: string; className?: string })
     >
       {INDUSTRY_ICONS[icon]}
     </svg>
+  );
+}
+
+/* ---- the mobile industry dropdown ----
+   A custom listbox, because the native <select>'s open menu is drawn by
+   the OS — on desktop-sized browsers at mobile widths that meant a huge
+   unstyled white panel with the browser's blue highlight (MIDIS fix,
+   2026-10-22). No headless-UI dependency exists in this project, so the
+   WAI-ARIA listbox-button pattern is implemented here directly: the
+   trigger is a real <button aria-haspopup>, the menu is role="listbox"
+   with aria-activedescendant, and it supports touch, Arrow/Home/End,
+   Enter/Space, Escape, Tab-out and outside-click dismissal. The menu is
+   absolutely anchored to the trigger's own box (same width, never the
+   viewport's), capped at 17rem with internal scrolling only. */
+
+const ALL_OPTION = { slug: "all", label: "All Projects", icon: "all" } as const;
+
+function IndustrySelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (slug: string) => void;
+}) {
+  const options = [ALL_OPTION, ...industries];
+  const selectedIndex = Math.max(0, options.findIndex((o) => o.slug === value));
+
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(selectedIndex);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const optionId = (index: number) => `${baseId}-option-${index}`;
+
+  const openMenu = useCallback(() => {
+    setActive(selectedIndex);
+    setOpen(true);
+  }, [selectedIndex]);
+
+  const close = useCallback((refocus: boolean) => {
+    setOpen(false);
+    if (refocus) triggerRef.current?.focus();
+  }, []);
+
+  const choose = useCallback(
+    (slug: string) => {
+      onChange(slug);
+      close(true);
+    },
+    [onChange, close],
+  );
+
+  /* Outside click/tap dismisses without stealing the interaction. */
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  /* The listbox takes focus while open (aria-activedescendant names the
+     active row), and the active row is kept inside the scroll window. */
+  useEffect(() => {
+    if (open) listRef.current?.focus({ preventScroll: true });
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
+
+  const onListKeyDown = (event: React.KeyboardEvent) => {
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        setActive((index) => Math.min(index + 1, options.length - 1));
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setActive((index) => Math.max(index - 1, 0));
+        break;
+      case "Home":
+        event.preventDefault();
+        setActive(0);
+        break;
+      case "End":
+        event.preventDefault();
+        setActive(options.length - 1);
+        break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        choose(options[active].slug);
+        break;
+      case "Escape":
+        event.preventDefault();
+        close(true);
+        break;
+      case "Tab":
+        setOpen(false);
+        break;
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="relative md:hidden">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
+        onClick={() => (open ? close(false) : openMenu())}
+        onKeyDown={(event) => {
+          if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+            event.preventDefault();
+            openMenu();
+          }
+        }}
+        className={cn(
+          "flex h-12 w-full items-center gap-2.5 rounded-full border bg-surface px-4 text-left",
+          "transition-[border-color] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)]",
+          open ? "border-accent/60" : "border-line",
+        )}
+      >
+        <IndustryIcon
+          icon={value === "all" ? "all" : (industries.find((i) => i.slug === value)?.icon ?? "all")}
+          className="size-4 shrink-0 text-accent-ink"
+        />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-fg">
+          {value === "all"
+            ? "All Industries"
+            : industries.find((i) => i.slug === value)?.label}
+        </span>
+        <svg
+          viewBox="0 0 16 16"
+          width="15"
+          height="15"
+          fill="none"
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 text-muted transition-transform duration-[var(--dur-fast)]",
+            open && "rotate-180",
+          )}
+        >
+          <path
+            d="m3.5 6 4.5 4.5L12.5 6"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {open ? (
+        <ul
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          tabIndex={-1}
+          aria-label="Filter projects by industry"
+          aria-activedescendant={optionId(active)}
+          onKeyDown={onListKeyDown}
+          className={cn(
+            "wg-menu absolute inset-x-0 top-[calc(100%+0.375rem)] z-20",
+            "max-h-[17rem] overflow-y-auto overscroll-contain p-1.5",
+            "rounded-2xl border border-line bg-surface",
+            "shadow-[0_18px_40px_-20px_rgb(20_21_24/0.35)]",
+            "focus:outline-none",
+          )}
+        >
+          {options.map((option, index) => {
+            const selected = option.slug === value;
+            return (
+              <li
+                key={option.slug}
+                id={optionId(index)}
+                role="option"
+                aria-selected={selected}
+                onPointerMove={() => setActive(index)}
+                onClick={() => choose(option.slug)}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl px-3 text-sm font-semibold",
+                  selected
+                    ? "bg-accent-soft text-accent-ink"
+                    : cn("text-fg", index === active && "bg-fg/[0.05]"),
+                )}
+              >
+                <IndustryIcon
+                  icon={option.icon}
+                  className={cn("size-4 shrink-0", selected ? "text-accent-ink" : "text-muted")}
+                />
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                {selected ? (
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    aria-hidden="true"
+                    className="shrink-0 text-accent-ink"
+                  >
+                    <path
+                      d="m3 8.5 3.2 3.2L13 5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
@@ -287,10 +516,17 @@ export function WorkGallery() {
   return (
     <div>
       {/* ============ the filters ============ */}
+      {/* PHONES (< md): nine pills wrapped into ~six rows and pushed the
+          projects below the fold, so they become ONE 48px dropdown — the
+          custom listbox above, anchored to its own trigger so the menu
+          can never outgrow the container. */}
+      <IndustrySelect value={filter} onChange={setFilter} />
+
+      {/* FROM md: the pill row, exactly as on desktop before. */}
       <div
         role="group"
         aria-label="Filter projects by industry"
-        className="flex flex-wrap gap-2"
+        className="hidden flex-wrap gap-2 md:flex"
       >
         <button
           type="button"
@@ -326,7 +562,7 @@ export function WorkGallery() {
 
       {/* ============ the grid ============ */}
       <div
-        className="wg-grid mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+        className="wg-grid mt-5 grid gap-5 sm:grid-cols-2 md:mt-7 lg:grid-cols-3"
         data-collapsed={collapsed || undefined}
       >
         {shown.map((study, index) => (

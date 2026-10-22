@@ -41,6 +41,9 @@ export const work = {
   headline: "Our Work Speaks for Itself",
   subheadline:
     "Explore digital experiences built to solve real business challenges, strengthen brands, and create better customer journeys.",
+  /* Phones get one line instead of three (MIDIS mobile pass, 2026-10-22):
+     the full description pushed the first project far below the fold. */
+  subheadlineShort: "Explore digital experiences built for different industries.",
   /* One destination, three label lengths (MIDIS fix, 2026-10-22): the full
      p.3 line needs a ~346px button, which cannot sit on one line inside a
      narrow phone's gutters — so phones get a shorter label instead of a

@@ -44,12 +44,22 @@ export function Work() {
         eyebrow="Featured work"
         heading={work.headline}
         headingId="work-heading"
-        sub={work.subheadline}
+        sub={
+          /* Full description from sm up; one line on phones, so the first
+             project surfaces sooner (MIDIS mobile pass, 2026-10-22). The
+             spans are display-toggled — a screen reader announces only
+             the visible one. */
+          <>
+            <span className="hidden sm:inline">{work.subheadline}</span>
+            <span className="sm:hidden">{work.subheadlineShort}</span>
+          </>
+        }
       />
 
-      {/* Deliberately mt-9, not --space-block: the brief asks that the
-          introduction give way to the work quickly. */}
-      <div className="container-site mt-9">
+      {/* Deliberately tighter than --space-block (and tighter again on
+          phones): the brief asks that the introduction give way to the
+          work quickly. */}
+      <div className="container-site mt-6 sm:mt-9">
         <Reveal>
           <WorkGallery />
         </Reveal>
