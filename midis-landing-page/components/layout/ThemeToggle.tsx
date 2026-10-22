@@ -96,8 +96,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       title={label}
       className={cn(
         "inline-flex size-11 items-center justify-center rounded-full",
-        "text-fg transition-colors duration-[var(--dur-fast)]",
-        "hover:bg-fg/[0.07] hover:text-accent-ink",
+        "text-fg transition-[background-color,color,transform] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)]",
+        "hover:scale-105 hover:bg-fg/[0.07] hover:text-accent-ink",
+        "active:scale-95 motion-reduce:transform-none",
         className,
       )}
     >

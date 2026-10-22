@@ -52,6 +52,11 @@ const variants: Record<Variant, string> = {
     "bg-accent text-on-accent hover:bg-accent-hover",
     "shadow-[0_1px_2px_rgba(20,21,24,0.14)]",
     "hover:shadow-[0_8px_20px_-8px_rgba(239,135,22,0.75)]",
+    /* The one variant that lifts on hover — it is the page's conversion
+       action, and the raised shadow above already implies the depth. A
+       transform, so no layout shifts; the press state below still wins
+       while the pointer is down. */
+    "hover:-translate-y-0.5 motion-reduce:hover:translate-y-0",
   ),
   /* On a page surface: a quiet outline that does not compete with the
      primary. Driven by `fg`, so it reads in both themes. */
@@ -215,8 +220,19 @@ export function ButtonGroup({
  * announcing "right arrow" after every button label is noise. `shrink-0` so
  * a wrapping label never squashes it. It nudges on hover of the button, not
  * of itself.
+ *
+ * `flip` is the back-navigation form: same glyph rotated to point left,
+ * nudging LEFT on hover — the one arrow component serves both directions,
+ * so no call site draws its own (or types a bare "←", which neither aligns
+ * with the glyph set nor animates).
  */
-export function Arrow({ className }: { className?: string }) {
+export function Arrow({
+  className,
+  flip = false,
+}: {
+  className?: string;
+  flip?: boolean;
+}) {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -226,7 +242,10 @@ export function Arrow({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn(
         "shrink-0 transition-transform duration-[var(--dur-fast)]",
-        "ease-[var(--ease-out-quart)] group-hover/btn:translate-x-1",
+        "ease-[var(--ease-out-quart)]",
+        flip
+          ? "rotate-180 group-hover/btn:-translate-x-1"
+          : "group-hover/btn:translate-x-1",
         "motion-reduce:transform-none motion-reduce:transition-none",
         className,
       )}

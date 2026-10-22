@@ -472,7 +472,8 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
             onClick={() => goTo(step - 1)}
             className="sm:-ml-3"
           >
-            <span aria-hidden="true">←</span> Back
+            <Arrow flip />
+            Back
           </Button>
         ) : (
           <span className="hidden sm:block" />

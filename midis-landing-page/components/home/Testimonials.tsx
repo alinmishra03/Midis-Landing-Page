@@ -206,10 +206,16 @@ export function Testimonials() {
                       aria-label={`Show ${s.short} story`}
                       aria-current={i === index}
                       className={cn(
-                        "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition-[color,border-color,background-color] duration-[var(--dur-fast)]",
+                        /* One selector-pill language, shared with the work
+                           gallery's filter chips: solid accent when active,
+                           soft accent wash + accent border on hover, a
+                           gentle press. */
+                        "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold",
+                        "transition-[color,border-color,background-color,transform] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)]",
+                        "active:scale-[0.97] motion-reduce:active:scale-100",
                         i === index
-                          ? "border-accent bg-accent-soft text-accent-ink"
-                          : "border-line text-muted hover:border-fg/40 hover:text-fg",
+                          ? "border-transparent bg-accent text-on-accent"
+                          : "border-line text-muted hover:border-accent/60 hover:bg-accent-soft hover:text-accent-ink",
                       )}
                     >
                       {s.short}
@@ -227,7 +233,7 @@ export function Testimonials() {
                 type="button"
                 onClick={() => go(-1)}
                 aria-label="Previous client"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-[color,border-color,background-color,transform] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)] hover:scale-105 hover:border-accent/60 hover:bg-accent-soft/60 hover:text-accent-ink active:scale-95 motion-reduce:transform-none"
               >
                 <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
                   <path d="M10 3 5 8l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -237,7 +243,7 @@ export function Testimonials() {
                 type="button"
                 onClick={() => go(1)}
                 aria-label="Next client"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-colors duration-[var(--dur-fast)] hover:border-accent/60 hover:text-accent-ink"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line text-fg transition-[color,border-color,background-color,transform] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)] hover:scale-105 hover:border-accent/60 hover:bg-accent-soft/60 hover:text-accent-ink active:scale-95 motion-reduce:transform-none"
               >
                 <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
                   <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />

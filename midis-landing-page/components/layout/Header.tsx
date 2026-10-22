@@ -252,7 +252,7 @@ export function Header() {
                   onClick={() => setOpen((v) => !v)}
                   aria-expanded={open}
                   aria-controls={panelId}
-                  className="inline-flex size-11 items-center justify-center rounded-full text-fg transition-colors duration-[var(--dur-fast)] hover:bg-fg/[0.07] lg:hidden"
+                  className="inline-flex size-11 items-center justify-center rounded-full text-fg transition-[background-color,transform] duration-[var(--dur-fast)] ease-[var(--ease-out-quart)] hover:bg-fg/[0.07] active:scale-95 motion-reduce:transform-none lg:hidden"
                 >
                   <span className="sr-only">
                     {open ? "Close menu" : "Open menu"}
