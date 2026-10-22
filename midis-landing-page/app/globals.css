@@ -1598,9 +1598,23 @@ p {
  * text on a transparent background is invisible. The fallback is a solid
  * accent fill, so an unsupporting browser gets a readable orange line rather
  * than a blank one.
+ *
+ * DESCENDER FIX №2 (2026-10-22). `background-clip: text` + transparent color
+ * only shows glyph ink where the element's own BACKGROUND BOX is — and at
+ * line-height 1.02 the font's ink (Inter-class metrics, ~1.21em ascent +
+ * descent) overflows that box by ~0.07em at the bottom. The mask fix on
+ * `.cta-headline-line` (0.28em, 2026-10-20) cannot help here, because the
+ * clipping isn't the overflow mask: it is the "g" of "Something" extending
+ * below its own background, where there is nothing to clip the gradient to,
+ * so its bowl rendered transparent — visually sliced flat. The padding below
+ * extends the background box past the deepest descender; the negative margin
+ * mirrors it so the heading's layout height does not change by a pixel.
+ * Applied unconditionally: without the gradient it is invisible no-op.
  */
 @utility cta-accent-text {
   color: var(--color-accent);
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
 }
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
