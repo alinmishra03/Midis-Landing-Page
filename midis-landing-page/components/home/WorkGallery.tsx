@@ -104,6 +104,9 @@ const INDUSTRY_ICONS: Record<string, React.JSX.Element> = {
       <path d="M10 14h8M10 18h5" />
     </>
   ),
+  cloud: (
+    <path d="M17.5 19H8a6 6 0 1 1 5.7-7.9A4.5 4.5 0 1 1 17.5 19Z" />
+  ),
   /* The mobile selector's "all industries" mark — three stacked layers. */
   all: (
     <>

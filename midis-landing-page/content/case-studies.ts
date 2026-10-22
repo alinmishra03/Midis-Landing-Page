@@ -1,18 +1,20 @@
 /**
  * FEATURED WORK — industry-based case studies (MIDIS brief, 2026-10-21).
  *
- * WHO IS HERE, AND WHY. The brief names nine clients for this section.
- * Eight appear below; HIGH SPIRITS does not, because the business could
- * not be independently identified (several unrelated companies share the
- * name) and the brief says to report an unverifiable website rather than
- * substitute one. See the session report of 2026-10-21.
+ * WHO IS HERE, AND WHY. Nine clients, IN DISPLAY ORDER (MIDIS brief,
+ * 2026-10-22: strongest work first — the first six fill the collapsed
+ * desktop grid). NeoCloudz joined on that brief, from its portfolio
+ * record in content/work.ts. HIGH SPIRITS is still absent although the
+ * brief placed it seventh: no website or screenshot of the business
+ * exists to show, and the brief says to report a missing screenshot
+ * rather than substitute one. It slots in at index 6 once one exists.
  *
  * PROVENANCE, PER FIELD:
  *  - `industry` and `overview`: verified against each client's live site
  *    on 2026-10-21 (and, for Country Kids / Gulf Connect / AlinKriti,
  *    the project records carried over in content/work.ts).
  *  - `delivered`: ONLY what is supportable. For Country Kids, Gulf
- *    Connect and AlinKriti these are the portfolio's own service tags
+ *    Connect, AlinKriti and NeoCloudz these are the portfolio's own tags
  *    (content/work.ts). For the other five they read "Website Design &
  *    Development" on the strength of each client's published feedback
  *    (content/testimonials.ts, supplied and attested 2026-10-21), which
@@ -76,6 +78,97 @@ export const caseStudies: readonly CaseStudy[] = [
     host: "countrykids.au",
   },
   {
+    slug: "mining-discovery",
+    client: "Mining Discovery",
+    industry: "Mining News & Media",
+    industryShort: "News & Media",
+    icon: "news",
+    projectType: "Website Design & Development",
+    overview:
+      "A global mining-industry news platform: daily coverage of gold, silver, copper and the wider metals market, digital magazine editions and company profiles, serving an international readership at news-room pace.",
+    delivered: ["Website Design & Development"],
+    features: [
+      "Live metals price ticker",
+      "Digital magazine editions",
+      "Daily and weekly newsletters",
+    ],
+    preview: "/images/work/mining-discovery.jpg",
+    host: "miningdiscovery.com",
+  },
+  {
+    slug: "gulf-connect",
+    client: "Gulf Connect Consultancy",
+    industry: "Capital Markets Communications",
+    industryShort: "Capital Markets",
+    icon: "globe",
+    projectType: "Website Design & Development",
+    overview:
+      "A capital-markets communications consultancy connecting international companies with Gulf capital, partners and media. An institutional palette and investor-focused pathways carry the confidence the sector expects.",
+    delivered: ["Website Strategy", "UI/UX Design", "Development"],
+    features: [
+      "Investor and company pathways",
+      "Three-part capability model",
+      "English / Arabic navigation",
+    ],
+    preview: "/images/work/gulf-connect.jpg",
+    host: "gulfconnectconsultancy.com",
+  },
+  {
+    slug: "neocloudz",
+    client: "NeoCloudz",
+    industry: "AI Cloud Infrastructure",
+    industryShort: "AI Cloud",
+    icon: "cloud",
+    projectType: "Website Design & Development",
+    overview:
+      "A GPU cloud presented as a live cluster terminal. Blackwell-class compute, workload-led solutions and developer tooling sit inside a dark, green-lit interface that feels operational from the first screen.",
+    delivered: ["Website Strategy", "UI/UX Design", "Development"],
+    features: [
+      "Live GPU-cluster dashboard hero",
+      "Light and dark theme toggle",
+      "Product and solution menus",
+    ],
+    preview: "/images/work/neocloudz.jpg",
+    host: "neocloudz.com",
+  },
+  {
+    slug: "alinkriti",
+    client: "AlinKriti",
+    industry: "Jewellery & E-commerce",
+    industryShort: "E-commerce",
+    icon: "gem",
+    projectType: "E-commerce Development",
+    overview:
+      "Handcrafted jewellery inspired by heritage and refined for the modern woman. The store gives every piece room to shine — warm metallics, soft neutrals and story-led product presentation from discovery to checkout.",
+    delivered: ["E-commerce", "UI/UX Design", "Development"],
+    features: [
+      "Story-led product presentation",
+      "Collections and gifting pathways",
+      "Full online shopping experience",
+    ],
+    preview: "/images/work/alinkriti.jpg",
+    host: "alinkriti.com",
+  },
+  {
+    slug: "mobile-tyre-champions",
+    client: "Mobile Tyre Champions",
+    industry: "Automotive Services",
+    industryShort: "Automotive",
+    icon: "car",
+    projectType: "Website Design & Development",
+    overview:
+      "A 24/7 mobile tyre-fitting service across Surrey, Hampshire and Berkshire. The website is built for the roadside moment: find a fitter, check availability and reach the team in seconds — above all on a phone.",
+    delivered: ["Website Design & Development"],
+    features: [
+      "Postcode availability checker",
+      "One-tap call and WhatsApp",
+      "Emergency-first mobile layout",
+    ],
+    preview: "/images/work/mobile-tyre-champions.jpg",
+    host: "mobiletyrechampions.com",
+    phone: "/images/work/mobile-tyre-champions-phone.jpg",
+  },
+  {
     slug: "mounting-backend-services",
     client: "Mounting Backend Services",
     industry: "Business Services",
@@ -112,61 +205,6 @@ export const caseStudies: readonly CaseStudy[] = [
     host: "sofisam.com",
   },
   {
-    slug: "gulf-connect",
-    client: "Gulf Connect Consultancy",
-    industry: "Capital Markets Communications",
-    industryShort: "Capital Markets",
-    icon: "globe",
-    projectType: "Website Design & Development",
-    overview:
-      "A capital-markets communications consultancy connecting international companies with Gulf capital, partners and media. An institutional palette and investor-focused pathways carry the confidence the sector expects.",
-    delivered: ["Website Strategy", "UI/UX Design", "Development"],
-    features: [
-      "Investor and company pathways",
-      "Three-part capability model",
-      "English / Arabic navigation",
-    ],
-    preview: "/images/work/gulf-connect.jpg",
-    host: "gulfconnectconsultancy.com",
-  },
-  {
-    slug: "mobile-tyre-champions",
-    client: "Mobile Tyre Champions",
-    industry: "Automotive Services",
-    industryShort: "Automotive",
-    icon: "car",
-    projectType: "Website Design & Development",
-    overview:
-      "A 24/7 mobile tyre-fitting service across Surrey, Hampshire and Berkshire. The website is built for the roadside moment: find a fitter, check availability and reach the team in seconds — above all on a phone.",
-    delivered: ["Website Design & Development"],
-    features: [
-      "Postcode availability checker",
-      "One-tap call and WhatsApp",
-      "Emergency-first mobile layout",
-    ],
-    preview: "/images/work/mobile-tyre-champions.jpg",
-    host: "mobiletyrechampions.com",
-    phone: "/images/work/mobile-tyre-champions-phone.jpg",
-  },
-  {
-    slug: "alinkriti",
-    client: "AlinKriti",
-    industry: "Jewellery & E-commerce",
-    industryShort: "E-commerce",
-    icon: "gem",
-    projectType: "E-commerce Development",
-    overview:
-      "Handcrafted jewellery inspired by heritage and refined for the modern woman. The store gives every piece room to shine — warm metallics, soft neutrals and story-led product presentation from discovery to checkout.",
-    delivered: ["E-commerce", "UI/UX Design", "Development"],
-    features: [
-      "Story-led product presentation",
-      "Collections and gifting pathways",
-      "Full online shopping experience",
-    ],
-    preview: "/images/work/alinkriti.jpg",
-    host: "alinkriti.com",
-  },
-  {
     slug: "hqb-pro-solutions",
     client: "HQB Pro Solutions",
     industry: "Professional Services",
@@ -183,24 +221,6 @@ export const caseStudies: readonly CaseStudy[] = [
     ],
     preview: "/images/work/hqb-pro-solutions.jpg",
     host: "hqbprosolutions.com",
-  },
-  {
-    slug: "mining-discovery",
-    client: "Mining Discovery",
-    industry: "Mining News & Media",
-    industryShort: "News & Media",
-    icon: "news",
-    projectType: "Website Design & Development",
-    overview:
-      "A global mining-industry news platform: daily coverage of gold, silver, copper and the wider metals market, digital magazine editions and company profiles, serving an international readership at news-room pace.",
-    delivered: ["Website Design & Development"],
-    features: [
-      "Live metals price ticker",
-      "Digital magazine editions",
-      "Daily and weekly newsletters",
-    ],
-    preview: "/images/work/mining-discovery.jpg",
-    host: "miningdiscovery.com",
   },
 ];
 
