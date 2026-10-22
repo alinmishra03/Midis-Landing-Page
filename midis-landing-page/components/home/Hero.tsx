@@ -4,7 +4,6 @@ import { Eyebrow } from "@/components/ui/Section";
 import { EstimateCta } from "./EstimateCta";
 import { EstimatorForm } from "@/components/forms/EstimatorForm";
 import { hero } from "@/content/sections";
-import { verifiedCounts } from "@/content/clients";
 
 /**
  * SECTION 1 — Hero.
@@ -203,10 +202,11 @@ export function Hero() {
               style={{ "--d": "340ms" } as React.CSSProperties}
             >
               <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center sm:items-start sm:justify-start sm:gap-1.5 sm:p-0 sm:text-left">
-                {/* MIDIS-instructed figure (2026-10-20), not derived from
-                    clientMarks.length — see the trust-strip note above. */}
+                {/* MIDIS-instructed figure (raised 20+ → 30+ on MIDIS's
+                    instruction of 2026-10-22), not derived from the
+                    client list — see the trust-strip note above. */}
                 <CountUp
-                  value={20}
+                  value={30}
                   suffix="+"
                   delay={520}
                   className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-[2.75rem] sm:tracking-[-0.02em]"
@@ -218,8 +218,12 @@ export function Hero() {
                 </span>
               </li>
               <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-line px-2 py-2.5 text-center sm:ml-10 sm:items-start sm:justify-start sm:gap-1.5 sm:p-0 sm:pl-10 sm:text-left">
+                {/* MIDIS-instructed figure (2026-10-22; previously the
+                    counted verifiedCounts.projectsShown, which remains
+                    the portfolio's own countable fact). */}
                 <CountUp
-                  value={verifiedCounts.projectsShown}
+                  value={20}
+                  suffix="+"
                   delay={520}
                   className="font-display text-[1.375rem] font-semibold leading-none text-accent-ink sm:text-[2.75rem] sm:tracking-[-0.02em]"
                 />

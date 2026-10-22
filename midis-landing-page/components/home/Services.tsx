@@ -382,6 +382,16 @@ export function Services() {
                     <p className="mt-2 text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
                       {service.description}
                     </p>
+                    {/* One label on every card — "Get a Project Estimate",
+                        straight to the ONE form (MIDIS instruction,
+                        2026-10-22; settled after two passes the same day:
+                        no box of any kind, just the site's text-link
+                        language in the MIDIS orange). `accent-ink` IS the
+                        site's orange for text on light surfaces — the raw
+                        brand orange is 2.55:1 on paper and fails as text
+                        (see the Button notes). The prefill stays: arriving
+                        from a service card still preselects its project
+                        type. */}
                     <a
                       href="#estimator"
                       onClick={() => {
@@ -390,7 +400,9 @@ export function Services() {
                       }}
                       className="group/btn mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink"
                     >
-                      <span className="link-underline-accent">{service.cta}</span>
+                      <span className="link-underline-accent">
+                        Get a Project Estimate
+                      </span>
                       <Arrow />
                     </a>
                   </div>
