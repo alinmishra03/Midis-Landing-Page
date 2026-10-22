@@ -1818,11 +1818,9 @@ p {
    (40) and the header (50), far below the popup layer (70) — so it can
    never sit on top of an open menu or dialog.
 
-   Hidden states use opacity + transform + pointer-events, never display,
-   so the hide/show transitions run and an invisible control cannot catch a
-   tap. FloatingCta.tsx drives them from two IntersectionObservers (the
-   hero, the footer) and the focusin/focusout pair (any form field — which
-   is also the mobile-keyboard case).
+   ALWAYS VISIBLE (MIDIS instruction, 2026-10-22): there are no hidden
+   states any more — the button never fades while scrolling. The only
+   motion is its one-time entrance on page load.
    ========================================================================== */
 
 @keyframes fab-rise {
@@ -1844,30 +1842,6 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.625rem;
-  transition:
-    opacity var(--dur-base) var(--ease-out-quart),
-    transform var(--dur-base) var(--ease-out-quart);
-}
-
-@media (min-width: 640px) {
-  .floating-cta {
-    gap: 0.75rem;
-  }
-}
-
-.floating-cta[data-hidden] {
-  opacity: 0;
-  transform: translateY(14px);
-  pointer-events: none;
-}
-
-/* While a lead popup (modal or the mobile reminder) is open, the whole
-   dock stands down — LeadPopups keeps this attribute on <body>. */
-body[data-popup-open] .floating-cta {
-  opacity: 0;
-  transform: translateY(14px);
-  pointer-events: none;
 }
 
 /* ---- the button ---- */
@@ -1881,9 +1855,8 @@ body[data-popup-open] .floating-cta {
   height: 3rem;
   border-radius: calc(infinity * 1px);
   box-shadow: 0 10px 26px -16px rgb(20 21 24 / 0.5);
-  /* `backwards`, deliberately not `both`: a forwards fill would keep the
-     final keyframe applied forever and silently defeat the hide
-     transition above. */
+  /* One-time entrance on load. `backwards`, not `both`: a forwards fill
+     would pin the final keyframe's transform and block the hover lift. */
   animation: fab-rise 520ms var(--ease-out-expo) 500ms backwards;
   transition:
     transform var(--dur-fast) var(--ease-out-quart),
