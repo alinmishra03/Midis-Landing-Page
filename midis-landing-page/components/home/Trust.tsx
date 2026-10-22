@@ -89,19 +89,13 @@ export function Trust() {
           </Reveal>
         </div>
 
-        {/* ---- the labelled divider ---- */}
+        {/* ---- the labelled divider (no counter, MIDIS 2026-10-22) ---- */}
         <Reveal className="mt-10 sm:mt-12">
           <div className="flex items-center gap-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-ink">
-              Selected clients
+              Brands we&rsquo;ve worked with
             </p>
             <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-line" />
-            <p
-              className="font-display text-sm font-semibold tabular-nums text-muted"
-              aria-label={`${showcaseClients.length} clients shown`}
-            >
-              {String(showcaseClients.length).padStart(2, "0")}
-            </p>
           </div>
         </Reveal>
 
@@ -109,10 +103,18 @@ export function Trust() {
             flex + justify-center rather than a grid, so ANY roster count
             centres its last row instead of leaving it ragged. Slot widths
             are (track − its share of the gaps): 2 per row on phones,
-            3 from sm, 5 from lg. */}
+            3 from sm, 5 from lg.
+
+            LOGO, THEN NAME (MIDIS 2026-10-22). Every slot is a column: a
+            FIXED-height logo area (the mark centred in it at its own
+            aspect), then the client's name. Because the logo area is the
+            same height everywhere, every name in a row starts at the same
+            line whatever the mark's shape. The visible name labels the
+            mark, so the images carry empty alt text — a screen reader
+            hears the name once, not "X logo, X". */}
         <ul
-          className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-10 sm:mt-10 sm:gap-x-10 sm:gap-y-12"
-          aria-label="Client logos"
+          className="mt-8 flex flex-wrap items-start justify-center gap-x-6 gap-y-9 sm:mt-10 sm:gap-x-10 sm:gap-y-11"
+          aria-label="Clients"
         >
           {showcaseClients.map((client, index) => (
             <Reveal
@@ -120,41 +122,46 @@ export function Trust() {
               as="li"
               delay={60 + index * 55}
               className={cn(
-                "group flex items-center justify-center",
+                "group flex flex-col items-center",
                 "w-[calc(50%-0.75rem)] sm:w-[calc(33.333%-1.667rem)] lg:w-[calc(20%-2rem)]",
               )}
             >
-              <Image
-                src={client.logo.src}
-                alt={`${client.name} logo`}
-                width={client.logo.width}
-                height={client.logo.height}
-                loading="lazy"
-                sizes="200px"
-                className={cn(
-                  "h-auto w-auto max-w-full",
-                  "transition-transform duration-[var(--dur-base)] ease-[var(--ease-out-expo)]",
-                  "group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none",
-                  logoHeight(client.logo),
-                  client.logoDark && "theme-logo-light",
-                )}
-              />
-              {client.logoDark ? (
+              <span className="flex h-20 w-full items-center justify-center sm:h-[5.25rem]">
                 <Image
-                  src={client.logoDark.src}
-                  alt={`${client.name} logo`}
-                  width={client.logoDark.width}
-                  height={client.logoDark.height}
+                  src={client.logo.src}
+                  alt=""
+                  width={client.logo.width}
+                  height={client.logo.height}
                   loading="lazy"
                   sizes="200px"
                   className={cn(
-                    "theme-logo-dark h-auto w-auto max-w-full",
+                    "h-auto w-auto max-w-full",
                     "transition-transform duration-[var(--dur-base)] ease-[var(--ease-out-expo)]",
                     "group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none",
-                    logoHeight(client.logoDark),
+                    logoHeight(client.logo),
+                    client.logoDark && "theme-logo-light",
                   )}
                 />
-              ) : null}
+                {client.logoDark ? (
+                  <Image
+                    src={client.logoDark.src}
+                    alt=""
+                    width={client.logoDark.width}
+                    height={client.logoDark.height}
+                    loading="lazy"
+                    sizes="200px"
+                    className={cn(
+                      "theme-logo-dark h-auto w-auto max-w-full",
+                      "transition-transform duration-[var(--dur-base)] ease-[var(--ease-out-expo)]",
+                      "group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none",
+                      logoHeight(client.logoDark),
+                    )}
+                  />
+                ) : null}
+              </span>
+              <span className="mt-3.5 text-balance text-center text-xs font-medium leading-[1.4] text-fg transition-colors duration-[var(--dur-fast)] group-hover:text-accent-ink sm:text-[0.8125rem]">
+                {client.name}
+              </span>
             </Reveal>
           ))}
         </ul>

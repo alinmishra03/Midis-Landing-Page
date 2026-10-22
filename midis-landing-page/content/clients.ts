@@ -105,7 +105,7 @@ export const clients: readonly Client[] = [
     industry: "Jewellery & E-commerce",
   },
   {
-    name: "SofiSam",
+    name: "Sofisam",
     logo: { src: "/images/clients/sofisam-light.webp", width: 520, height: 86 },
     logoDark: { src: "/images/clients/sofisam.webp", width: 520, height: 86 },
     website: "https://www.sofisam.com/",
