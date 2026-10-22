@@ -41,7 +41,16 @@ export const work = {
   headline: "Our Work Speaks for Itself",
   subheadline:
     "Explore digital experiences built to solve real business challenges, strengthen brands, and create better customer journeys.",
-  cta: { label: "Have a Project in Mind? Let's Talk.", href: "#estimator" },
+  /* One destination, three label lengths (MIDIS fix, 2026-10-22): the full
+     p.3 line needs a ~346px button, which cannot sit on one line inside a
+     narrow phone's gutters — so phones get a shorter label instead of a
+     wrapped, double-height button. Work.tsx picks by breakpoint. */
+  cta: {
+    label: "Have a Project in Mind? Let's Talk.",
+    labelShort: "Let's Talk About Your Project",
+    labelCompact: "Discuss Your Project",
+    href: "#estimator",
+  },
 } as const;
 
 /* ==========================================================================
