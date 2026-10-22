@@ -2171,11 +2171,11 @@ p {
 }
 
 /* ==========================================================================
-   FLOATING CONTACT DOCK — WhatsApp / Call / Estimate (MIDIS brief,
-   2026-10-21; replaces the 2026-10-20 WhatsApp + estimator-pill pair)
+   FLOATING CONTACT BUTTON — WhatsApp only (MIDIS follow-up, 2026-10-22;
+   the Call and Estimate circles of the 2026-10-21 dock were removed)
    --------------------------------------------------------------------------
-   Three equal circles stacked vertically, pinned bottom-right, clear of
-   safe areas. z-30: above all page content, BELOW the mobile nav panel
+   One circle pinned bottom-right, clear of safe areas. z-30: above all
+   page content, BELOW the mobile nav panel
    (40) and the header (50), far below the popup layer (70) — so it can
    never sit on top of an open menu or dialog.
 
@@ -2231,7 +2231,7 @@ body[data-popup-open] .floating-cta {
   pointer-events: none;
 }
 
-/* ---- the buttons: one geometry, three identities ---- */
+/* ---- the button ---- */
 
 .fab {
   position: relative;
@@ -2242,10 +2242,10 @@ body[data-popup-open] .floating-cta {
   height: 3rem;
   border-radius: calc(infinity * 1px);
   box-shadow: 0 10px 26px -16px rgb(20 21 24 / 0.5);
-  /* Staggered entrance per button. `backwards`, deliberately not `both`:
-     a forwards fill would keep the final keyframe applied forever and
-     silently defeat the group's hide transition above. */
-  animation: fab-rise 520ms var(--ease-out-expo) var(--d, 500ms) backwards;
+  /* `backwards`, deliberately not `both`: a forwards fill would keep the
+     final keyframe applied forever and silently defeat the hide
+     transition above. */
+  animation: fab-rise 520ms var(--ease-out-expo) 500ms backwards;
   transition:
     transform var(--dur-fast) var(--ease-out-quart),
     background-color var(--dur-fast) var(--ease-out-quart),
@@ -2271,7 +2271,7 @@ body[data-popup-open] .floating-cta {
   transform: translateY(0) scale(0.96);
 }
 
-/* 01 — WhatsApp: the brand's own published green, white official glyph
+/* WhatsApp: the brand's own published green, white official glyph
    (MIDIS instruction, 2026-10-21). Same values in both themes — the whole
    point is that it reads as WhatsApp. */
 .fab-whatsapp {
@@ -2282,36 +2282,6 @@ body[data-popup-open] .floating-cta {
 @media (hover: hover) {
   .fab-whatsapp:hover {
     background: #1ebe5d;
-  }
-}
-
-/* 02 — Call: charcoal with a white handset; the hover accent is MIDIS
-   orange. A hairline keeps the circle visible on the dark theme's ground. */
-.fab-call {
-  border: 1px solid rgb(255 255 255 / 0.14);
-  background: var(--color-ink);
-  color: #fff;
-}
-
-@media (hover: hover) {
-  .fab-call:hover {
-    border-color: rgb(239 135 22 / 0.6);
-    color: var(--color-accent);
-  }
-}
-
-/* 03 — Estimate: the page's primary-action language — orange fill, dark
-   icon — same pairing as every primary Button (the orange fails with white,
-   see the Button notes). */
-.fab-estimate {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  box-shadow: 0 10px 26px -14px rgb(239 135 22 / 0.65);
-}
-
-@media (hover: hover) {
-  .fab-estimate:hover {
-    background: var(--color-accent-hover);
   }
 }
 
@@ -2364,13 +2334,6 @@ body[data-popup-open] .floating-cta {
   .fab:hover {
     transform: none;
   }
-}
-
-/* Hidden while the estimator itself is on screen. */
-.floating-pill[data-hidden] {
-  opacity: 0;
-  transform: translateX(10px);
-  pointer-events: none;
 }
 
 /* ==========================================================================
