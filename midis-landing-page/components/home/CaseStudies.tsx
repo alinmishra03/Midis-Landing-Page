@@ -34,7 +34,7 @@ export function CaseStudies() {
           {/* ---- framing ---- */}
           <div>
             <Reveal>
-              <Eyebrow className="mb-5">Case studies</Eyebrow>
+              <Eyebrow className="mb-5">Purpose-driven work</Eyebrow>
             </Reveal>
             <RevealText
               id="case-studies-heading"
