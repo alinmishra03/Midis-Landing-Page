@@ -63,27 +63,36 @@ import { hero } from "@/content/sections";
  *
  * HEIGHT. Still not `100vh` — a viewport-locked hero on a short laptop
  * pushes the CTAs and the form out of view entirely.
+ *
+ * THE PHOTOGRAPH (MIDIS briefs, 2026-10-23). The designer's-desk photo is
+ * no longer drawn here: it is the SITE BACKDROP, one fixed layer behind
+ * the whole homepage (components/layout/SiteBackdrop.tsx). The hero is
+ * where it shows most. This section is transparent and carries only its
+ * veils (".hero-media" in globals.css, "SITE ATMOSPHERE"):
+ *
+ *   1. A readability veil in the page colour, strongest behind the copy,
+ *      lighter toward the right where the screens sit.
+ *   2. A long multi-stop fade down to the shared section-edge veil, so the
+ *      hero's last pixel matches the trust section's first exactly.
+ *
+ * Photo: Domenico Loia on Unsplash (unsplash.com/photos/hGV2TfOh0ns),
+ * Unsplash License — free for commercial use, no attribution required.
+ * The original download is kept in assets-source/hero/.
  */
 
 export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden bg-paper pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
+      className="relative isolate overflow-hidden pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
     >
       {/*
-        Background wash. A single very soft radial in the brand orange at 7%
-        — enough to stop the paper reading as flat, nowhere near the "flashy
-        gradient" the brief rules out. It sits behind the form column, which
-        is also what gives the glass shell something real to blur.
+        The hero's veils over the site backdrop — see THE PHOTOGRAPH above.
+        `isolate` keeps this -z-10 layer inside the hero, under the content.
       */}
       <div
         aria-hidden="true"
-        className="hero-wash pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(60rem 40rem at 78% 18%, rgba(239,135,22,0.07), transparent 65%)",
-        }}
+        className="hero-media pointer-events-none absolute inset-0 -z-10"
       />
 
       <div className="container-site">

@@ -37,6 +37,7 @@ export function Work() {
     <Section
       id="work"
       tone="paper"
+      veil="clean"
       labelledBy="work-heading"
       className="pt-[calc(var(--space-section)*0.5)]"
     >

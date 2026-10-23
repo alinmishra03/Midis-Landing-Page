@@ -708,7 +708,7 @@ const VISUALS: Record<string, () => React.JSX.Element> = {
 
 export function Services() {
   return (
-    <Section id="services" tone="surface" labelledBy="services-heading">
+    <Section id="services" tone="surface" veil="soft" labelledBy="services-heading">
       {/* ================= the editorial header ================= */}
       {/* Tighter than the last pass on MIDIS's note: two masked lines
           instead of three, column widths that keep the paragraph beside

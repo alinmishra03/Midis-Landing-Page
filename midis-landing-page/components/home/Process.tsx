@@ -319,7 +319,7 @@ export function Process() {
   }, [anim]);
 
   return (
-    <Section id="process" tone="surface" labelledBy="process-heading">
+    <Section id="process" tone="surface" veil="rich" labelledBy="process-heading">
       <SectionHeader
         eyebrow="How it works"
         heading={process.headline}

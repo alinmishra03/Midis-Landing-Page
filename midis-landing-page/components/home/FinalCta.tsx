@@ -59,6 +59,9 @@ export function FinalCta() {
   return (
     <section
       aria-labelledby="final-cta-heading"
+      data-tone="ink"
+      data-veil="rich"
+      data-end="solid"
       className="on-dark relative overflow-hidden bg-ink pt-[var(--space-section)] text-white"
     >
       {/*

@@ -31,9 +31,19 @@ const tones: Record<Tone, string> = {
   ink: "bg-ink text-white on-dark",
 };
 
+/**
+ * How much of the site backdrop shows through this section, on pages that
+ * have one (`main[data-atmosphere]` — see "SITE ATMOSPHERE" in globals.css).
+ * `clean` for card- and text-dense sections, `rich` where the photo helps
+ * the composition. Elsewhere the attribute is inert and the tone's solid
+ * background applies unchanged.
+ */
+type Veil = "clean" | "subtle" | "soft" | "rich";
+
 interface SectionProps {
   id?: string;
   tone?: Tone;
+  veil?: Veil;
   className?: string;
   children: ReactNode;
   labelledBy?: string;
@@ -42,6 +52,7 @@ interface SectionProps {
 export function Section({
   id,
   tone = "paper",
+  veil = "subtle",
   className,
   children,
   labelledBy,
@@ -50,6 +61,8 @@ export function Section({
     <section
       id={id}
       aria-labelledby={labelledBy}
+      data-tone={tone}
+      data-veil={veil}
       className={cn(tones[tone], "relative py-[var(--space-section)]", className)}
     >
       {children}

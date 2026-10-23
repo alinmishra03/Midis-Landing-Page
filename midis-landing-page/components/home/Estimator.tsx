@@ -23,7 +23,7 @@ import { site } from "@/content/site";
 
 export function Estimator() {
   return (
-    <Section id="estimator-overview" tone="paper" labelledBy="estimator-heading">
+    <Section id="estimator-overview" tone="paper" veil="soft" labelledBy="estimator-heading">
       <div className="container-site">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-center lg:gap-16">
           {/* ---- the case for filling it in ---- */}

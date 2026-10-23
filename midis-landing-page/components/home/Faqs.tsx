@@ -51,7 +51,7 @@ export function Faqs() {
   }
 
   return (
-    <Section id="faqs" tone="paper" labelledBy="faqs-heading">
+    <Section id="faqs" tone="paper" veil="clean" labelledBy="faqs-heading">
       {/*
         ONE COLUMN, ONE LEFT EDGE.
 

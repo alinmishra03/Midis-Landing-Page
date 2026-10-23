@@ -555,11 +555,442 @@ p {
   }
 }
 
+/* ==========================================================================
+   SITE ATMOSPHERE (MIDIS hero + full-site background briefs, 2026-10-23)
+   --------------------------------------------------------------------------
+   One photograph behind the whole homepage, every section a veil over it.
+
+   LAYER 1  the canvas: body's --color-paper, as everywhere.
+   LAYER 2  .site-backdrop — the designer's-desk photo on ONE fixed layer
+            (components/layout/SiteBackdrop.tsx). Fixed so it is decoded
+            and composited once, and so the page scrolls OVER one
+            continuous image instead of a stack of cropped copies.
+   LAYER 3  the veils — each section's background becomes the page colour
+            at a strength from --veil-*: dense where text and cards are
+            dense, thinner where the photo helps the composition.
+   LAYER 4  the transitions — every section starts and ends at the SAME
+            strength (--veil-edge), easing to its own strength over its
+            top and bottom padding, so neighbouring sections always meet
+            at identical pixels. No boundary can exist by construction.
+
+   THE CHARCOAL BANDS (Pricing, the final CTA, the footer) stay charcoal —
+   their type, glass cards and washes are built for it — but they no
+   longer START as a hard edge: each fades in from the light veil through
+   its own top padding, before any of its content begins, and the final
+   CTA fades to solid ink at its foot so the footer continues it exactly.
+
+   Scoped to main[data-atmosphere] (the homepage only): every other route
+   keeps its solid sections. Every colour is a token, every strength a
+   variable with its own dark-theme value — the dark veil sits a little
+   thinner, because the same photo under a near-black veil reads far
+   dimmer than under a light one.
+   ========================================================================== */
+
+:root {
+  --veil-edge: 91%; /* where every section meets the next */
+  --veil-clean: 95%; /* card- and text-dense sections */
+  --veil-subtle: 91%;
+  --veil-soft: 88%;
+  --veil-rich: 81%; /* where the photo carries the composition */
+  --ink-veil: 97%; /* the charcoal bands */
+  --ink-veil-rich: 88%;
+}
+
+/* PHONES, LIGHT MODE: thinner veils so the photograph reads (MIDIS mobile
+   brief, 2026-10-23 — "barely noticeable" at the values above). Desktop
+   and tablet keep the approved values; dark mode is untouched, because
+   :root[data-theme="dark"] below outranks this plain :root. */
+@media (max-width: 639.98px) {
+  :root {
+    --veil-edge: 84%;
+    --veil-clean: 90%;
+    --veil-subtle: 84%;
+    --veil-soft: 80%;
+    --veil-rich: 74%;
+  }
+}
+
+:root[data-theme="dark"] {
+  --veil-edge: 87%;
+  --veil-clean: 93%;
+  --veil-subtle: 87%;
+  --veil-soft: 84%;
+  --veil-rich: 76%;
+  --ink-veil: 96%;
+  --ink-veil-rich: 86%;
+}
+
+@keyframes backdrop-in {
+  from {
+    /* Not 0: an invisible image is not an LCP candidate until it fades in,
+       which would push LCP out by the whole animation. */
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Layer 2: the photograph ---- */
+
+.site-backdrop {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  /* lvh: sized to the LARGEST viewport, so the mobile URL bar collapsing
+     never resizes (and re-crops) the photo mid-scroll. */
+  height: 100vh;
+  height: 100lvh;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.site-backdrop-img {
+  object-fit: cover;
+  animation: backdrop-in 1800ms var(--ease-out-quart) both;
+}
+
+/* PHONES (MIDIS mobile background brief, 2026-10-23). A landscape photo
+   cropped to a TALL phone viewport keeps only a third of its width — the
+   earlier crop showed just the lamp and wall, and the laptop was gone.
+   So on phones the photo is not cropped to the viewport at all: it is
+   laid out at its own 3:2 proportions, 180vw wide, and placed by its
+   composition:
+
+     - the laptop (photo x 24–68%, y 36–81%) is centred on the HEADLINE —
+       large, near-black type that reads over a photograph — about 85% in
+       view; the description below sits over the pale desk;
+     - the plant and bottle sit to its left;
+     - the iMac's "WORKHARD ANYWHERE" lettering (photo x 60–76%) falls just
+       past the right edge, so no screen lettering sits behind the copy.
+
+   Its top and bottom edges feather out (mask), so the photo never ends in
+   a line; below it the page colour continues and every section veil
+   behaves exactly as before. */
+@media (max-width: 639.98px) {
+  .site-backdrop-img {
+    /* The photo is 120vw tall (180vw at 3:2); this puts the laptop's
+       centre (58.5% down the photo) on the headline's centre (~10.8rem). */
+    top: calc(10.8rem - 70.2vw) !important;
+    left: -10vw !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 180vw !important;
+    /* Tailwind's preflight caps every img at max-width: 100%. */
+    max-width: none !important;
+    height: auto !important;
+    /* Feathered top (wall and lamp, under the header) and bottom (the
+       desk edge), so the photo never ends in a line. */
+    mask-image: linear-gradient(180deg, transparent 0, #000 24%, #000 76%, transparent 100%);
+  }
+}
+
+/* FROM SM the photo occupies only the RIGHT of the viewport, anchored at
+   its own left edge, so the screens stay clear of left-aligned copy: on
+   tablets the right half, from xl the right 72% (in the hero, the laptop
+   and iMac sit behind the estimator). next/image's `fill` writes inline
+   insets, hence !important on the three that move. The mask feathers the
+   photo's left edge into the page — no seam where it begins. */
+@media (min-width: 640px) {
+  .site-backdrop-img {
+    left: auto !important;
+    right: 0 !important;
+    width: 50% !important;
+    object-position: 0% 40%;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 32%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-backdrop-img {
+    width: 72% !important;
+    object-position: 0% 42%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-backdrop-img {
+    animation: none;
+  }
+}
+
+/* ---- Layer 3 + 4: the hero's veils ----
+   The hero shows the most photograph. Two veils, both theme tokens:
+
+     ::before  READABILITY — the page colour over the photo, strongest
+               behind the copy, plus a soft band under the floating header.
+               Masked out toward the bottom so it hands over cleanly.
+     ::after   the DISSOLVE — a long multi-stop fade down to --veil-edge,
+               exactly where the trust section's own veil begins.
+
+   --hero-fade is how far down the dissolve completes: on phones 36rem
+   (the copy, CTA and statistics; the estimator card below sits on the
+   edge veil), 44rem from sm, the full hero height from xl. Because
+   ::before is fully masked out by then, the hero's bottom pixel is
+   exactly --veil-edge — the same as the next section's top. */
+
+.hero-media {
+  --hero-fade: 36rem;
+}
+
+@media (min-width: 640px) {
+  .hero-media {
+    --hero-fade: 44rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-media {
+    --hero-fade: 100%;
+  }
+}
+
+.hero-media::before,
+.hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.hero-media::before {
+  z-index: 1;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-paper) 55%, transparent) 0%,
+      transparent 22%
+    ),
+    color-mix(in srgb, var(--color-paper) 82%, transparent);
+  mask-image: linear-gradient(
+    180deg,
+    #000 0,
+    #000 calc(var(--hero-fade) * 0.45),
+    transparent var(--hero-fade)
+  );
+}
+
+/* PHONES, LIGHT MODE: the readability veil follows the copy instead of
+   sitting evenly over everything (MIDIS mobile brief, 2026-10-23):
+
+     0–6.2rem       86%  header and the small orange eyebrow
+     → 8rem         55%  eases open over the headline, where the laptop is
+     12.5rem        55%
+     → 15.4rem      88%  eases closed before the grey description, which
+                         needs it for 4.5:1 over the desk and mouse pad
+     21.9rem        88%
+     → 24rem        62%  behind the CTA and statistics (solid surfaces)
+
+   Every change is a 2–3rem ramp, never a step, so the photo has no band
+   edges. The rem stops track the measured layout at 320–430px (eyebrow
+   ≤ 6.1rem, headline 6.9–15.2rem, description 15.1–21.9rem). Scoped to
+   light mode: dark keeps the shared rules above unchanged. */
+@media (max-width: 639.98px) {
+  :root:not([data-theme="dark"]) .hero-media::before {
+    --hm-top: 86%;
+    --hm-head: 55%;
+    --hm-text: 88%;
+    --hm-open: 62%;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-paper) var(--hm-top), transparent) 0,
+      color-mix(in srgb, var(--color-paper) var(--hm-top), transparent) 6.2rem,
+      color-mix(in srgb, var(--color-paper) var(--hm-head), transparent) 8rem,
+      color-mix(in srgb, var(--color-paper) var(--hm-head), transparent) 12.5rem,
+      color-mix(in srgb, var(--color-paper) var(--hm-text), transparent) 15.4rem,
+      color-mix(in srgb, var(--color-paper) var(--hm-text), transparent) 21.9rem,
+      color-mix(in srgb, var(--color-paper) var(--hm-open), transparent) 24rem
+    );
+    /* Hand over to the dissolve only after the statistics (~30rem), not
+       mid-description as the shared 45%-of-fade rule would. */
+    mask-image: linear-gradient(180deg, #000 0, #000 26rem, transparent 36rem);
+  }
+
+  /* The dissolve starts after the statistics too, so it never adds veil
+     over the laptop; it completes behind the (opaque) estimator card. */
+  :root:not([data-theme="dark"]) .hero-media::after {
+    background: linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 26rem,
+      color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.13), transparent) 27.5rem,
+      color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.34), transparent) 29rem,
+      color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.6), transparent) 30.5rem,
+      color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.82), transparent) 32rem,
+      color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.95), transparent) 34rem,
+      color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 36rem,
+      color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 100%
+    );
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-media::before {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-paper) 50%, transparent) 0%,
+        transparent 20%
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-paper) 92%, transparent) 0%,
+        color-mix(in srgb, var(--color-paper) 85%, transparent) 34%,
+        color-mix(in srgb, var(--color-paper) 60%, transparent) 56%,
+        color-mix(in srgb, var(--color-paper) 40%, transparent) 78%,
+        color-mix(in srgb, var(--color-paper) 32%, transparent) 100%
+      );
+  }
+}
+
+.hero-media::after {
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    transparent 0,
+    transparent calc(var(--hero-fade) * 0.34),
+    color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.13), transparent)
+      calc(var(--hero-fade) * 0.44),
+    color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.34), transparent)
+      calc(var(--hero-fade) * 0.54),
+    color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.6), transparent)
+      calc(var(--hero-fade) * 0.65),
+    color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.82), transparent)
+      calc(var(--hero-fade) * 0.76),
+    color-mix(in srgb, var(--color-paper) calc(var(--veil-edge) * 0.95), transparent)
+      calc(var(--hero-fade) * 0.88),
+    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) var(--hero-fade),
+    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 100%
+  );
+}
+
+/* ---- Layer 3 + 4: the light sections ----
+   Paper and surface sections share ONE veil colour (the warm paper) so
+   there is no off-white/white step left between them; cards inside keep
+   their own opaque surfaces and stand off the veil. Each section eases
+   from --veil-edge to its own strength over 12rem (or a quarter of a
+   short section) and back. Unlayered, so it outranks the tone utility. */
+
+main[data-atmosphere] section[data-tone="paper"],
+main[data-atmosphere] section[data-tone="surface"] {
+  --veil-mid: var(--veil-subtle);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 0%,
+    color-mix(in srgb, var(--color-paper) var(--veil-mid), transparent) min(12rem, 25%),
+    color-mix(in srgb, var(--color-paper) var(--veil-mid), transparent)
+      max(calc(100% - 12rem), 75%),
+    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 100%
+  );
+}
+
+main[data-atmosphere] section[data-veil="clean"] {
+  --veil-mid: var(--veil-clean);
+}
+
+main[data-atmosphere] section[data-veil="soft"] {
+  --veil-mid: var(--veil-soft);
+}
+
+main[data-atmosphere] section[data-veil="rich"] {
+  --veil-mid: var(--veil-rich);
+}
+
+/* ---- Layer 3 + 4: the charcoal bands ----
+   Light veil → charcoal over --ink-ramp, inside the band's own top
+   padding (grown by half on this page to give the dusk room), so no
+   content ever sits on the in-between greys; charcoal held; and back to
+   the light veil through the bottom padding. The ramp is an eased
+   S-curve (0 → 12 → 50 → 88 → 100% ink across 0/30/50/70/100% of the
+   ramp), built by mixing the two END colours — never a linear band that
+   reads as a shadow. The final CTA (data-end="solid") deepens instead to
+   solid ink at its foot, where the solid footer continues it exactly. */
+
+main[data-atmosphere] section[data-tone="ink"] {
+  --ink-mid: var(--ink-veil);
+  /* Never shorter than 7rem: on phones the section rhythm is ~56px, and a
+     light-to-charcoal ramp that short reads as a shadow, not a dusk. */
+  --ink-ramp: max(calc(var(--space-section) * 1.35), 7rem);
+  --light-end: color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent);
+  --ink-end: color-mix(in srgb, var(--color-ink) var(--ink-mid), transparent);
+  padding-top: max(calc(var(--space-section) * 1.5), 7.75rem);
+  padding-bottom: max(calc(var(--space-section) * 1.5), 7.75rem);
+  background: linear-gradient(
+    180deg,
+    var(--light-end) 0,
+    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(var(--ink-ramp) * 0.3),
+    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(var(--ink-ramp) * 0.5),
+    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(var(--ink-ramp) * 0.7),
+    var(--ink-end) var(--ink-ramp),
+    var(--ink-end) calc(100% - var(--ink-ramp)),
+    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.7),
+    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.5),
+    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.3),
+    var(--light-end) 100%
+  );
+}
+
+main[data-atmosphere] section[data-tone="ink"][data-veil="rich"] {
+  --ink-mid: var(--ink-veil-rich);
+}
+
+/* The second layer is the BRIDGE to the footer: the footer's own top glow
+   (radial 56rem × 22rem, orange at 12%, centred on its top edge — see
+   Footer.tsx) mirrored onto this section's bottom edge. Same centre, same
+   radii, same strength, so the two halves meet at identical pixels and
+   the warmth carries across with no line. */
+main[data-atmosphere] section[data-tone="ink"][data-end="solid"] {
+  padding-bottom: 0;
+  background:
+    radial-gradient(56rem 22rem at 50% 100%, rgba(239, 135, 22, 0.12), transparent 68%),
+    linear-gradient(
+    180deg,
+    var(--light-end) 0,
+    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(var(--ink-ramp) * 0.3),
+    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(var(--ink-ramp) * 0.5),
+    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(var(--ink-ramp) * 0.7),
+    var(--ink-end) var(--ink-ramp),
+    var(--ink-end) 55%,
+    var(--color-ink) 100%
+  );
+}
+
+/* The bands' own decorative orange washes start where the charcoal is
+   fully in, never on the light part of the ramp — otherwise they tint
+   the page at the band's top edge, which is a visible seam. */
+main[data-atmosphere] section[data-tone="ink"] > .ambient {
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    transparent calc(var(--ink-ramp) * 0.5),
+    #000 calc(var(--ink-ramp) * 1.2),
+    #000 calc(100% - var(--ink-ramp) * 1.2),
+    transparent calc(100% - var(--ink-ramp) * 0.5),
+    transparent 100%
+  );
+}
+
+/* The final CTA's drifting glow fades out before its foot (by 92%, clear
+   of the drift's 7% scale), leaving the static bridge above to meet the
+   footer: a moving glow can never match a still one at the seam. */
+main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    transparent calc(var(--ink-ramp) * 0.5),
+    #000 calc(var(--ink-ramp) * 1.2),
+    #000 60%,
+    transparent 92%
+  );
+}
+
 /* --------------------------------------------------------------------------
    The hero estimator's shell
    --------------------------------------------------------------------------
    A refined glass surface for the form column. It earns its blur: the hero
-   wash sits behind it, so there is genuinely something to diffuse (see the
+   photograph sits behind it, so there is genuinely something to diffuse (see the
    GLASS section's rule about where backdrop-filter is allowed). Theme-aware
    by explicit values rather than tokens because translucency needs a
    different alpha recipe per theme, same as the glass utilities.
@@ -572,7 +1003,11 @@ p {
   position: relative;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card-lg);
-  background: rgb(255 255 255 / 0.72);
+  /* 0.92 (was 0.72): the shell now floats over the site photograph, and
+     the brief asks for the estimator to stay a clearly defined interface —
+     the photo reads as a soft glow through it, never as detail behind the
+     labels and inputs. */
+  background: rgb(255 255 255 / 0.92);
   /* Standard property only — Lightning CSS prefixes from browser targets;
      see the warning in the GLASS section. */
   backdrop-filter: blur(16px) saturate(120%);
@@ -580,7 +1015,7 @@ p {
 }
 
 :root[data-theme="dark"] .hero-form-shell {
-  background: rgb(24 24 27 / 0.66);
+  background: rgb(24 24 27 / 0.9);
   box-shadow: 0 18px 44px -32px rgb(0 0 0 / 0.7);
 }
 
@@ -3365,15 +3800,6 @@ p {
  * (The trust section's logo cells keep fixed light/dark tones in both
  * themes — see "Client logo wall" above for why they do not flip here.)
  */
-
-/*
- * The hero wash. The warm radial reads as light bleeding onto paper in light
- * mode; on a dark page the same wash needs to be stronger to register at all.
- */
-:root[data-theme="dark"] .hero-wash,
-:root:not([data-theme="light"]) .hero-wash {
-  opacity: 0.85;
-}
 
 /* --------------------------------------------------------------------------
    The auto-switching wordmark

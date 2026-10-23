@@ -65,7 +65,7 @@ export function Testimonials() {
   const tailDelay = Math.min(words.length * 12 + 220, 680);
 
   return (
-    <Section id="testimonials" tone="surface" labelledBy="testimonials-heading">
+    <Section id="testimonials" tone="surface" veil="soft" labelledBy="testimonials-heading">
       <div className="container-site">
         <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-x-16 lg:gap-y-12">
           {/* ---- 1. the header ---- */}
