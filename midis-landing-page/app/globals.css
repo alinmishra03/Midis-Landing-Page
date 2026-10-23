@@ -3461,168 +3461,328 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
 }
 
 /* ==========================================================================
-   PROCESS ROADMAP — the project journey (MIDIS brief, 2026-10-21)
+   PROCESS RIBBON — the serpentine process chart (MIDIS brief, 2026-10-23)
    --------------------------------------------------------------------------
-   Process.tsx measures the five milestone badges and generates the four
-   S-path legs through their real centres; this block only styles and
-   choreographs them. Three board states, set as data-anim on .pr-board:
+   Process.tsx measures where the grid below puts the five labels and draws
+   one thick ribbon through them (base, orange progress, chevron joints).
+   This block owns the LAYOUT and the look; the geometry follows the layout.
 
-     static   everything visible — the SSR state, and the resting state
-              after the sequence has played once;
-     pending  hidden, entered only client-side when motion is allowed and
-              the board is still below the viewport;
-     play     the journey: milestone -> leg draws -> next milestone,
-              finishing with one pulse on Launch & Grow.
+     --pr-band   ribbon thickness = the height of every label row
+     --pr-turn   the turn columns each side, where the U-turns run
 
-   Legs carry pathLength="1", so the draw-on is a normalised
-   stroke-dashoffset — identical timing at every viewport width.
-   Reduced-motion force-finishes everything at the bottom of the block.
+   BELOW LG (phones and tablets): one stage per run, runs alternating
+   direction, U-turns down alternate sides. Each description sits under its
+   own run and spans away from the turn that follows it.
+
+   FROM LG: three runs — 01 02 → | ← 03 04 (03 on the right: the ribbon is
+   travelling leftwards) | 05 → with its description beside the arrowhead.
+   Every stage is placed explicitly; the DOM keeps 01–05 in order.
    ========================================================================== */
 
-.pr-leg-base {
-  fill: none;
-  stroke: color-mix(in srgb, var(--color-fg) 22%, transparent);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 0.5 7;
+.pr-board {
+  --pr-band: clamp(2.625rem, 11vw, 2.875rem);
+  --pr-turn: calc(var(--pr-band) * 1.3);
+  --pr-ribbon: #171717;
+  --pr-notch: var(--color-paper);
+  position: relative;
+  isolation: isolate;
 }
 
-.pr-leg-ink {
-  fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  transition:
-    stroke 280ms var(--ease-out-quart),
-    stroke-width 280ms var(--ease-out-quart);
+@media (min-width: 768px) {
+  .pr-board {
+    --pr-band: 3.25rem;
+    --pr-turn: calc(var(--pr-band) * 1.4);
+  }
 }
 
-.pr-leg-hot {
-  stroke: var(--color-accent-ink);
-  stroke-width: 3.5;
+@media (min-width: 1024px) {
+  .pr-board {
+    --pr-band: clamp(4.75rem, 6.2vw, 6rem);
+    --pr-turn: calc(var(--pr-band) * 1.5);
+  }
 }
 
-.pr-arrowhead {
+/* Dark theme: a charcoal ribbon would vanish into the page, so the ribbon
+   lifts to a graphite that still reads as the same object. */
+:root[data-theme="dark"] .pr-board {
+  --pr-ribbon: #34353b;
+}
+
+/* A soft, local lift of the page colour behind the chart, so the
+   photograph never puts detail behind the descriptions. Feathered on all
+   sides: it has no edge to see. */
+.pr-board::before {
+  content: "";
+  position: absolute;
+  inset: -2.5rem -1rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 70% 62% at 50% 50%,
+    color-mix(in srgb, var(--color-paper) 72%, transparent) 0%,
+    color-mix(in srgb, var(--color-paper) 48%, transparent) 60%,
+    transparent 100%
+  );
+}
+
+/* ---- the ribbon (SVG) ---- */
+
+.pr-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pr-base {
+  fill: var(--pr-ribbon);
+  stroke: var(--pr-ribbon);
+  /* Depth: one soft settling shadow under the whole ribbon. Static, so it
+     rasterises once — the moving fill is drawn above it, unfiltered. */
+  filter: drop-shadow(0 12px 18px rgb(20 21 24 / 0.16));
+}
+
+:root[data-theme="dark"] .pr-base {
+  filter: drop-shadow(0 12px 22px rgb(0 0 0 / 0.5));
+}
+
+.pr-lit {
+  stroke: rgb(255 255 255 / 0.13);
+  stroke-linecap: butt;
+}
+
+.pr-joint {
   fill: none;
-  stroke: var(--color-accent-ink);
-  stroke-width: 2.2;
+  stroke: var(--pr-notch);
+  stroke-width: max(3px, calc(var(--pr-band) * 0.07));
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.pr-badge {
-  box-shadow: 0 10px 24px -18px rgb(20 21 24 / 0.5);
+/* ---- the grid ---- */
+
+.pr-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--pr-turn) minmax(0, 1fr) var(--pr-turn);
+  grid-template-rows: repeat(5, var(--pr-band) auto);
+}
+
+.pr-stage {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: span 2;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+}
+
+.pr-stage:nth-child(1) { grid-row: 1 / 3; }
+.pr-stage:nth-child(2) { grid-row: 3 / 5; }
+.pr-stage:nth-child(3) { grid-row: 5 / 7; }
+.pr-stage:nth-child(4) { grid-row: 7 / 9; }
+.pr-stage:nth-child(5) { grid-row: 9 / 11; }
+
+.pr-label {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* Each description spans AWAY from the turn that follows its run: runs
+   1, 3, 5 head right (turn on the right), 2 and 4 head left. */
+.pr-desc {
+  grid-row: 2;
+  grid-column: 1 / 3;
+  padding: 0.75rem 0.75rem 1.5rem 0;
+}
+
+.pr-stage:nth-child(even) .pr-desc {
+  grid-column: 2 / 4;
+  padding: 0.75rem 0 1.5rem calc(var(--pr-band) * 0.42);
+}
+
+.pr-stage:nth-child(5) .pr-desc {
+  padding-bottom: 0;
+}
+
+@media (min-width: 1024px) {
+  .pr-grid {
+    grid-template-columns: var(--pr-turn) minmax(0, 1fr) minmax(0, 1fr) var(--pr-turn);
+    grid-template-rows: var(--pr-band) auto var(--pr-band) auto var(--pr-band);
+  }
+
+  .pr-stage {
+    grid-column: auto;
+    grid-template-columns: none;
+  }
+
+  .pr-stage:nth-child(1) { grid-column: 2; grid-row: 1 / 3; }
+  .pr-stage:nth-child(2) { grid-column: 3; grid-row: 1 / 3; }
+  /* Row two runs right-to-left: 03 is met first, on the right. */
+  .pr-stage:nth-child(3) { grid-column: 3; grid-row: 3 / 5; }
+  .pr-stage:nth-child(4) { grid-column: 2; grid-row: 3 / 5; }
+  .pr-stage:nth-child(5) {
+    grid-column: 2 / 4;
+    grid-row: 5 / 6;
+    grid-template-columns: subgrid;
+    grid-template-rows: var(--pr-band);
+  }
+
+  .pr-label,
+  .pr-stage:nth-child(5) .pr-label {
+    grid-column: 1;
+  }
+
+  .pr-desc,
+  .pr-stage:nth-child(even) .pr-desc {
+    grid-column: 1;
+    max-width: 36ch;
+    padding: 1rem calc(var(--pr-band) * 0.45) 2.25rem;
+  }
+
+  /* 05's description sits beside the arrowhead, on the ribbon's line. */
+  .pr-stage:nth-child(5) .pr-desc {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    padding: 0 0 0 calc(var(--pr-band) * 0.6 + 1.5rem);
+  }
+}
+
+/* ---- labels: number and title, inside the ribbon ---- */
+
+.pr-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding-inline: calc(var(--pr-band) * 0.42);
+  border-radius: calc(var(--pr-band) / 2);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: left;
+  transition: color var(--dur-base) var(--ease-out-quart);
+}
+
+/* CHEVRON ZONES. A run that begins after a joint (a U-turn, or the joint
+   between two stages on one desktop row) starts with a chevron notch; the
+   label reserves 0.6× the ribbon height on that side, so the number never
+   meets the notch and the clearance scales with the ribbon at every width.
+   Phones/tablets: runs 2 and 4 enter from the right, 3 and 5 from the
+   left. Desktop: 02 and 05 enter from the left (03 and 04 are text-left on
+   a leftward run, far from both of theirs). */
+.pr-stage:nth-child(even) .pr-label {
+  padding-inline-end: calc(var(--pr-band) * 0.6);
+}
+
+.pr-stage:nth-child(3) .pr-label,
+.pr-stage:nth-child(5) .pr-label {
+  padding-inline-start: calc(var(--pr-band) * 0.6);
+}
+
+@media (min-width: 1024px) {
+  .pr-stage:nth-child(even) .pr-label,
+  .pr-stage:nth-child(3) .pr-label {
+    padding-inline: calc(var(--pr-band) * 0.42);
+  }
+
+  .pr-stage:nth-child(2) .pr-label,
+  .pr-stage:nth-child(5) .pr-label {
+    padding-inline-start: calc(var(--pr-band) * 0.6);
+  }
+
+  /* Keep 02's description flush with its title. */
+  .pr-stage:nth-child(2) .pr-desc {
+    padding-inline-start: calc(var(--pr-band) * 0.6);
+  }
+}
+
+/* Before the ribbon is measured (server render, no JS) each label is its
+   own charcoal pill, so the five stages still read in order. */
+.pr-board:not([data-ready]) .pr-label {
+  background: var(--pr-ribbon);
+}
+
+.pr-num {
+  flex: none;
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: #f68b13;
   transition:
-    transform 360ms var(--ease-out-expo),
-    border-color 280ms var(--ease-out-quart),
-    box-shadow 360ms var(--ease-out-expo);
+    color var(--dur-base) var(--ease-out-quart),
+    transform var(--dur-fast) var(--ease-out-quart);
 }
 
-.pr-title {
-  transition: color 280ms var(--ease-out-quart);
+.pr-name {
+  min-width: 0;
+  text-wrap: balance;
 }
 
-@media (hover: hover) {
-  .pr-stone:hover .pr-badge {
-    transform: translateY(-3px) scale(1.06);
-    border-color: var(--color-accent);
-    box-shadow: 0 16px 30px -18px rgb(239 135 22 / 0.55);
-  }
-
-  .pr-stone:hover .pr-title {
-    color: var(--color-accent-ink);
+@media (min-width: 768px) {
+  .pr-label {
+    font-size: 1.0625rem;
   }
 }
 
-/* ---- the choreography ---- */
-
-@keyframes pr-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
+@media (min-width: 1024px) {
+  .pr-label {
+    gap: 0.85rem;
+    font-size: clamp(1.125rem, 1.45vw, 1.375rem);
   }
 }
 
-@keyframes pr-stone-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.97);
+/* Reached: the orange fill is under the label — charcoal on orange is
+   7.3:1, where white would be 2.3:1. */
+.pr-stage[data-reached="true"] .pr-label,
+.pr-stage[data-reached="true"] .pr-num {
+  color: #171717;
+}
+
+.pr-label:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -6px;
+}
+
+/* ---- descriptions ---- */
+
+.pr-desc {
+  /* A readable measure on tablets, where a run is ~700px wide. */
+  max-width: 46ch;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+  transition: color var(--dur-base) var(--ease-out-quart);
+}
+
+@media (min-width: 1024px) {
+  .pr-desc {
+    font-size: 0.9375rem;
   }
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
-@keyframes pr-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* Hover, focus or tap: the stage's run lights (in the SVG), its number
+   nudges along the direction of travel, its description comes forward. */
+.pr-stage[data-active] .pr-desc {
+  color: var(--color-fg);
 }
 
-/* The ring Launch & Grow sends out once the journey arrives. */
-@keyframes pr-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgb(239 135 22 / 0.45);
-  }
-  100% {
-    box-shadow: 0 0 0 22px rgb(239 135 22 / 0);
-  }
+.pr-stage[data-active] .pr-num {
+  transform: translateX(2px);
 }
-
-.pr-board[data-anim="pending"] .pr-stone {
-  opacity: 0;
-}
-
-.pr-board[data-anim="pending"] .pr-leg-ink,
-.pr-board[data-anim="pending"] .pr-arrowhead {
-  opacity: 0;
-}
-
-.pr-board[data-anim="play"] .pr-stone {
-  animation: pr-stone-in 640ms var(--ease-out-expo) both;
-  animation-delay: calc(var(--stone) * 680ms);
-}
-
-.pr-board[data-anim="play"] .pr-leg-ink {
-  animation: pr-draw 760ms var(--ease-out-quart) both;
-  animation-delay: calc(var(--leg) * 680ms + 320ms);
-}
-
-.pr-board[data-anim="play"] .pr-arrowhead {
-  animation: pr-fade-in 400ms var(--ease-out-quart) both;
-  animation-delay: calc(var(--leg) * 680ms + 860ms);
-}
-
-.pr-board[data-anim="play"] [data-last] .pr-badge {
-  animation: pr-pulse 950ms var(--ease-out-quart) calc(4 * 680ms + 680ms) 1 both;
-}
-
-/* ---- reduced motion: the finished journey, still ---- */
 
 @media (prefers-reduced-motion: reduce) {
-  .pr-board .pr-stone,
-  .pr-board .pr-leg-ink,
-  .pr-board .pr-arrowhead,
-  .pr-board .pr-badge {
-    animation: none !important;
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none;
+  .pr-label,
+  .pr-num,
+  .pr-desc {
+    transition: none;
   }
 
-  .pr-board .pr-leg-ink {
-    stroke-dashoffset: 0 !important;
-  }
-
-  .pr-stone:hover .pr-badge {
+  .pr-stage[data-active] .pr-num {
     transform: none;
   }
 }
