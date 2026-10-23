@@ -6,7 +6,7 @@ import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
-import { estimatorSchema } from "@/lib/enquiry";
+import { projectEstimateSchema } from "@/lib/project-estimate";
 import { markLeadSubmitted } from "@/lib/popups";
 import { estimator } from "@/content/sections";
 import { cn } from "@/lib/utils";
@@ -35,10 +35,8 @@ import { cn } from "@/lib/utils";
  *
  * STEP VALIDATION. Each step is validated against the same Zod field schemas
  * the server uses, field by field, so the browser and the API can never
- * disagree about what is valid. Phone is required in the UI (step 1) even
- * though the backend schema treats it as optional — the front-end check
- * ensures a number is supplied, while the backend remains permissive in case
- * of direct API calls. Advancing is blocked on a failing step — but errors
+ * disagree about what is valid. Phone is required on both sides. Advancing
+ * is blocked on a failing step — but errors
  * appear only after an attempt to advance, never while the visitor is still
  * typing their first character into a field.
  *
@@ -47,8 +45,9 @@ import { cn } from "@/lib/utils";
  * keypress landing on the button, and a re-submit after a slow response all
  * resolve to one POST.
  *
- * PAYLOAD SHAPE UNCHANGED. The backend schema, Strapi mapping, and field
- * names are identical — only the order the visitor fills them in has changed.
+ * WHERE IT GOES (2026-10-23): /api/project-estimate, which stores ONE
+ * record per completed form in the MIDIS admin's portfolio-project-estimates
+ * collection (field mapping and stored values: lib/project-estimate.ts).
  */
 
 /*
@@ -148,22 +147,13 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
   }, []);
 
   /**
-   * Validates one step against the server's own field schemas, plus the
-   * front-end phone requirement on step 0.
+   * Validates one step against the server's own field schemas.
    */
   function validateStep(index: number) {
-    const shape = estimatorSchema.shape;
+    const shape = projectEstimateSchema.shape;
     const next: Partial<Record<FieldName, string>> = {};
 
     for (const field of STEP_FIELDS[index]) {
-      /* Phone is required in the UI (step 0) even though the backend schema
-         uses optionalPhone. Add the check here before running the schema,
-         which would pass an empty string. */
-      if (field === "phone" && index === 0 && values.phone.trim() === "") {
-        next.phone = "Please enter your phone number.";
-        continue;
-      }
-
       const result = shape[field].safeParse(values[field]);
       if (!result.success) {
         next[field] = result.error.issues[0]?.message ?? "Please check this.";
@@ -197,7 +187,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
     if (status === "submitting" || sent.current) return;
     if (!validateStep(step)) return;
 
-    const parsed = estimatorSchema.safeParse({
+    const parsed = projectEstimateSchema.safeParse({
       kind: "estimator",
       ...values,
       website: honey,
@@ -223,7 +213,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
     setFormError(null);
 
     try {
-      const response = await fetch("/api/enquiry", {
+      const response = await fetch("/api/project-estimate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
@@ -488,7 +478,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
             {status === "submitting" ? (
               <>
                 <Spinner />
-                Sending…
+                Submitting…
               </>
             ) : (
               <>

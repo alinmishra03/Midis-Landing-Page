@@ -36,7 +36,7 @@ import type { ProjectType } from "@/content/forms";
  *      and crawl files, read from the live site — foundations only, no
  *      ranking or traffic claimed;
  *   06 MIDIS's own lead pipeline (Automation): the real estimator with
- *      demo data, the checks app/api/enquiry actually runs, the real
+ *      demo data, the checks app/api/project-estimate actually runs, the real
  *      confirmation page.
  * Raw captures live in assets-source/; every source host is credited on
  * the visual. No metric, ranking or outcome appears anywhere.
@@ -635,7 +635,7 @@ function VisualSeo() {
 
 /* ---- 06: MIDIS's own lead pipeline, verified in this codebase ----
    The real estimator (captured with obviously fake demo data, never
-   submitted), the server-side checks app/api/enquiry/route.ts actually
+   submitted), the server-side checks app/api/project-estimate/route.ts actually
    performs, and the real confirmation page. Every pipeline row names
    something the route does — nothing is an invented integration. */
 
@@ -659,7 +659,7 @@ function VisualAutomation() {
     >
       <SceneLayer src="/images/work/services/midis-estimator-demo.webp" on />
       <div className="sc-layer sc-pipe" data-on={step === 1 || undefined}>
-        <p className="sc-pipe-route">POST /api/enquiry</p>
+        <p className="sc-pipe-route">POST /api/project-estimate</p>
         <ul>
           {AUTO_CHECKS.map((check, index) => (
             <li
