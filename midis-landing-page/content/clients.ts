@@ -328,15 +328,44 @@ export const clients: readonly Client[] = [
   },
 ];
 
+/** The showcase's display order (MIDIS instruction, 2026-10-23) — read
+    in threes, the rows of the mobile grid. Clients not named in either
+    list sit between the two in their list order (Array.prototype.sort is
+    stable); SHOWCASE_LAST closes the wall. Order only: who appears is
+    still decided by the filter in showcaseClients. */
+const SHOWCASE_ORDER = [
+  "The Mining Investment Event",
+  "Gulf Connect Consultancy",
+  "Mobile Tyre Champions",
+  "Sofisam",
+  "Mining Discovery",
+  "US Data Centers",
+  "AlinKriti",
+  "DigiPowerX",
+  "NeoCloudz",
+  "Country Kids",
+  "Noble Capital Markets",
+];
+const SHOWCASE_LAST = ["Mounting Backend Services"];
+
+function showcaseRank(name: string): number {
+  const first = SHOWCASE_ORDER.indexOf(name);
+  if (first !== -1) return first;
+  const last = SHOWCASE_LAST.indexOf(name);
+  return last === -1 ? SHOWCASE_ORDER.length : SHOWCASE_ORDER.length + 1 + last;
+}
+
 /** What the trust section actually shows: approved entries with the
     client's own mark on disk, excluding any site CONFIRMED not live.
     (approved on an "unverified" site is MIDIS explicitly overriding
     the live-site gate — High Spirits, 2026-10-22 — recorded on the
     entry itself; a "not-live" site can never be overridden here.) */
-export const showcaseClients = clients.filter(
-  (client): client is Client & { logo: NonNullable<Client["logo"]> } =>
-    client.approved && client.status !== "not-live" && client.logo !== null,
-);
+export const showcaseClients = clients
+  .filter(
+    (client): client is Client & { logo: NonNullable<Client["logo"]> } =>
+      client.approved && client.status !== "not-live" && client.logo !== null,
+  )
+  .sort((a, b) => showcaseRank(a.name) - showcaseRank(b.name));
 
 /**
  * Countable facts only — counted from lists that exist (this file and
