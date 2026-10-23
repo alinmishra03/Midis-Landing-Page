@@ -4159,3 +4159,46 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
     transform: none;
   }
 }
+
+/* ==========================================================================
+   FREE WEBSITE AUDIT — the analysing state (WebsiteAuditTool.tsx)
+   --------------------------------------------------------------------------
+   An INDETERMINATE shimmer: the audit reports no measurable progress, so
+   nothing here implies a percentage. Under reduced motion it is a still,
+   tinted bar.
+   ========================================================================== */
+
+@keyframes audit-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.audit-shimmer {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+
+.audit-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: audit-shimmer 1.6s var(--ease-out-quart) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audit-shimmer::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.35;
+  }
+}

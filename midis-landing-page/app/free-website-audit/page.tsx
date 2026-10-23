@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Logo } from "@/components/layout/Logo";
-import { AuditForm } from "@/components/forms/AuditForm";
+import { WebsiteAuditTool } from "@/components/forms/WebsiteAuditTool";
 import { auditIntro } from "@/content/forms";
 import { site } from "@/content/site";
 
@@ -20,6 +20,10 @@ import { site } from "@/content/site";
  * wording, and they describe what the audit covers rather than promising an
  * outcome — "Personalised recommendations", not "a 40% conversion lift".
  *
+ * THE FORM (2026-10-23) is the automated Free Website Audit tool
+ * (components/forms/WebsiteAuditTool.tsx): a real Lighthouse + page-check
+ * audit, then contact details, then the results and the emailed report.
+ *
  * METADATA. Its own title, description and canonical, so it does not
  * duplicate the landing page's. `robots: index` stays on — this is a real
  * landing destination worth ranking for "free website audit".
@@ -27,7 +31,7 @@ import { site } from "@/content/site";
 
 const title = "Get Your Free Website Audit";
 const description =
-  "Request a free website audit from MIDIS. We review your site for conversion, user experience and search opportunities, and send personalised recommendations.";
+  "Run a free website audit with MIDIS. Get your site's Google Lighthouse scores for performance, SEO, accessibility and best practices, plus a full PDF report by email.";
 
 export const metadata: Metadata = {
   title,
@@ -138,7 +142,7 @@ export default function FreeWebsiteAuditPage() {
             </div>
 
             {/* ---- the form ---- */}
-            <AuditForm />
+            <WebsiteAuditTool />
           </div>
         </div>
       </main>
