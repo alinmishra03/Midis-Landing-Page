@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
-import { ContactActions } from "./ContactActions";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
 
@@ -30,14 +29,12 @@ import { sectionNav } from "@/content/site";
  *   - From 1280 the sum is ~1124px against a ~1164px shell, so the grid
  *     becomes `1fr auto 1fr` and the links are centred against the shell
  *     itself.
- *   - Labelled WhatsApp/Call pills cost ~155px more than the two circles.
- *     Centred, that needs ~1434px of shell, which arrives at about 1600px
- *     — hence `min-[1600px]`. Below it the same two actions are 44px
- *     circles with their labels on `aria-label`, which is what §6 of the
- *     brief allows when the bar is short of room.
+ *   - The header carries no contact pills (WhatsApp was removed on MIDIS's
+ *     instruction of 2026-10-23), so the right-hand group is now narrower
+ *     than these measurements assumed — the breakpoints only got safer.
  *
- * ONE CONTROL HEIGHT. The toggle, the contact pills and the CTA are all
- * 44px: `size="sm"` on the Button and the pills, `size-11` on the toggle,
+ * ONE CONTROL HEIGHT. The toggle and the CTA are both
+ * 44px: `size="sm"` on the Button, `size-11` on the toggle,
  * with `.nav-group-end a, .nav-group-end button { min-height }` in the CSS
  * as the bar's standing guarantee. Nothing in the bar sets its own height.
  *
@@ -229,16 +226,6 @@ export function Header() {
 
               {/* ================= right: the actions ================= */}
               <div className="nav-group-end">
-                <ContactActions
-                  variant="pill"
-                  size="sm"
-                  className="hidden min-[1600px]:flex"
-                />
-                <ContactActions
-                  variant="icon"
-                  className="hidden min-[380px]:flex min-[1600px]:hidden"
-                />
-
                 <ThemeToggle />
 
                 <Button href="#estimator" size="sm" className="hidden sm:inline-flex">
@@ -317,31 +304,12 @@ export function Header() {
           </ul>
         </nav>
 
-        {/*
-          The contact actions, labelled, inside the panel.
-
-          This is what guarantees they are reachable at 320px, where the bar
-          itself has no room for them.
-
-          `flex-1` alone is not enough to make them equal: a flex item
-          defaults to `min-width: auto`, so the wider label refuses to shrink
-          to the shared basis and the pair lands at 136px and 132px.
-          `min-w-0` lets both reach the same width, which is what matches
-          them to the full-width buttons directly beneath.
-        */}
+        {/* No WhatsApp in the header or this panel (MIDIS instruction,
+            2026-10-23): the always-visible floating button is the site's one
+            WhatsApp entry point. */}
         <div
-          className="nav-panel-item container-site pt-5"
+          className="nav-panel-item container-site flex flex-col gap-3 pt-5"
           style={{ "--i": sectionNav.length } as React.CSSProperties}
-        >
-          <ContactActions
-            variant="pill"
-            className="w-full gap-3 [&>a]:min-w-0 [&>a]:flex-1"
-          />
-        </div>
-
-        <div
-          className="nav-panel-item container-site flex flex-col gap-3 pt-3"
-          style={{ "--i": sectionNav.length + 1 } as React.CSSProperties}
         >
           <Button href="#estimator" size="lg" onClick={closeAnd} className="w-full">
             Get a Free Consultation
