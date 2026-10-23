@@ -38,6 +38,12 @@ import { cn } from "@/lib/utils";
  * THEME VARIANTS, for exactly how each variant was derived — brand
  * accents kept, no CSS filters anywhere).
  *
+ * MOBILE (MIDIS brief, 2026-10-23). Below `md` the wall is a compact
+ * three-column grid with smaller marks, 11px names and tighter spacing,
+ * every logo visible (no "View All" cut — MIDIS declined it). Every phone
+ * value is a base class with the previous value kept at `md:` — so from
+ * 768px up the section is unchanged.
+ *
  * LOGOS ARE NOT LINKS, deliberately: the section builds trust, it does
  * not send visitors away.
  */
@@ -48,9 +54,9 @@ import { cn } from "@/lib/utils";
     slot scales down instead of squashing against the width limit. */
 function logoHeight(logo: NonNullable<Client["logo"]>) {
   const ratio = logo.width / logo.height;
-  if (ratio >= 3.2) return "max-h-7 sm:max-h-8"; // wide wordmarks
-  if (ratio >= 1.6) return "max-h-10 sm:max-h-12"; // landscape marks
-  return "max-h-14 sm:max-h-16"; // square-ish emblems
+  if (ratio >= 3.2) return "max-h-5 md:max-h-8"; // wide wordmarks
+  if (ratio >= 1.6) return "max-h-8 md:max-h-12"; // landscape marks
+  return "max-h-11 md:max-h-16"; // square-ish emblems
 }
 
 export function Trust() {
@@ -68,10 +74,10 @@ export function Trust() {
       className="pb-[calc(var(--space-section)*0.5)]"
     >
       <div className="container-site">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16">
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16">
           <div>
             <Reveal>
-              <Eyebrow className="mb-5">Trusted by</Eyebrow>
+              <Eyebrow className="mb-3 md:mb-5">Trusted by</Eyebrow>
             </Reveal>
             <RevealText
               id="trust-heading"
@@ -90,7 +96,7 @@ export function Trust() {
         </div>
 
         {/* ---- the labelled divider (no counter, MIDIS 2026-10-22) ---- */}
-        <Reveal className="mt-10 sm:mt-12">
+        <Reveal className="mt-7 md:mt-12">
           <div className="flex items-center gap-4">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-ink">
               Brands we&rsquo;ve worked with
@@ -102,8 +108,9 @@ export function Trust() {
         {/* ---- the showcase: an open wall, marks straight on the ground ----
             flex + justify-center rather than a grid, so ANY roster count
             centres its last row instead of leaving it ragged. Slot widths
-            are (track − its share of the gaps): 2 per row on phones,
-            3 from sm, 5 from lg.
+            are (track − its share of the gaps): 3 from md, 5 from lg.
+            Phones get a plain three-column grid instead (15 marks fill it
+            exactly).
 
             LOGO, THEN NAME (MIDIS 2026-10-22). Every slot is a column: a
             FIXED-height logo area (the mark centred in it at its own
@@ -113,7 +120,10 @@ export function Trust() {
             mark, so the images carry empty alt text — a screen reader
             hears the name once, not "X logo, X". */}
         <ul
-          className="mt-8 flex flex-wrap items-start justify-center gap-x-6 gap-y-9 sm:mt-10 sm:gap-x-10 sm:gap-y-11"
+          className={cn(
+            "mt-5 grid grid-cols-3 gap-x-2.5 gap-y-5",
+            "md:mt-10 md:flex md:flex-wrap md:items-start md:justify-center md:gap-x-10 md:gap-y-11",
+          )}
           aria-label="Clients"
         >
           {showcaseClients.map((client, index) => (
@@ -122,11 +132,11 @@ export function Trust() {
               as="li"
               delay={60 + index * 55}
               className={cn(
-                "group flex flex-col items-center",
-                "w-[calc(50%-0.75rem)] sm:w-[calc(33.333%-1.667rem)] lg:w-[calc(20%-2rem)]",
+                "group flex min-w-0 flex-col items-center",
+                "md:w-[calc(33.333%-1.667rem)] lg:w-[calc(20%-2rem)]",
               )}
             >
-              <span className="flex h-20 w-full items-center justify-center sm:h-[5.25rem]">
+              <span className="flex h-12 w-full items-center justify-center md:h-[5.25rem]">
                 <Image
                   src={client.logo.src}
                   alt=""
@@ -159,7 +169,7 @@ export function Trust() {
                   />
                 ) : null}
               </span>
-              <span className="mt-3.5 text-balance text-center text-xs font-medium leading-[1.4] text-fg transition-colors duration-[var(--dur-fast)] group-hover:text-accent-ink sm:text-[0.8125rem]">
+              <span className="mt-1.5 text-balance text-center text-[0.6875rem] font-medium leading-[1.3] text-muted transition-colors duration-[var(--dur-fast)] group-hover:text-accent-ink md:mt-3.5 md:text-[0.8125rem] md:leading-[1.4] md:text-fg">
                 {client.name}
               </span>
             </Reveal>
