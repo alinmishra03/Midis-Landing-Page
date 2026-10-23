@@ -82,9 +82,14 @@ import { hero } from "@/content/sections";
 
 export function Hero() {
   return (
+    /* TOP CLEARANCE BELOW 768px (2026-10-23): `--header-h` + 1.5rem puts the
+       eyebrow ~39px under the fixed nav's bottom edge at every phone width
+       (--header-h already includes the nav at each breakpoint), where it
+       was a cramped 19px on phones and an inconsistent 47px at 640–767.
+       From md the original clearances are unchanged. */
     <section
       aria-labelledby="hero-heading"
-      className="relative isolate overflow-hidden pt-[calc(var(--header-h)+0.25rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
+      className="relative isolate overflow-hidden pt-[calc(var(--header-h)+1.5rem)] pb-10 sm:pb-16 md:pt-[calc(var(--header-h)+2rem)] lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
     >
       {/*
         The hero's veils over the site backdrop — see THE PHOTOGRAPH above.
