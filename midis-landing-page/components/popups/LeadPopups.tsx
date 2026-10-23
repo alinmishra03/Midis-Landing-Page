@@ -13,6 +13,7 @@ import { Arrow, Button } from "@/components/ui/Button";
 import { FieldError, Honeypot, SelectField, TextField } from "@/components/forms/Fields";
 import { PROJECT_TYPES } from "@/content/forms";
 import { popupSchema } from "@/lib/enquiry";
+import { consultationSchema } from "@/lib/consultation";
 import {
   markLeadSubmitted,
   readPopupState,
@@ -487,6 +488,10 @@ export function LeadPopups() {
 
             <PopupForm
               key={kind}
+              /* "Before you go" posts to the admin Strapi's
+                 portfolio-consultations collection (/api/consultation);
+                 the timed popup keeps the existing /api/enquiry inbox. */
+              target={kind === "exit" ? "consultation" : "enquiry"}
               source={copy.source}
               submitLabel={copy.primary}
               secondaryLabel={copy.secondary}
@@ -514,17 +519,21 @@ const EMPTY: Record<FieldName, string> = {
 
 /**
  * The popups' concise lead form. Validates field-by-field against the SAME
- * Zod schema the server runs, posts to the same /api/enquiry route, and
- * reports success only when the CMS confirmed the record — exactly the
- * estimator's contract, with five fields instead of four steps.
+ * Zod schema the server runs and reports success only when the CMS
+ * confirmed the record — exactly the estimator's contract, with five
+ * fields instead of four steps. The timed popup posts to /api/enquiry;
+ * the exit popup ("Before you go") posts to /api/consultation, which
+ * stores it in the MIDIS admin's portfolio-consultations collection.
  */
 function PopupForm({
+  target,
   source,
   submitLabel,
   secondaryLabel,
   onDismiss,
   onSubmitted,
 }: {
+  target: "enquiry" | "consultation";
   source: (typeof COPY)[PopupKind]["source"];
   submitLabel: string;
   secondaryLabel: string;
@@ -548,12 +557,15 @@ function PopupForm({
     event.preventDefault();
     if (status === "submitting" || sentRef.current) return;
 
-    const parsed = popupSchema.safeParse({
-      kind: "popup",
-      source,
-      ...values,
-      website: honey,
-    });
+    const parsed =
+      target === "consultation"
+        ? consultationSchema.safeParse({ ...values, hp: honey })
+        : popupSchema.safeParse({
+            kind: "popup",
+            source,
+            ...values,
+            website: honey,
+          });
 
     if (!parsed.success) {
       const next: Partial<Record<FieldName, string>> = {};
@@ -569,7 +581,7 @@ function PopupForm({
     setFormError(null);
 
     try {
-      const response = await fetch("/api/enquiry", {
+      const response = await fetch(target === "consultation" ? "/api/consultation" : "/api/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
@@ -687,7 +699,7 @@ function PopupForm({
           {status === "submitting" ? (
             <>
               <SpinnerGlyph />
-              Sending…
+              {target === "consultation" ? "Submitting…" : "Sending…"}
             </>
           ) : (
             <>
