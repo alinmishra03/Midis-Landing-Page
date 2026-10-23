@@ -13,7 +13,6 @@ import { Pricing } from "@/components/home/Pricing";
 import { Faqs } from "@/components/home/Faqs";
 import { FinalCta } from "@/components/home/FinalCta";
 import { FloatingCta } from "@/components/layout/FloatingCta";
-import { LeadPopups } from "@/components/popups/LeadPopups";
 import { buildJsonLd } from "@/lib/seo";
 import { site } from "@/content/site";
 
@@ -87,11 +86,11 @@ export default function HomePage() {
 
       <Footer />
 
-      {/* The floating WhatsApp + estimator actions and the managed lead
-          popups — both fixed overlays, both landing-page-specific, so they
-          mount here rather than in the root layout. */}
+      {/* The floating WhatsApp + estimator actions — a landing-page-specific
+          fixed overlay, so it mounts here rather than in the root layout.
+          (The automatic lead popup lives in the root layout: one controller
+          for the whole session, whatever route the visitor is on.) */}
       <FloatingCta />
-      <LeadPopups />
 
       {/*
         Structured data. Rendered as a plain script tag rather than through a

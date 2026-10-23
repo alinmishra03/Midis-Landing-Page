@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { Eyebrow } from "@/components/ui/Section";
 import { Arrow, Button } from "@/components/ui/Button";
 import { FieldError, Honeypot, SelectField, TextField } from "@/components/forms/Fields";
@@ -14,86 +15,94 @@ import { PROJECT_TYPES } from "@/content/forms";
 import { popupSchema } from "@/lib/enquiry";
 import {
   markLeadSubmitted,
-  markPopupClosed,
-  markPopupShown,
   readPopupState,
-  type PopupTrigger,
+  updatePopupState,
 } from "@/lib/popups";
 import { cn } from "@/lib/utils";
 
 /**
- * THE LEAD-GENERATION POPUP SYSTEM (MIDIS brief, 2026-10-20).
+ * THE AUTOMATIC LEAD POPUP (MIDIS brief, 2026-10-23 — replaces the
+ * three-trigger system of 2026-10-20, whose welcome popup opened 2.6s after
+ * load and interrupted the first look at the page).
  *
- * One dialog, three triggers — welcome (2.6s after load), 40% scroll depth,
- * and exit intent — governed by one manager so the rules cannot drift:
+ * ONE automatic popup, opened only once BOTH are true:
+ *   - the visitor has spent 20 seconds of ACTIVE browsing — the clock pauses
+ *     while the tab is hidden and is banked in sessionStorage, so a refresh
+ *     or a trip to another page never restarts it; and
+ *   - the visitor has genuinely scrolled: a wheel, touch, keyboard or
+ *     scrollbar scroll. A restored scroll position, an anchor jump or a
+ *     layout shift does not count.
  *
- *   - Never more than one popup at a time, never stacked.
- *   - Each trigger fires at most once per session (sessionStorage).
- *   - 45s cooldown after any dismissal before another trigger may fire.
- *   - Nothing fires while the visitor is typing in ANY field (which also
- *     covers the mobile keyboard being open).
- *   - Nothing fires after a successful lead submission this session —
- *     including one made through the hero estimator.
- *   - Every popup is dismissible: close button, Escape, backdrop click,
- *     and an explicit secondary action. Nothing blocks navigation.
+ * And never when:
+ *   - it already opened this session (closed, submitted or ignored alike);
+ *   - a lead was submitted this session, here or through the estimator;
+ *   - the visitor reached for a form themselves — an estimator CTA, the
+ *     estimator's own fields, a WhatsApp / email / phone link;
+ *   - the visitor is typing in a field, or another modal (the work
+ *     gallery's detail dialog, the mobile menu) is open. A blocked moment
+ *     is retried on the visitor's next scroll — never on a loop.
  *
- * EXIT INTENT is desktop-only in the literal sense (pointer leaving the
- * viewport through the top edge, only after 12s on the page, so a stray
- * swipe across the toolbar does not count). Mobile browsers expose no
- * honest exit signal, and the brief forbids history tricks — so touch
- * devices get a NON-MODAL reminder card instead, shown once after real
- * engagement (70% depth and 30s dwell), which never traps focus and never
- * blocks the page.
+ * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
+ * dialog: "Before you go". No browser lets a page show its own content as
+ * the tab actually closes, so this is EXIT INTENT, the standard stand-in:
+ * the pointer leaving the page through the TOP edge, toward the tabs, the
+ * address bar and the close button. Desktop (fine pointer) only, because
+ * touch browsers expose no honest exit signal and the old brief rules out
+ * back-button tricks. It opens at most once per session, never in the
+ * first 10 seconds (a stray swipe at the toolbar is not leaving), never
+ * after a lead was submitted, never over another dialog, never while the
+ * visitor is typing. The two popups are independent: each opens once per
+ * session on its own rules, whichever comes first (MIDIS, 2026-10-23).
  *
- * COPY comes from the client's own popup brief (SUPPORTING — it introduces
- * the ask; the form options are the approved estimator content). The form
- * posts kind:"popup" with a `source` identifier through the same validated
- * /api/enquiry route as every other lead — one backend, honest success
- * states, no duplicate records.
+ * MANUAL CTAs are untouched: every "Get a Project Estimate" button is a
+ * plain link to #estimator and works instantly. This controller only
+ * listens to them so it can stand down.
+ *
+ * Mounted once in the root layout, so client-side navigation never spawns a
+ * second timer or listener set. It only OPENS on the landing page — the
+ * audit form and the thank-you pages are lead flows of their own — and the
+ * clock only runs there.
+ *
+ * Every popup is dismissible: close button, Escape, backdrop click, and an
+ * explicit secondary action. The form posts kind:"popup" through the same
+ * validated /api/enquiry route as every other lead.
  */
 
-const COOLDOWN_MS = 45_000;
-const INITIAL_DELAY_MS = 2_600;
-const INITIAL_RETRY_MS = 11_000;
-const EXIT_MIN_DWELL_MS = 12_000;
-const REMINDER_MIN_DWELL_MS = 30_000;
-const SCROLL_DEPTH = 0.4;
-const REMINDER_DEPTH = 0.7;
+const ACTIVE_DELAY_MS = 20_000;
+/** The exit popup ignores the toolbar for this long after landing. */
+const EXIT_MIN_DWELL_MS = 10_000;
+/** Movement smaller than this is jitter, not a scroll. */
+const SCROLL_MIN_PX = 24;
+/** How long after a wheel / touch / key event a scroll still counts as the
+    visitor's own. */
+const INTENT_WINDOW_MS = 1_000;
+const SCROLL_KEYS = new Set([
+  "ArrowDown",
+  "ArrowUp",
+  "PageDown",
+  "PageUp",
+  "Home",
+  "End",
+  " ",
+]);
+/** Routes the popup may open on. */
+const AUTO_ROUTES = new Set(["/"]);
+/** Links that mean "the visitor is already on their way to us". */
+const ENGAGED_HREF = /#estimator$|^mailto:|^tel:|wa\.me\/|whatsapp/i;
 
-interface VariantCopy {
-  eyebrow: string;
-  heading: string;
-  description: string;
-  primary: string;
-  secondary: string;
-  /** Welcome and exit carry the lead form; the scroll variant routes to the
-      estimator instead — its job is to point at the existing form, not to
-      open a second one. */
-  hasForm: boolean;
-  source: "initial_popup" | "scroll_popup" | "exit_popup";
-}
+type PopupKind = "timed" | "exit";
 
-const VARIANTS: Record<PopupTrigger, VariantCopy> = {
-  initial: {
+const COPY = {
+  timed: {
     eyebrow: "Let’s build something better",
     heading: "Have a Website Project in Mind?",
     description:
       "Tell us what you’re planning, and the MIDIS team will help you explore the right solution for your business.",
     primary: "Get a Free Consultation",
     secondary: "Maybe Later",
-    hasForm: true,
     source: "initial_popup",
   },
-  scroll: {
-    eyebrow: "Your next project starts here",
-    heading: "Let’s Turn Your Idea Into Reality.",
-    description:
-      "Planning a new website or redesign? Share your requirements and we’ll help you take the next step.",
-    primary: "Get a Project Estimate",
-    secondary: "Continue Exploring",
-    hasForm: false,
-    source: "scroll_popup",
-  },
+  /* The exit copy from the client's popup brief of 2026-10-20. */
   exit: {
     eyebrow: "Before you go",
     heading: "Let’s Talk About Your Next Big Idea.",
@@ -101,157 +110,268 @@ const VARIANTS: Record<PopupTrigger, VariantCopy> = {
       "Have a project in mind? Tell us a little about it, and our team can help you explore the next steps.",
     primary: "Get a Free Consultation",
     secondary: "No Thanks",
-    hasForm: true,
     source: "exit_popup",
   },
-};
+} as const;
 
-/** True while the visitor is in a form field — popups must wait. */
+/** True while the visitor is in a form field — the popup must wait. */
 function isTyping(): boolean {
   const el = document.activeElement;
   return (
     el instanceof HTMLElement &&
-    (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")
+    (el.tagName === "INPUT" ||
+      el.tagName === "TEXTAREA" ||
+      el.tagName === "SELECT" ||
+      el.isContentEditable)
   );
 }
 
-function scrollDepth(): number {
-  const doc = document.documentElement;
-  const max = doc.scrollHeight - window.innerHeight;
-  return max > 0 ? window.scrollY / max : 1;
+/** True while another modal surface owns the screen. The header's mobile
+    menu and the gallery dialog both lock body scroll while open. */
+function otherModalOpen(): boolean {
+  return (
+    document.querySelector("dialog[open], [aria-modal='true']") !== null ||
+    document.body.style.overflow === "hidden"
+  );
 }
 
 export function LeadPopups() {
-  const [active, setActive] = useState<PopupTrigger | null>(null);
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<PopupKind>("timed");
   const [closing, setClosing] = useState(false);
-  const [reminder, setReminder] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const pathname = usePathname();
+  const autoRoute = AUTO_ROUTES.has(pathname);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
-  /* Mirrors `active` for the long-lived trigger listeners, synced in an
-     effect because writing a ref during render is forbidden. */
-  const activeRef = useRef<PopupTrigger | null>(null);
-  useEffect(() => {
-    activeRef.current = active;
-  }, [active]);
 
-  /** The gate every trigger passes through. Reads fresh state each time. */
-  const tryShow = useCallback((trigger: PopupTrigger): boolean => {
-    const state = readPopupState();
-    if (
-      state.submitted ||
-      activeRef.current !== null ||
-      state.shown[trigger] ||
-      Date.now() - state.lastClosedAt < COOLDOWN_MS ||
-      isTyping()
-    ) {
-      return false;
-    }
-    markPopupShown(trigger);
+  const show = useCallback((which: PopupKind) => {
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     setClosing(false);
     setSent(false);
-    setActive(trigger);
-    return true;
+    setKind(which);
+    setOpen(true);
   }, []);
 
   const dismiss = useCallback(() => {
-    markPopupClosed();
     setClosing(true);
     /* Let the exit transition play, then unmount and restore focus. */
     window.setTimeout(() => {
-      setActive(null);
+      setOpen(false);
       setClosing(false);
-      restoreFocusRef.current?.focus?.();
+      restoreFocusRef.current?.focus?.({ preventScroll: true });
     }, 180);
   }, []);
 
-  /* ---------------- triggers ---------------- */
+  /* ---------------- the automatic trigger ---------------- */
 
   useEffect(() => {
-    const timers: number[] = [];
-    const cleanups: (() => void)[] = [];
-    const mountedAt = Date.now();
+    if (!autoRoute) return;
+    const initial = readPopupState();
+    if (initial.shown || initial.submitted || initial.engaged) return;
 
-    /* 1 — welcome, shortly after the page is interactive. If the moment is
-       blocked (visitor already typing), one quiet retry; never a loop. */
-    timers.push(
-      window.setTimeout(() => {
-        if (!tryShow("initial")) {
-          timers.push(window.setTimeout(() => tryShow("initial"), INITIAL_RETRY_MS));
-        }
-      }, INITIAL_DELAY_MS),
-    );
+    /* ONE timeout at a time, scheduled for exactly the active time still
+       owed; banked into storage whenever it pauses. performance.now() is
+       monotonic, so a clock change cannot skip the wait. */
+    let activeMs = initial.activeMs;
+    let scrolled = initial.scrolled;
+    let resumedAt: number | null = null;
+    let timer: number | undefined;
+    let frame = 0;
+    let stopped = false;
 
-    /* 2 — 40% of the real scrollable height. The listener stays until the
-       trigger actually fires (so a cooldown at first crossing just defers
-       it to further scrolling), then removes itself. */
-    const onScroll = () => {
-      if (scrollDepth() >= SCROLL_DEPTH && tryShow("scroll")) {
-        window.removeEventListener("scroll", onScroll);
+    /* Scroll intent: a scroll only counts when it follows the visitor's own
+       wheel / touch / key input, or happens while a pointer is held (the
+       scrollbar). The baseline is the position when that input began, so a
+       restored position or programmatic jump is never mistaken for one. */
+    let intentAt = -Infinity;
+    let pointerHeld = false;
+    let baselineY: number | null = null;
+
+    const elapsed = () =>
+      activeMs + (resumedAt === null ? 0 : performance.now() - resumedAt);
+
+    const pause = () => {
+      if (resumedAt !== null) {
+        activeMs = Math.min(elapsed(), ACTIVE_DELAY_MS);
+        resumedAt = null;
+      }
+      window.clearTimeout(timer);
+      updatePopupState({ activeMs });
+    };
+
+    const attempt = () => {
+      if (stopped || !scrolled || elapsed() < ACTIVE_DELAY_MS) return;
+      const state = readPopupState();
+      if (state.shown || state.submitted || state.engaged) {
+        stop();
+        return;
+      }
+      /* Blocked moments wait for the next genuine scroll. */
+      if (isTyping() || otherModalOpen() || document.visibilityState !== "visible") {
+        return;
+      }
+      stop();
+      updatePopupState({ shown: true });
+      show("timed");
+    };
+
+    const resume = () => {
+      if (stopped || resumedAt !== null || document.visibilityState !== "visible") {
+        return;
+      }
+      const remaining = ACTIVE_DELAY_MS - activeMs;
+      /* Time already served: a visitor returning to the tab is not
+         ambushed — the popup waits for their next scroll. */
+      if (remaining <= 0) return;
+      resumedAt = performance.now();
+      timer = window.setTimeout(() => {
+        pause();
+        attempt();
+      }, remaining);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") resume();
+      else pause();
+    };
+
+    const markIntent = () => {
+      intentAt = performance.now();
+      if (baselineY === null) baselineY = window.scrollY;
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (SCROLL_KEYS.has(event.key) && !isTyping()) markIntent();
+    };
+    const onPointerDown = () => {
+      pointerHeld = true;
+      markIntent();
+    };
+    const onPointerUp = () => {
+      pointerHeld = false;
+    };
+
+    const intentEvents = [
+      ["wheel", markIntent],
+      ["touchmove", markIntent],
+      ["keydown", onKeyDown],
+      ["pointerdown", onPointerDown],
+      ["pointerup", onPointerUp],
+      ["pointercancel", onPointerUp],
+    ] as const;
+    const dropIntentListeners = () => {
+      for (const [type, fn] of intentEvents) {
+        window.removeEventListener(type, fn as EventListener);
       }
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    cleanups.push(() => window.removeEventListener("scroll", onScroll));
 
-    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-    if (fine) {
-      /* 3a — desktop exit intent: the pointer leaving through the TOP edge
-         (toward tabs / URL bar), never mere movement across the page, and
-         only once the visitor has actually been here a while. */
-      const onMouseOut = (event: MouseEvent) => {
-        if (
-          event.relatedTarget === null &&
-          event.clientY <= 0 &&
-          Date.now() - mountedAt > EXIT_MIN_DWELL_MS
-        ) {
-          tryShow("exit");
-        }
-      };
-      document.addEventListener("mouseout", onMouseOut);
-      cleanups.push(() => document.removeEventListener("mouseout", onMouseOut));
-    } else {
-      /* 3b — touch devices: no exit signal exists, so after meaningful
-         engagement show the NON-MODAL reminder card once, under the same
-         frequency rules (it books the "exit" slot). */
-      const onEngaged = () => {
-        if (
-          Date.now() - mountedAt > REMINDER_MIN_DWELL_MS &&
-          scrollDepth() >= REMINDER_DEPTH
-        ) {
-          const state = readPopupState();
-          if (
-            !state.submitted &&
-            !state.shown.exit &&
-            activeRef.current === null &&
-            Date.now() - state.lastClosedAt >= COOLDOWN_MS &&
-            !isTyping()
-          ) {
-            markPopupShown("exit");
-            setReminder(true);
-            window.removeEventListener("scroll", onEngaged);
+    /* Coalesced to one check per frame — never work per raw scroll event. */
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (!scrolled) {
+          const userDriven =
+            pointerHeld || performance.now() - intentAt < INTENT_WINDOW_MS;
+          if (!userDriven) {
+            baselineY = null;
+            return;
           }
+          if (baselineY === null || Math.abs(window.scrollY - baselineY) < SCROLL_MIN_PX) {
+            return;
+          }
+          scrolled = true;
+          updatePopupState({ scrolled: true });
+          dropIntentListeners();
         }
-      };
-      window.addEventListener("scroll", onEngaged, { passive: true });
-      cleanups.push(() => window.removeEventListener("scroll", onEngaged));
+        attempt();
+      });
+    };
+
+    /* The visitor reaching for a form themselves ends the controller. */
+    const engage = () => {
+      updatePopupState({ engaged: true });
+      stop();
+    };
+    const onClick = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (link && ENGAGED_HREF.test(link.getAttribute("href") ?? "")) engage();
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (event.target instanceof Element && event.target.closest("#estimator form")) {
+        engage();
+      }
+    };
+
+    function stop() {
+      if (stopped) return;
+      pause();
+      stopped = true;
+      cancelAnimationFrame(frame);
+      dropIntentListeners();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", pause);
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("focusin", onFocusIn);
     }
 
-    return () => {
-      timers.forEach((t) => window.clearTimeout(t));
-      cleanups.forEach((fn) => fn());
+    if (!scrolled) {
+      for (const [type, fn] of intentEvents) {
+        window.addEventListener(type, fn as EventListener, { passive: true });
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", pause);
+    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("click", onClick, true);
+    document.addEventListener("focusin", onFocusIn);
+    resume();
+
+    return stop;
+  }, [autoRoute, show]);
+
+  /* ---------------- the exit-intent trigger ---------------- */
+
+  useEffect(() => {
+    if (!autoRoute) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const initial = readPopupState();
+    if (initial.exitShown || initial.submitted) return;
+
+    const mountedAt = performance.now();
+
+    const onMouseOut = (event: MouseEvent) => {
+      /* relatedTarget null = the pointer left the document entirely;
+         clientY <= 0 = it left through the top edge. */
+      if (event.relatedTarget !== null || event.clientY > 0) return;
+      if (performance.now() - mountedAt < EXIT_MIN_DWELL_MS) return;
+      const state = readPopupState();
+      if (state.exitShown || state.submitted) {
+        document.removeEventListener("mouseout", onMouseOut);
+        return;
+      }
+      /* Blocked now; the next exit attempt gets another chance. */
+      if (isTyping() || otherModalOpen()) return;
+      document.removeEventListener("mouseout", onMouseOut);
+      updatePopupState({ exitShown: true });
+      show("exit");
     };
-  }, [tryShow]);
+
+    document.addEventListener("mouseout", onMouseOut);
+    return () => document.removeEventListener("mouseout", onMouseOut);
+  }, [autoRoute, show]);
 
   /* ---------------- dialog behaviour: lock, focus, escape ---------------- */
 
   useEffect(() => {
-    if (!active) return;
+    if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -293,154 +413,90 @@ export function LeadPopups() {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [active, dismiss]);
+  }, [open, dismiss]);
 
-  /* While any popup (modal or the mobile reminder) is on screen, flag the
-     body so the floating CTA group hides itself in pure CSS — the two
-     overlays never compete for the bottom of the viewport. */
+  /* While the popup is on screen, flag the body (styling hook for any
+     fixed overlay that should step back). */
   useEffect(() => {
-    if (!active && !reminder) return;
+    if (!open) return;
     document.body.setAttribute("data-popup-open", "");
     return () => document.body.removeAttribute("data-popup-open");
-  }, [active, reminder]);
+  }, [open]);
 
   const onSubmitted = useCallback(() => {
     markLeadSubmitted();
     setSent(true);
   }, []);
 
-  /* The scroll variant's primary: close, then glide to the estimator once
-     the scroll lock has lifted. */
-  const goToEstimator = useCallback(() => {
-    dismiss();
-    window.setTimeout(() => {
-      document
-        .getElementById("estimator")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 200);
-  }, [dismiss]);
-
   const headingId = useId();
-  const variant = active ? VARIANTS[active] : null;
+  const descriptionId = useId();
+
+  if (!open) return null;
+  const copy = COPY[kind];
 
   return (
-    <>
-      {variant ? (
-        <div
-          className="popup-backdrop"
-          data-closing={closing || undefined}
-          onPointerDown={dismiss}
+    <div
+      className="popup-backdrop"
+      data-closing={closing || undefined}
+      onPointerDown={dismiss}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        aria-describedby={sent ? undefined : descriptionId}
+        tabIndex={-1}
+        className="popup-panel"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Close"
+          className="popup-close"
         >
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={headingId}
-            tabIndex={-1}
-            className="popup-panel"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={dismiss}
-              aria-label="Close"
-              className="popup-close"
-            >
-              <CloseGlyph />
-            </button>
+          <CloseGlyph />
+        </button>
 
-            {sent ? (
-              <div className="py-4 text-center">
-                <SuccessGlyph />
-                <h2 id={headingId} className="mt-4 font-display text-xl font-semibold">
-                  Thank you — we&rsquo;ve received your enquiry.
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  A member of the MIDIS team will get back to you shortly.
-                </p>
-                <Button type="button" size="md" onClick={dismiss} className="mt-6">
-                  Continue Browsing
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Eyebrow className="mb-2.5">{variant.eyebrow}</Eyebrow>
-                <h2
-                  id={headingId}
-                  className="font-display text-[1.375rem] font-semibold leading-[1.15] sm:text-2xl"
-                >
-                  {variant.heading}
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {variant.description}
-                </p>
-
-                {variant.hasForm ? (
-                  <PopupForm
-                    source={variant.source}
-                    submitLabel={variant.primary}
-                    secondaryLabel={variant.secondary}
-                    onDismiss={dismiss}
-                    onSubmitted={onSubmitted}
-                  />
-                ) : (
-                  <div className="mt-6 flex flex-col items-stretch gap-2.5">
-                    <Button type="button" size="md" onClick={goToEstimator}>
-                      {variant.primary}
-                      <Arrow />
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={dismiss}
-                      className="popup-secondary"
-                    >
-                      {variant.secondary}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
-
-      {/*
-        The touch-device reminder: NON-modal by design. role="complementary"
-        rather than dialog, no focus trap, no backdrop — the page stays
-        fully usable, and the card simply offers the next step once.
-      */}
-      {reminder ? (
-        <div className="popup-reminder" role="complementary" aria-label="Project enquiry">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold leading-snug">
-              {VARIANTS.exit.heading}
+        {sent ? (
+          <div className="py-4 text-center">
+            <SuccessGlyph />
+            <h2 id={headingId} className="mt-4 font-display text-xl font-semibold">
+              Thank you — we&rsquo;ve received your enquiry.
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              A member of the MIDIS team will get back to you shortly.
             </p>
-            <a
-              href="#estimator"
-              onClick={() => {
-                markPopupClosed();
-                setReminder(false);
-              }}
-              className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-ink"
-            >
-              Get a Free Consultation
-              <Arrow className="size-3.5" />
-            </a>
+            <Button type="button" size="md" onClick={dismiss} className="mt-6">
+              Continue Browsing
+            </Button>
           </div>
-          <button
-            type="button"
-            aria-label="Dismiss"
-            className="popup-close static shrink-0"
-            onClick={() => {
-              markPopupClosed();
-              setReminder(false);
-            }}
-          >
-            <CloseGlyph />
-          </button>
-        </div>
-      ) : null}
-    </>
+        ) : (
+          <>
+            <Eyebrow className="mb-2.5">{copy.eyebrow}</Eyebrow>
+            <h2
+              id={headingId}
+              className="font-display text-[1.375rem] font-semibold leading-[1.15] sm:text-2xl"
+            >
+              {copy.heading}
+            </h2>
+            <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-muted">
+              {copy.description}
+            </p>
+
+            <PopupForm
+              key={kind}
+              source={copy.source}
+              submitLabel={copy.primary}
+              secondaryLabel={copy.secondary}
+              onDismiss={dismiss}
+              onSubmitted={onSubmitted}
+            />
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -469,7 +525,7 @@ function PopupForm({
   onDismiss,
   onSubmitted,
 }: {
-  source: VariantCopy["source"];
+  source: (typeof COPY)[PopupKind]["source"];
   submitLabel: string;
   secondaryLabel: string;
   onDismiss: () => void;

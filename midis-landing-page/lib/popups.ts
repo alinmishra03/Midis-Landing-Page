@@ -1,10 +1,10 @@
 /**
- * Popup frequency state — the memory behind the lead-popup rules.
+ * Popup session state — the memory behind the automatic lead popup.
  *
  * sessionStorage, deliberately: the brief asks for per-SESSION frequency
- * control ("once per eligible visitor session") and for storing only the
- * minimal state needed. A closed tab forgets everything; nothing here
- * identifies the visitor.
+ * control. A refresh or a route change keeps the state; a new browsing
+ * session (new tab, closed browser) starts clean. Nothing here identifies
+ * the visitor.
  *
  * Every read and write is wrapped in try/catch because storage access
  * throws outright in some privacy modes — in which case the safe behaviour
@@ -12,65 +12,74 @@
  * on the side of the visitor seeing at most what a first-time visitor sees.
  */
 
-export type PopupTrigger = "initial" | "scroll" | "exit";
-
 export interface PopupState {
-  /** Triggers that have already fired this session. Each fires at most once. */
-  shown: Partial<Record<PopupTrigger, true>>;
-  /** When the visitor last closed a popup — drives the cooldown. */
-  lastClosedAt: number;
-  /** A lead landed this session: suppress every further popup. */
+  /** The timed popup has opened this session. It never opens again —
+      whether the visitor submitted, closed it, or simply moved on. */
+  shown: boolean;
+  /** The exit-intent popup has opened this session. Also once only. */
+  exitShown: boolean;
+  /** Active (visible-tab) browsing time banked so far, in ms. Survives
+      refreshes and navigation so the 20-second clock never restarts. */
+  activeMs: number;
+  /** The visitor has genuinely scrolled at least once this session. */
+  scrolled: boolean;
+  /** The visitor reached for a form themselves (an estimator CTA, the
+      estimator's fields, a contact link): no automatic pitch after that. */
+  engaged: boolean;
+  /** A lead landed this session: suppress the popup entirely. */
   submitted: boolean;
 }
 
-const KEY = "midis-popups";
+/* A new key rather than the old "midis-popups": the three-trigger shape it
+   held does not map onto the timed + exit pair. */
+const KEY = "midis-popup";
 
-const EMPTY: PopupState = { shown: {}, lastClosedAt: 0, submitted: false };
+function empty(): PopupState {
+  return {
+    shown: false,
+    exitShown: false,
+    activeMs: 0,
+    scrolled: false,
+    engaged: false,
+    submitted: false,
+  };
+}
 
 export function readPopupState(): PopupState {
   try {
     const raw = sessionStorage.getItem(KEY);
-    if (!raw) return { ...EMPTY, shown: {} };
+    if (!raw) return empty();
     const parsed = JSON.parse(raw) as Partial<PopupState>;
     return {
-      shown: typeof parsed.shown === "object" && parsed.shown ? parsed.shown : {},
-      lastClosedAt:
-        typeof parsed.lastClosedAt === "number" ? parsed.lastClosedAt : 0,
+      shown: parsed.shown === true,
+      exitShown: parsed.exitShown === true,
+      activeMs:
+        typeof parsed.activeMs === "number" && parsed.activeMs > 0
+          ? parsed.activeMs
+          : 0,
+      scrolled: parsed.scrolled === true,
+      engaged: parsed.engaged === true,
       submitted: parsed.submitted === true,
     };
   } catch {
-    return { ...EMPTY, shown: {} };
+    return empty();
   }
 }
 
-function write(state: PopupState) {
+export function updatePopupState(patch: Partial<PopupState>) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(state));
+    sessionStorage.setItem(KEY, JSON.stringify({ ...readPopupState(), ...patch }));
   } catch {
-    /* Private mode or storage blocked: frequency rules then live only in
-       this page's memory, which the manager also keeps. Not worth throwing. */
+    /* Private mode or storage blocked: the controller still holds the
+       state in memory for this page. Not worth throwing. */
   }
-}
-
-export function markPopupShown(trigger: PopupTrigger) {
-  const state = readPopupState();
-  state.shown[trigger] = true;
-  write(state);
-}
-
-export function markPopupClosed() {
-  const state = readPopupState();
-  state.lastClosedAt = Date.now();
-  write(state);
 }
 
 /**
- * Called after ANY successful lead submission this session — the popups'
+ * Called after ANY successful lead submission this session — the popup's
  * own form, and the hero estimator — so a visitor who has already enquired
  * is never pitched again on the same visit.
  */
 export function markLeadSubmitted() {
-  const state = readPopupState();
-  state.submitted = true;
-  write(state);
+  updatePopupState({ submitted: true });
 }

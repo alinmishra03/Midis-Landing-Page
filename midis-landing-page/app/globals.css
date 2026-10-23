@@ -1810,17 +1810,26 @@ p {
 }
 
 /* ==========================================================================
-   FLOATING CONTACT BUTTON — WhatsApp only (MIDIS follow-up, 2026-10-22;
-   the Call and Estimate circles of the 2026-10-21 dock were removed)
+   FLOATING ACTIONS — Estimate + WhatsApp (MIDIS brief, 2026-10-23)
    --------------------------------------------------------------------------
-   One circle pinned bottom-right, clear of safe areas. z-30: above all
-   page content, BELOW the mobile nav panel
-   (40) and the header (50), far below the popup layer (70) — so it can
-   never sit on top of an open menu or dialog.
+   Two solid circles on ONE vertical axis: the column is the only thing
+   positioned, and every button is the same size inside it, so there is no
+   per-button offset to drift. 16px from the right/bottom edges on phones,
+   24px from `sm`, plus the safe-area insets.
 
-   ALWAYS VISIBLE (MIDIS instruction, 2026-10-22): there are no hidden
-   states any more — the button never fades while scrolling. The only
-   motion is its one-time entrance on page load.
+   The group is a direct child of <body>, which sets no transform, filter or
+   overflow: hidden — nothing can become its containing block or clip it.
+   z-30: above all page content, BELOW the mobile nav panel (40) and the
+   header (50), far below the popup layer (70).
+
+   VISIBLE ON EVERY GROUND. Solid fills only, white glyphs, and a two-part
+   shadow (a soft drop plus a tight contact shadow) that lifts them off
+   white, off-white and photographs alike. On the dark theme's near-black
+   page the shadow has nothing to darken, so there — and only there — each
+   circle also carries a faint light hairline.
+
+   ALWAYS VISIBLE (MIDIS instruction, 2026-10-22): no scroll-driven hiding.
+   The only motion is the one-time entrance on load and the hover scale.
    ========================================================================== */
 
 @keyframes fab-rise {
@@ -1836,34 +1845,45 @@ p {
 
 .floating-cta {
   position: fixed;
-  right: clamp(0.875rem, 3vw, 1.5rem);
-  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
 }
 
-/* ---- the button ---- */
+@media (min-width: 640px) {
+  .floating-cta {
+    right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- the buttons ---- */
 
 .fab {
   position: relative;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 3rem; /* 48px on phones (44px tap minimum comfortably cleared) */
+  width: 3rem; /* 48px on phones */
   height: 3rem;
+  border: 1px solid transparent;
   border-radius: calc(infinity * 1px);
-  box-shadow: 0 10px 26px -16px rgb(20 21 24 / 0.5);
+  color: #fff;
+  box-shadow:
+    0 8px 20px -8px rgb(0 0 0 / 0.38),
+    0 2px 5px rgb(0 0 0 / 0.14);
   /* One-time entrance on load. `backwards`, not `both`: a forwards fill
-     would pin the final keyframe's transform and block the hover lift. */
+     would pin the final keyframe's transform and block the hover scale. */
   animation: fab-rise 520ms var(--ease-out-expo) 500ms backwards;
   transition:
     transform var(--dur-fast) var(--ease-out-quart),
     background-color var(--dur-fast) var(--ease-out-quart),
-    border-color var(--dur-fast) var(--ease-out-quart),
-    color var(--dur-fast) var(--ease-out-quart),
-    opacity var(--dur-base) var(--ease-out-quart);
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 
 @media (min-width: 640px) {
@@ -1873,35 +1893,62 @@ p {
   }
 }
 
+/* Glyphs never shrink and sit dead centre whatever their own viewBox. */
+.fab > svg {
+  flex: none;
+  display: block;
+}
+
 @media (hover: hover) {
   .fab:hover {
-    transform: translateY(-2px);
+    transform: scale(1.07);
+    box-shadow:
+      0 12px 24px -8px rgb(0 0 0 / 0.42),
+      0 3px 6px rgb(0 0 0 / 0.16);
   }
 }
 
 .fab:active {
-  transform: translateY(0) scale(0.96);
+  transform: scale(0.96);
 }
 
-/* WhatsApp: the brand's own published green, white official glyph
-   (MIDIS instruction, 2026-10-21). Same values in both themes — the whole
-   point is that it reads as WhatsApp. */
+/* Keyboard focus: a ring in the page's text colour, which reads on both
+   fills — the site-wide orange ring would vanish on the orange circle. */
+.fab:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+  border-radius: calc(infinity * 1px);
+}
+
+/* Entrance order, bottom up: WhatsApp, then Estimate a beat later. */
+.fab-estimate {
+  background: #f68b13;
+  animation-delay: 580ms;
+}
+
 .fab-whatsapp {
   background: #25d366;
-  color: #fff;
 }
 
 @media (hover: hover) {
+  .fab-estimate:hover {
+    background: #e57d08;
+  }
+
   .fab-whatsapp:hover {
     background: #1ebe5d;
   }
 }
 
-/* ---- the labels ----
-   Compact tooltips sliding out LEFT of the hovered/focused button, never
-   reflowing anything. Pointer devices only — on touch the aria-labels do
-   the explaining and a tooltip would just flash under a tap. Ink on white
-   text with a hairline, so they read identically on both themes. */
+:root[data-theme="dark"] .fab {
+  border-color: rgb(255 255 255 / 0.16);
+}
+
+/* ---- the tooltips ----
+   Compact labels sliding out LEFT of the hovered/focused button, never
+   reflowing anything. Pointer devices only — touch stays icon-only and the
+   aria-labels do the explaining. Charcoal with white text and a hairline,
+   so they read identically on both themes. */
 .fab-label {
   position: absolute;
   right: calc(100% + 0.75rem);
@@ -1949,11 +1996,12 @@ p {
 }
 
 /* ==========================================================================
-   LEAD POPUPS — one dialog, three triggers (MIDIS brief, 2026-10-20)
+   LEAD POPUPS — the timed and exit dialogs (MIDIS briefs, 2026-10-20 / 10-23)
    --------------------------------------------------------------------------
    The backdrop centres the panel from `sm`; below that the panel sits at
-   the bottom of the screen like a sheet. Both animate in with one gentle
-   fade-and-rise; `[data-closing]` plays the reverse before the component
+   the bottom of the screen like a sheet. The overlay fades in over 300ms
+   while the panel fades in with a slight scale (and a few pixels of rise,
+   so the mobile sheet reads as arriving from below) — no bounce; `[data-closing]` plays the reverse before the component
    unmounts. The reduced-motion kill switch at the top of this file flattens
    all of it to an instant swap.
    ========================================================================== */
@@ -1967,7 +2015,7 @@ p {
 @keyframes popup-panel-in {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.985);
+    transform: translateY(8px) scale(0.96);
   }
 }
 
@@ -1981,7 +2029,7 @@ p {
   padding: 0.75rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   background: rgb(9 9 11 / 0.55);
-  animation: popup-backdrop-in 240ms var(--ease-out-quart) both;
+  animation: popup-backdrop-in 300ms var(--ease-out-quart) both;
   transition: opacity 180ms var(--ease-out-quart);
 }
 
@@ -2003,7 +2051,7 @@ p {
   border: 1px solid var(--color-line);
   border-radius: 1.25rem;
   background: var(--color-surface);
-  animation: popup-panel-in 300ms var(--ease-out-expo) both;
+  animation: popup-panel-in 320ms var(--ease-out-expo) both;
   transition:
     opacity 180ms var(--ease-out-quart),
     transform 180ms var(--ease-out-quart);
@@ -2063,8 +2111,7 @@ p {
   background: rgb(127 127 127 / 0.12);
 }
 
-/* Pinned to the corner only inside the dialog; the reminder card lays its
-   copy of the control out in flow. */
+/* Pinned to the dialog's top-right corner. */
 .popup-panel .popup-close {
   position: absolute;
   top: 0.75rem;
@@ -2086,31 +2133,6 @@ p {
 .popup-secondary:hover,
 .popup-secondary:focus-visible {
   color: var(--color-fg);
-}
-
-/* --------------------------------------------------------------------------
-   The touch-device reminder — NON-modal by design: no backdrop, no focus
-   trap, the page stays fully usable. Sits above the floating CTA group.
-   -------------------------------------------------------------------------- */
-
-.popup-reminder {
-  position: fixed;
-  left: 1rem;
-  right: 1rem;
-  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
-  z-index: 40;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  max-width: 26rem;
-  margin-inline: auto;
-  padding: 0.875rem 0.75rem 0.875rem 1rem;
-  border: 1px solid var(--color-line);
-  border-radius: 0.875rem;
-  background: var(--color-surface);
-  box-shadow: 0 14px 36px -24px rgb(20 21 24 / 0.5);
-  animation: popup-panel-in 300ms var(--ease-out-expo) both;
 }
 
 /* ==========================================================================

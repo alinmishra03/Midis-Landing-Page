@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { site } from "@/content/site";
+import { LeadPopups } from "@/components/popups/LeadPopups";
 
 /**
  * Root layout.
@@ -140,6 +141,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to main content
         </a>
         {children}
+        {/* The automatic lead popup. Mounted HERE, once, so its single
+            timer and listener set survive client-side navigation instead of
+            restarting per page; it decides itself which routes it may open
+            on (see components/popups/LeadPopups.tsx). */}
+        <LeadPopups />
       </body>
     </html>
   );
