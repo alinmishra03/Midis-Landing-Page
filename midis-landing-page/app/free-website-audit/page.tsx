@@ -129,16 +129,6 @@ export default function FreeWebsiteAuditPage() {
                   ))}
                 </ul>
               </div>
-
-              <p className="mt-6 text-sm leading-relaxed text-muted">
-                Prefer to talk it through?{" "}
-                <a
-                  href={`mailto:${site.email}`}
-                  className="font-medium text-accent-ink underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
-                >
-                  {site.email}
-                </a>
-              </p>
             </div>
 
             {/* ---- the form ---- */}

@@ -184,11 +184,9 @@ export function Confirmation({ content }: { content: ThankYouContent }) {
                     arrange a time that suits you.
                   </p>
 
+                  {/* No email button: the address lives in the site footer
+                      only (MIDIS instruction, 2026-10-24). */}
                   <ButtonGroup align="center" className="mt-6">
-                    <Button href={`mailto:${site.email}`} size="lg">
-                      Email {site.email}
-                      <Arrow />
-                    </Button>
                     {/* WhatsApp brand green with the official glyph (MIDIS
                         instruction, 2026-10-21) — white-on-green is
                         WhatsApp's own button convention. */}

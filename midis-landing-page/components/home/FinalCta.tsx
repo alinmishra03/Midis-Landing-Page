@@ -2,7 +2,7 @@ import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { Eyebrow } from "@/components/ui/Section";
 import { finalCta } from "@/content/sections";
-import { site, whatsappHref } from "@/content/site";
+import { whatsappHref } from "@/content/site";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 
 /**
@@ -142,21 +142,12 @@ export function FinalCta() {
             </ButtonGroup>
           </Reveal>
 
-          {/* Contact line: flex-wrap so email + separator + WhatsApp stack
-              naturally on very narrow screens without awkward mid-word breaks.
-              The separator uses a centred dot (·) which reads better than a
-              forward slash at small sizes and doesn't need aria-hidden tricks
-              to disappear when the line wraps. */}
+          {/* Contact line: flex-wrap so the lead-in and WhatsApp stack
+              naturally on very narrow screens. The email address lives in
+              the footer only (MIDIS instruction, 2026-10-24). */}
           <Reveal delay={460}>
             <p className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted-dark">
               <span>Or reach us directly —</span>
-              <a
-                href={`mailto:${site.email}`}
-                className="link-underline-accent font-medium text-white transition-colors"
-              >
-                {site.email}
-              </a>
-              <span aria-hidden="true" className="text-white/30">·</span>
               {/* Brand green + glyph (MIDIS WhatsApp-branding brief,
                   2026-10-21); #25D366 on this ink band reads at ~8:1. */}
               <a

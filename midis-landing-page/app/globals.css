@@ -2245,12 +2245,12 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
 }
 
 /* ==========================================================================
-   FLOATING ACTIONS — Estimate + WhatsApp (MIDIS brief, 2026-10-23)
+   FLOATING ACTIONS — WhatsApp circle + sticky estimate pill (MIDIS briefs,
+   2026-10-23 / 2026-10-24)
    --------------------------------------------------------------------------
-   Two solid circles on ONE vertical axis: the column is the only thing
-   positioned, and every button is the same size inside it, so there is no
-   per-button offset to drift. 16px from the right/bottom edges on phones,
-   24px from `sm`, plus the safe-area insets.
+   The WhatsApp circle sits bottom-right: 16px from the right/bottom edges
+   on phones, 24px from `sm`, plus the safe-area insets. The estimate pill
+   (.sticky-cta, after the circle's rules) shares its row, centres aligned.
 
    The group is a direct child of <body>, which sets no transform, filter or
    overflow: hidden — nothing can become its containing block or clip it.
@@ -2355,21 +2355,11 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   border-radius: calc(infinity * 1px);
 }
 
-/* Entrance order, bottom up: WhatsApp, then Estimate a beat later. */
-.fab-estimate {
-  background: #f68b13;
-  animation-delay: 580ms;
-}
-
 .fab-whatsapp {
   background: #25d366;
 }
 
 @media (hover: hover) {
-  .fab-estimate:hover {
-    background: #e57d08;
-  }
-
   .fab-whatsapp:hover {
     background: #1ebe5d;
   }
@@ -2426,6 +2416,151 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   .fab,
   .fab:active,
   .fab:hover {
+    transform: none;
+  }
+}
+
+/* ---- the sticky estimate pill (MIDIS brief, 2026-10-24) ----
+   An orange pill with ink text inside a thin glass ring, so it stays
+   legible over white sections, photographs and the dark footer alike.
+
+   GEOMETRY. The ring's padding (--ring) is subtracted from its bottom
+   offset, so the PILL sits exactly where the WhatsApp circle sits and the
+   two share a centre line:
+     - phones: pill 48px tall (= circle), ring from 16px left to 12px short
+       of the circle — a centred pill wide enough to read would run under it;
+     - `sm` up: pill 52px tall (= circle), centred, 24px off the bottom; at
+       640px it ends ~95px left of the circle, so they never meet.
+   z-30 like the circle: under the nav panel (40), header (50), popups (70). */
+.sticky-cta {
+  --ring: 0.3125rem;
+  position: fixed;
+  z-index: 30;
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  right: calc(4.75rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem - var(--ring) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  padding: var(--ring);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  border-radius: calc(infinity * 1px);
+  background: rgb(255 255 255 / 0.42);
+  backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    0 18px 40px -18px rgb(20 21 24 / 0.45),
+    0 2px 6px rgb(20 21 24 / 0.08);
+  animation: fab-rise 520ms var(--ease-out-expo) 580ms backwards;
+}
+
+@media (min-width: 640px) {
+  .sticky-cta {
+    --ring: 0.375rem;
+    left: 0;
+    right: 0;
+    width: max-content;
+    margin-inline: auto;
+    bottom: calc(1.5rem - var(--ring) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+:root[data-theme="dark"] .sticky-cta {
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(24 24 27 / 0.5);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.8);
+}
+
+.sticky-cta-btn {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+  height: 3rem; /* = the WhatsApp circle on phones */
+  padding-inline: 1rem;
+  border-radius: calc(infinity * 1px);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  box-shadow:
+    0 8px 20px -10px rgb(239 135 22 / 0.75),
+    inset 0 1px 0 rgb(255 255 255 / 0.28);
+  transition:
+    transform var(--dur-fast) var(--ease-out-quart),
+    background-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
+}
+
+@media (min-width: 640px) {
+  .sticky-cta-btn {
+    height: 3.25rem; /* = the WhatsApp circle from sm */
+    padding-inline: 1.5rem;
+    font-size: 0.9375rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .sticky-cta-btn {
+    padding-inline: 1.75rem;
+  }
+}
+
+.sticky-cta-arrow {
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease-out-quart);
+}
+
+/* The narrowest phones (320px) leave ~218px for the pill: the arrow goes
+   so the full label still fits on one line. */
+@media (max-width: 359px) {
+  .sticky-cta-btn {
+    padding-inline: 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .sticky-cta-arrow {
+    display: none;
+  }
+}
+
+@media (hover: hover) {
+  .sticky-cta-btn:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow:
+      0 12px 26px -10px rgb(239 135 22 / 0.85),
+      inset 0 1px 0 rgb(255 255 255 / 0.28);
+  }
+  .sticky-cta-btn:hover .sticky-cta-arrow {
+    transform: translateX(3px);
+  }
+}
+
+.sticky-cta-btn:active {
+  transform: scale(0.98);
+}
+
+/* The page-text ring, like the circle's: an orange ring would vanish on
+   the orange pill. */
+.sticky-cta-btn:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 3px;
+}
+
+/* The pill is always on screen, so the footer's last line gets room to
+   scroll clear of it. Only on pages that mount it. */
+body:has(.sticky-cta) footer {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky-cta {
+    animation: none;
+  }
+  .sticky-cta-btn:hover,
+  .sticky-cta-btn:active,
+  .sticky-cta-btn:hover .sticky-cta-arrow {
     transform: none;
   }
 }

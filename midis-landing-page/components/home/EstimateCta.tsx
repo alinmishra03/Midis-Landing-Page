@@ -18,21 +18,21 @@ import { Arrow, Button } from "@/components/ui/Button";
  * The target is step one's first RADIO, deliberately: focusing a radio
  * never opens the mobile keyboard mid-scroll, where a text field would.
  */
+export function focusEstimatorAfterScroll() {
+  window.setTimeout(() => {
+    document
+      .querySelector<HTMLInputElement>("#estimator form input[type='radio']")
+      ?.focus({ preventScroll: true });
+  }, 700);
+}
+
 export function EstimateCta({ className }: { className?: string }) {
   return (
     <Button
       href="#estimator"
       size="lg"
       className={className}
-      onClick={() => {
-        window.setTimeout(() => {
-          document
-            .querySelector<HTMLInputElement>(
-              "#estimator form input[type='radio']",
-            )
-            ?.focus({ preventScroll: true });
-        }, 700);
-      }}
+      onClick={focusEstimatorAfterScroll}
     >
       Get a Free Project Estimate
       <Arrow />

@@ -1,13 +1,11 @@
 import { Logo } from "./Logo";
 import { Reveal } from "@/components/ui/Reveal";
 import { Arrow } from "@/components/ui/Button";
-import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import {
   footerColumns,
   footerLegal,
   site,
   visibleSocials,
-  whatsappHref,
 } from "@/content/site";
 
 /**
@@ -23,7 +21,7 @@ import {
  * to this page's two forms. Industries, Resources, About MIDIS and Contact
  * were removed — none has a section on this page — and nothing was added to
  * fill the space. The only links that still leave the page are the contact
- * actions (mailto:, tel:, WhatsApp, socials) and the two legal pages, which
+ * actions (mailto:, tel:, socials) and the two legal pages, which
  * exist only on the main MIDIS site; see the notes in content/site.ts.
  *
  * THE WORDMARK. An oversized MIDIS across the full width, outlined at rest
@@ -168,7 +166,7 @@ export function Footer() {
                 (profile confirmed 2026-10-21: medium.com/@officialmidis).
 
                 EACH NAME WEARS ITS OWN BRAND COLOUR (MIDIS instruction,
-                2026-10-21), matching the WhatsApp-green treatment below.
+                2026-10-21).
                 LinkedIn/Facebook/Instagram hues are nudged LIGHTER than
                 the official hex — the real values sit near 3:1 on this
                 ink ground, failing AA for 14px text — while staying
@@ -192,20 +190,8 @@ export function Footer() {
                   </a>
                 </li>
               ))}
-              <li>
-                {/* WhatsApp wears its own brand green here too (MIDIS
-                    WhatsApp-branding brief, 2026-10-21) — glyph + label,
-                    #25D366 on the ink ground reads at ~8:1. */}
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link-underline inline-flex min-h-6 items-center gap-1.5 text-sm font-medium text-[#25D366] transition-colors hover:text-[#1EBE5D]"
-                >
-                  <WhatsAppIcon className="size-4" />
-                  WhatsApp
-                </a>
-              </li>
+              {/* No WhatsApp link here (MIDIS instruction, 2026-10-24): the
+                  floating WhatsApp button is the site's WhatsApp entry. */}
             </ul>
           </div>
         </Reveal>
