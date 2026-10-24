@@ -26,22 +26,20 @@ import { cn } from "@/lib/utils";
  * three-trigger system of 2026-10-20, whose welcome popup opened 2.6s after
  * load and interrupted the first look at the page).
  *
- * ONE automatic popup, opened only once BOTH are true:
- *   - the visitor has spent 20 seconds of ACTIVE browsing — the clock pauses
- *     while the tab is hidden and is banked in sessionStorage, so a refresh
- *     or a trip to another page never restarts it; and
- *   - the visitor has genuinely scrolled: a wheel, touch, keyboard or
- *     scrollbar scroll. A restored scroll position, an anchor jump or a
- *     layout shift does not count.
- *
- * And never when:
- *   - it already opened this session (closed, submitted or ignored alike);
- *   - a lead was submitted this session, here or through the estimator;
- *   - the visitor reached for a form themselves — an estimator CTA, the
- *     estimator's own fields, a WhatsApp / email / phone link;
- *   - the visitor is typing in a field, or another modal (the work
- *     gallery's detail dialog, the mobile menu) is open. A blocked moment
- *     is retried on the visitor's next scroll — never on a loop.
+ * THE TIMED POPUP REPEATS EVERY 20 SECONDS (MIDIS instruction, 2026-10-24;
+ * it used to open once per session, after 20s of browsing AND a scroll):
+ *   - 20 seconds after the page loads, and again 20 seconds after each
+ *     close — scrolling or not. The clock only runs while the popup is
+ *     closed and the tab is visible, so two never stack and a background
+ *     tab is not ambushed on return.
+ *   - At most 3 times per visit (MIDIS, 2026-10-24). The count lives in
+ *     sessionStorage, so a refresh or a route change does not reset it; a
+ *     new tab or browser session starts fresh.
+ *   - It stops for good once a lead is submitted this session, here or
+ *     through the estimator.
+ *   - When the 20 seconds are up but the visitor is typing in a field, or
+ *     another modal (the work gallery's detail dialog, the mobile menu) is
+ *     open, it waits and opens as soon as that clears (checked each second).
  *
  * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
  * dialog: "Before you go". No browser lets a page show its own content as
@@ -52,12 +50,11 @@ import { cn } from "@/lib/utils";
  * back-button tricks. It opens at most once per session, never in the
  * first 10 seconds (a stray swipe at the toolbar is not leaving), never
  * after a lead was submitted, never over another dialog, never while the
- * visitor is typing. The two popups are independent: each opens once per
- * session on its own rules, whichever comes first (MIDIS, 2026-10-23).
+ * visitor is typing. The two popups are independent, each on its own
+ * rules; the timed one simply waits while the exit one is open.
  *
  * MANUAL CTAs are untouched: every "Get a Project Estimate" button is a
- * plain link to #estimator and works instantly. This controller only
- * listens to them so it can stand down.
+ * plain link to #estimator and works instantly.
  *
  * Mounted once in the root layout, so client-side navigation never spawns a
  * second timer or listener set. It only OPENS on the landing page — the
@@ -69,27 +66,16 @@ import { cn } from "@/lib/utils";
  * validated /api/enquiry route as every other lead.
  */
 
-const ACTIVE_DELAY_MS = 20_000;
+/** The timed popup opens every this-many ms of visible, popup-free time. */
+const REPEAT_MS = 20_000;
+/** …but no more than this many times per visit (browser session). */
+const MAX_TIMED_PER_VISIT = 3;
+/** How often a due-but-blocked popup re-checks whether it may open. */
+const BLOCKED_RETRY_MS = 1_000;
 /** The exit popup ignores the toolbar for this long after landing. */
 const EXIT_MIN_DWELL_MS = 10_000;
-/** Movement smaller than this is jitter, not a scroll. */
-const SCROLL_MIN_PX = 24;
-/** How long after a wheel / touch / key event a scroll still counts as the
-    visitor's own. */
-const INTENT_WINDOW_MS = 1_000;
-const SCROLL_KEYS = new Set([
-  "ArrowDown",
-  "ArrowUp",
-  "PageDown",
-  "PageUp",
-  "Home",
-  "End",
-  " ",
-]);
 /** Routes the popup may open on. */
 const AUTO_ROUTES = new Set(["/"]);
-/** Links that mean "the visitor is already on their way to us". */
-const ENGAGED_HREF = /#estimator$|^mailto:|^tel:|wa\.me\/|whatsapp/i;
 
 type PopupKind = "timed" | "exit";
 
@@ -147,6 +133,9 @@ export function LeadPopups() {
 
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  /* In-memory twin of the stored count, so the cap still holds where
+     sessionStorage is blocked (some privacy modes). */
+  const timedCountRef = useRef(0);
 
   const show = useCallback((which: PopupKind) => {
     restoreFocusRef.current =
@@ -171,172 +160,72 @@ export function LeadPopups() {
 
   /* ---------------- the automatic trigger ---------------- */
 
+  /* Runs while the popup is CLOSED; opening it tears this down, closing it
+     starts a fresh 20s. The countdown pauses while the tab is hidden: the
+     time still owed is kept and resumed on return. */
   useEffect(() => {
-    if (!autoRoute) return;
-    const initial = readPopupState();
-    if (initial.shown || initial.submitted || initial.engaged) return;
+    if (!autoRoute || open) return;
+    /* Finished for this visit: a lead landed, or the cap is reached. */
+    const finished = () => {
+      const state = readPopupState();
+      return (
+        state.submitted ||
+        Math.max(state.timedCount, timedCountRef.current) >= MAX_TIMED_PER_VISIT
+      );
+    };
+    if (finished()) return;
 
-    /* ONE timeout at a time, scheduled for exactly the active time still
-       owed; banked into storage whenever it pauses. performance.now() is
-       monotonic, so a clock change cannot skip the wait. */
-    let activeMs = initial.activeMs;
-    let scrolled = initial.scrolled;
-    let resumedAt: number | null = null;
+    let remaining = REPEAT_MS;
+    let startedAt: number | null = null;
     let timer: number | undefined;
-    let frame = 0;
-    let stopped = false;
-
-    /* Scroll intent: a scroll only counts when it follows the visitor's own
-       wheel / touch / key input, or happens while a pointer is held (the
-       scrollbar). The baseline is the position when that input began, so a
-       restored position or programmatic jump is never mistaken for one. */
-    let intentAt = -Infinity;
-    let pointerHeld = false;
-    let baselineY: number | null = null;
-
-    const elapsed = () =>
-      activeMs + (resumedAt === null ? 0 : performance.now() - resumedAt);
 
     const pause = () => {
-      if (resumedAt !== null) {
-        activeMs = Math.min(elapsed(), ACTIVE_DELAY_MS);
-        resumedAt = null;
+      if (startedAt !== null) {
+        remaining = Math.max(remaining - (performance.now() - startedAt), 0);
+        startedAt = null;
       }
       window.clearTimeout(timer);
-      updatePopupState({ activeMs });
     };
 
-    const attempt = () => {
-      if (stopped || !scrolled || elapsed() < ACTIVE_DELAY_MS) return;
-      const state = readPopupState();
-      if (state.shown || state.submitted || state.engaged) {
-        stop();
+    const due = () => {
+      startedAt = null;
+      if (finished()) return;
+      /* Went hidden at the last instant: open a beat after the return. */
+      if (document.visibilityState !== "visible") {
+        remaining = BLOCKED_RETRY_MS;
         return;
       }
-      /* Blocked moments wait for the next genuine scroll. */
-      if (isTyping() || otherModalOpen() || document.visibilityState !== "visible") {
+      /* Due but blocked: check again shortly rather than skip a round. */
+      if (isTyping() || otherModalOpen()) {
+        remaining = BLOCKED_RETRY_MS;
+        run();
         return;
       }
-      stop();
-      updatePopupState({ shown: true });
+      timedCountRef.current =
+        Math.max(readPopupState().timedCount, timedCountRef.current) + 1;
+      updatePopupState({ timedCount: timedCountRef.current });
       show("timed");
     };
 
-    const resume = () => {
-      if (stopped || resumedAt !== null || document.visibilityState !== "visible") {
-        return;
-      }
-      const remaining = ACTIVE_DELAY_MS - activeMs;
-      /* Time already served: a visitor returning to the tab is not
-         ambushed — the popup waits for their next scroll. */
-      if (remaining <= 0) return;
-      resumedAt = performance.now();
-      timer = window.setTimeout(() => {
-        pause();
-        attempt();
-      }, remaining);
+    const run = () => {
+      if (document.visibilityState !== "visible") return;
+      startedAt = performance.now();
+      timer = window.setTimeout(due, remaining);
     };
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible") resume();
+      if (document.visibilityState === "visible") run();
       else pause();
     };
 
-    const markIntent = () => {
-      intentAt = performance.now();
-      if (baselineY === null) baselineY = window.scrollY;
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (SCROLL_KEYS.has(event.key) && !isTyping()) markIntent();
-    };
-    const onPointerDown = () => {
-      pointerHeld = true;
-      markIntent();
-    };
-    const onPointerUp = () => {
-      pointerHeld = false;
-    };
-
-    const intentEvents = [
-      ["wheel", markIntent],
-      ["touchmove", markIntent],
-      ["keydown", onKeyDown],
-      ["pointerdown", onPointerDown],
-      ["pointerup", onPointerUp],
-      ["pointercancel", onPointerUp],
-    ] as const;
-    const dropIntentListeners = () => {
-      for (const [type, fn] of intentEvents) {
-        window.removeEventListener(type, fn as EventListener);
-      }
-    };
-
-    /* Coalesced to one check per frame — never work per raw scroll event. */
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        if (!scrolled) {
-          const userDriven =
-            pointerHeld || performance.now() - intentAt < INTENT_WINDOW_MS;
-          if (!userDriven) {
-            baselineY = null;
-            return;
-          }
-          if (baselineY === null || Math.abs(window.scrollY - baselineY) < SCROLL_MIN_PX) {
-            return;
-          }
-          scrolled = true;
-          updatePopupState({ scrolled: true });
-          dropIntentListeners();
-        }
-        attempt();
-      });
-    };
-
-    /* The visitor reaching for a form themselves ends the controller. */
-    const engage = () => {
-      updatePopupState({ engaged: true });
-      stop();
-    };
-    const onClick = (event: MouseEvent) => {
-      const link =
-        event.target instanceof Element ? event.target.closest("a[href]") : null;
-      if (link && ENGAGED_HREF.test(link.getAttribute("href") ?? "")) engage();
-    };
-    const onFocusIn = (event: FocusEvent) => {
-      if (event.target instanceof Element && event.target.closest("#estimator form")) {
-        engage();
-      }
-    };
-
-    function stop() {
-      if (stopped) return;
-      pause();
-      stopped = true;
-      cancelAnimationFrame(frame);
-      dropIntentListeners();
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("pagehide", pause);
-      document.removeEventListener("visibilitychange", onVisibility);
-      document.removeEventListener("click", onClick, true);
-      document.removeEventListener("focusin", onFocusIn);
-    }
-
-    if (!scrolled) {
-      for (const [type, fn] of intentEvents) {
-        window.addEventListener(type, fn as EventListener, { passive: true });
-      }
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("pagehide", pause);
     document.addEventListener("visibilitychange", onVisibility);
-    document.addEventListener("click", onClick, true);
-    document.addEventListener("focusin", onFocusIn);
-    resume();
+    run();
 
-    return stop;
-  }, [autoRoute, show]);
+    return () => {
+      pause();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [autoRoute, open, show]);
 
   /* ---------------- the exit-intent trigger ---------------- */
 

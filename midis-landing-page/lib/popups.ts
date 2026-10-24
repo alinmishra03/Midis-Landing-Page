@@ -13,19 +13,11 @@
  */
 
 export interface PopupState {
-  /** The timed popup has opened this session. It never opens again —
-      whether the visitor submitted, closed it, or simply moved on. */
-  shown: boolean;
-  /** The exit-intent popup has opened this session. Also once only. */
+  /** How many times the timed popup has opened this session. It repeats
+      every 20 seconds up to a cap (MIDIS, 2026-10-24: 3 per visit). */
+  timedCount: number;
+  /** The exit-intent popup has opened this session. Once only. */
   exitShown: boolean;
-  /** Active (visible-tab) browsing time banked so far, in ms. Survives
-      refreshes and navigation so the 20-second clock never restarts. */
-  activeMs: number;
-  /** The visitor has genuinely scrolled at least once this session. */
-  scrolled: boolean;
-  /** The visitor reached for a form themselves (an estimator CTA, the
-      estimator's fields, a contact link): no automatic pitch after that. */
-  engaged: boolean;
   /** A lead landed this session: suppress the popup entirely. */
   submitted: boolean;
 }
@@ -36,11 +28,8 @@ const KEY = "midis-popup";
 
 function empty(): PopupState {
   return {
-    shown: false,
+    timedCount: 0,
     exitShown: false,
-    activeMs: 0,
-    scrolled: false,
-    engaged: false,
     submitted: false,
   };
 }
@@ -51,14 +40,11 @@ export function readPopupState(): PopupState {
     if (!raw) return empty();
     const parsed = JSON.parse(raw) as Partial<PopupState>;
     return {
-      shown: parsed.shown === true,
-      exitShown: parsed.exitShown === true,
-      activeMs:
-        typeof parsed.activeMs === "number" && parsed.activeMs > 0
-          ? parsed.activeMs
+      timedCount:
+        typeof parsed.timedCount === "number" && parsed.timedCount > 0
+          ? parsed.timedCount
           : 0,
-      scrolled: parsed.scrolled === true,
-      engaged: parsed.engaged === true,
+      exitShown: parsed.exitShown === true,
       submitted: parsed.submitted === true,
     };
   } catch {
