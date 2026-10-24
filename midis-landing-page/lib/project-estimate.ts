@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js/max";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { estimatorSchema } from "@/lib/enquiry";
 
@@ -53,14 +54,23 @@ export const BUDGET_RANGE_VALUE: Record<(typeof BUDGETS)[number], string> = {
   "Not sure yet": "budget_not_sure",
 };
 
+/**
+ * THE PHONE RULE (international field, 2026-10-24). The form's phone input
+ * (components/forms/PhoneField.tsx) reports E.164 — "+919876543210" — and
+ * this checks it against the dialled country's own numbering plan with
+ * libphonenumber-js's full ("max") metadata: lengths and digit patterns
+ * differ per country, so there is no universal digit count. Strapi's
+ * phoneNumber stays a plain string; E.164 is simply a stricter shape of
+ * what it already accepted, so the API contract is unchanged.
+ */
 export const projectEstimateSchema = estimatorSchema.extend({
   phone: z
     .string()
     .trim()
     .min(1, "Please enter your phone number.")
     .max(32, "That phone number is longer than we can store.")
-    .refine((v) => /^[+()\d\s.-]+$/.test(v) && v.replace(/\D/g, "").length >= 6, {
-      message: "Please enter a valid phone number, including the country code.",
+    .refine((v) => isValidPhoneNumber(v), {
+      message: "Please enter a valid phone number for the selected country.",
     }),
 });
 

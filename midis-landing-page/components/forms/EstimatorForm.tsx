@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
+import type { Country } from "react-phone-number-input/max";
 import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
+import { PhoneField } from "./PhoneField";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
 import { projectEstimateSchema } from "@/lib/project-estimate";
@@ -102,6 +104,10 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<Record<FieldName, string>>(EMPTY);
+  /* The phone field's country lives here, not in the field: step 1
+     unmounts on Continue, and Back must find the visitor's choice intact
+     (India by default — no location lookup). */
+  const [phoneCountry, setPhoneCountry] = useState<Country>("IN");
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "submitting">("idle");
@@ -337,16 +343,17 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
                 onChange={(event) => set("email")(event.target.value)}
                 error={errors.email}
               />
-              <TextField
+              {/* International: searchable country code, per-country
+                  validation, E.164 value — see PhoneField. */}
+              <PhoneField
                 label="Phone Number"
                 name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="Include country code"
+                placeholder="Phone number"
                 required
                 value={values.phone}
-                onChange={(event) => set("phone")(event.target.value)}
+                onChange={set("phone")}
+                country={phoneCountry}
+                onCountryChange={setPhoneCountry}
                 error={errors.phone}
               />
               <TextField
