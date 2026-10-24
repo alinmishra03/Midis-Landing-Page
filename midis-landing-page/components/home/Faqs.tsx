@@ -53,32 +53,38 @@ export function Faqs() {
   return (
     <Section id="faqs" tone="paper" veil="clean" labelledBy="faqs-heading">
       {/*
-        ONE COLUMN, ONE LEFT EDGE.
+        LAYOUT (MIDIS, 2026-10-24). Both halves sit inside the one
+        `container-site`, so they share the page's left AND right edges —
+        the old 68rem column ended ~240px short of the right edge at 1440,
+        aligned with nothing.
 
-        The header and the accordion previously sat in separate wrappers —
-        the header left-aligned in `container-site`, the accordion
-        `mx-auto` inside it. On any screen wider than the accordion's own
-        max width those two resolve to DIFFERENT left edges, so the label,
-        heading and description started at one line and the questions at
-        another, with dead space between them.
+          below lg  stacked: label, heading, description, then the
+                    questions, all full width.
+          from lg   two columns, like the testimonials section: the label,
+                    heading and description (still stacked, description
+                    directly under the heading) on the left, pinned below
+                    the nav while the questions scroll; the questions on
+                    the right, their icons on the container's right edge.
+                    The heading steps down to the display-md size there,
+                    so it holds two lines in the narrower column.
 
-        Now both live in a single centred column. The column is centred in
-        the page; everything inside it is flush left, so "QUESTIONS", the
-        heading, the description and every question share one boundary at
-        every width. `bare` tells SectionHeader to skip its own container
-        so it inherits this one rather than nesting a second.
+        `bare` tells SectionHeader to skip its own container so it inherits
+        this one rather than nesting a second.
       */}
       <div className="container-site">
-        <div className="mx-auto max-w-[68rem]">
-          <SectionHeader
-            bare
-            eyebrow="Questions"
-            heading={faqSection.headline}
-            headingId="faqs-heading"
-            sub={faqSection.subheadline}
-          />
+        <div className="grid gap-y-[var(--space-block)] lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-x-14 xl:gap-x-20">
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:self-start">
+            <SectionHeader
+              bare
+              eyebrow="Questions"
+              heading={faqSection.headline}
+              headingId="faqs-heading"
+              sub={faqSection.subheadline}
+              className="lg:[&_h2]:text-[length:var(--text-display-md)]"
+            />
+          </div>
 
-          <div className="mt-[var(--space-block)]">
+          <div>
             {faqs.map((faq, index) => {
             const isOpen = open.has(index);
             const buttonId = `${baseId}-q-${index}`;
@@ -102,27 +108,28 @@ export function Faqs() {
                        — full width, comfortable height, question flush left
                        and icon flush right via `justify-between`. */
                     className={cn(
-                      "group/faq flex w-full items-start justify-between gap-6 py-5 text-left sm:py-6",
+                      "group/faq flex w-full items-start justify-between gap-4 py-5 text-left text-base font-semibold leading-snug sm:gap-6 sm:py-6 sm:text-lg",
                       "transition-colors duration-[var(--dur-fast)]",
                       isOpen ? "text-accent-ink" : "text-fg hover:text-accent-ink",
                     )}
                   >
-                    <span className="text-base font-semibold leading-snug sm:text-lg">
-                      {faq.question}
-                    </span>
+                    <span className="min-w-0 text-pretty">{faq.question}</span>
 
                     {/*
                       A plus that rotates into a minus. Decorative — the
                       state is already carried by aria-expanded, so
                       announcing "plus" here would be noise.
                     */}
+                    {/* A box exactly one line of the question tall
+                        (leading-snug = 1.375em of the button's size), the
+                        circle centred in it: dead centre on the first line
+                        for one-line and wrapped questions alike. */}
+                    <span aria-hidden="true" className="flex h-[1.375em] shrink-0 items-center">
                     <span
-                      aria-hidden="true"
                       className={cn(
-                        /* `mt-0.5` sits the circle on the first line's
-                           optical centre; `shrink-0` keeps it hard right and
-                           stops a long question squeezing it. */
-                        "relative mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border",
+                        /* `shrink-0` keeps it hard right and stops a long
+                           question squeezing it. */
+                        "relative grid size-7 shrink-0 place-items-center rounded-full border",
                         "transition-[background-color,border-color,color] duration-[var(--dur-fast)]",
                         isOpen
                           ? "border-accent bg-accent text-on-accent"
@@ -137,6 +144,7 @@ export function Faqs() {
                         )}
                       />
                     </span>
+                    </span>
                   </button>
                 </h3>
 
@@ -149,10 +157,11 @@ export function Faqs() {
                 >
                   <div>
                     {/* No left padding: the answer starts on the same line
-                        as its question. `pr-12` keeps it clear of the icon
-                        column, `max-w-[58rem]` holds a readable measure in
-                        the wider column. */}
-                    <p className="max-w-[58rem] pb-6 pr-12 text-[0.9375rem] leading-relaxed text-muted">
+                        as its question. The right padding keeps it clear of
+                        the icon column (28px icon + the row's gap);
+                        `max-w-[46rem]` holds a readable measure when the
+                        list runs full width on tablets. */}
+                    <p className="max-w-[46rem] pb-6 pr-11 text-[0.9375rem] leading-relaxed text-muted sm:pr-[3.25rem]">
                       {faq.answer}
                     </p>
                   </div>
