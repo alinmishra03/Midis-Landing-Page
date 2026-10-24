@@ -163,7 +163,7 @@ export function Footer() {
             <p className="text-sm text-muted-dark">{site.footerStrapline}</p>
 
             {/* visibleSocials: LinkedIn, Instagram, Facebook and Medium
-                (profile confirmed 2026-10-21: medium.com/@officialmidis).
+                (profile supplied 2026-10-24: medium.com/@midisofficial).
 
                 EACH NAME WEARS ITS OWN BRAND COLOUR (MIDIS instruction,
                 2026-10-21).

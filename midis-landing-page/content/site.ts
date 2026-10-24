@@ -112,14 +112,14 @@ export const site = {
 } as const;
 
 /**
- * MEDIUM — profile URL confirmed in chat on 2026-10-21: the user picked
- * medium.com/@officialmidis (matching the Instagram handle) when asked
- * directly. NEXT_PUBLIC_MEDIUM_URL still overrides it, so a rename never
+ * MEDIUM — medium.com/@midisofficial, supplied by MIDIS on 2026-10-24
+ * (it replaces @officialmidis, the handle picked on 2026-10-21 to match
+ * Instagram). NEXT_PUBLIC_MEDIUM_URL still overrides it, so a rename never
  * needs a code change. With the URL set, the link renders in the footer
  * and joins the Organization schema's `sameAs` automatically.
  */
 export const MEDIUM_URL =
-  process.env.NEXT_PUBLIC_MEDIUM_URL ?? "https://medium.com/@officialmidis";
+  process.env.NEXT_PUBLIC_MEDIUM_URL ?? "https://medium.com/@midisofficial";
 
 /** The socials the page should actually render (and the schema should
     assert): the confirmed list, plus Medium once its URL exists. */
