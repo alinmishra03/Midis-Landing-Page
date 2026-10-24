@@ -125,7 +125,10 @@
   --dur-slow: 760ms;
 
   /* ---- Layout ---------------------------------------------------------- */
-  --space-section: clamp(3.5rem, 6vw, 7rem);
+  /* 56px on phones (adjacent sections already stack two of these), ~73px
+     at 1024, ~90px at 1440, 96px ceiling (layout refinement, 2026-10-24;
+     it previously reached 112px). */
+  --space-section: clamp(3.5rem, 2rem + 4vw, 6rem);
   --space-block: clamp(1.75rem, 2.5vw, 2.75rem);
 
   /*
@@ -148,20 +151,29 @@
    * different left edges, so a section heading in one container and the grid
    * beneath it in the other would start 144px apart at 1920px.
    *
-   * So every container is 118rem and shares one left edge at every width.
-   * Expansiveness comes from the container; readability comes from max-w-*
-   * on the text block itself, which is where it belongs — a container should
-   * not be doing two jobs at once.
+   * So every container shares one left edge at every width. Expansiveness
+   * comes from the container; readability comes from max-w-* on the text
+   * block itself, which is where it belongs — a container should not be
+   * doing two jobs at once.
+   *
+   * LAYOUT REFINEMENT (MIDIS, 2026-10-24): the CONTENT is now capped at
+   * 85rem (1360px) — the cap adds the gutters back so the content width,
+   * not the box, is what stays constant — and the gutters step up per
+   * breakpoint (below). At 1920 that is 1360px of content inside 280px
+   * margins, where the old 118rem cap ran content to 1716px.
    */
-  --container-site: 118rem;
+  --container-site: calc(85rem + 2 * var(--gutter));
 
   /*
-   * 20px on a phone, ~65px at 1440, 96px ceiling — tracking the reference's
-   * measured gutters rather than a guess. The floor is 20px rather than 16
-   * because that is what the main site uses and it reads more comfortably
-   * against a full-bleed photograph.
+   * THE GUTTER, PER BREAKPOINT (2026-10-24):
+   *   < 360px      16px    the smallest phones
+   *   360–639px    20px    phones
+   *   640–1023px   32→40px tablets
+   *   1024–1535px  48→61px laptops (~55px at 1366, ~58px at 1440)
+   *   ≥ 1536px     64→80px large desktops
+   * Overrides below, after this block.
    */
-  --gutter: clamp(1.25rem, 4.5vw, 6rem);
+  --gutter: 1rem;
 
   --header-h: 4.5rem;
 }
@@ -172,6 +184,31 @@
 
 :root {
   color-scheme: light;
+}
+
+/* The gutter steps — see THE GUTTER, PER BREAKPOINT in the theme block. */
+@media (min-width: 360px) {
+  :root {
+    --gutter: 1.25rem;
+  }
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: clamp(2rem, 4vw, 2.5rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gutter: clamp(3rem, 4vw, 4rem);
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --gutter: clamp(4rem, 4.2vw, 5rem);
+  }
 }
 
 html {
@@ -2263,8 +2300,10 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
    page the shadow has nothing to darken, so there — and only there — each
    circle also carries a faint light hairline.
 
-   ALWAYS VISIBLE (MIDIS instruction, 2026-10-22): no scroll-driven hiding.
-   The only motion is the one-time entrance on load and the hover scale.
+   The WhatsApp circle is ALWAYS VISIBLE (MIDIS instruction, 2026-10-22):
+   its only motion is the one-time entrance on load and the hover scale.
+   The estimate pill hides while the hero button or the form is on screen
+   (MIDIS, 2026-10-24) — see FloatingCta.tsx.
    ========================================================================== */
 
 @keyframes fab-rise {
@@ -2448,7 +2487,28 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   box-shadow:
     0 18px 40px -18px rgb(20 21 24 / 0.45),
     0 2px 6px rgb(20 21 24 / 0.08);
-  animation: fab-rise 520ms var(--ease-out-expo) 580ms backwards;
+  /* SHOWN / HIDDEN (2026-10-24): FloatingCta sets data-shown once the hero
+     button and the form are both off screen. Hiding fades and drops it,
+     then flips visibility after the fade so it cannot be hit mid-exit;
+     showing flips visibility first. */
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity 260ms var(--ease-out-quart),
+    transform 260ms var(--ease-out-quart),
+    visibility 0s linear 0s;
+}
+
+.sticky-cta[data-shown="false"] {
+  opacity: 0;
+  transform: translateY(14px);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 200ms var(--ease-out-quart),
+    transform 200ms var(--ease-out-quart),
+    visibility 0s linear 200ms;
 }
 
 @media (min-width: 640px) {
@@ -2555,8 +2615,8 @@ body:has(.sticky-cta) footer {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sticky-cta {
-    animation: none;
+  .sticky-cta[data-shown="false"] {
+    transform: none;
   }
   .sticky-cta-btn:hover,
   .sticky-cta-btn:active,

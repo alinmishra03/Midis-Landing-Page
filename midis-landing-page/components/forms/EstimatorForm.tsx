@@ -350,7 +350,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
                 error={errors.phone}
               />
               <TextField
-                label="Company / Business Name"
+                label="Company Name"
                 name="company"
                 autoComplete="organization"
                 optional

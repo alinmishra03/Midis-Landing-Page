@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { focusEstimatorAfterScroll } from "@/components/home/EstimateCta";
 import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
 import { whatsappHref } from "@/content/site";
@@ -13,19 +14,43 @@ import { whatsappHref } from "@/content/site";
  *     every other estimate CTA, and moves focus to the form's first
  *     question once the scroll settles (see EstimateCta), so there is
  *     still exactly one estimator on the page.
- *   - WhatsApp: the green circle bottom-right, unchanged.
+ *   - WhatsApp: the green circle bottom-right, unchanged and always shown.
+ *
+ * WHEN THE PILL SHOWS (layout refinement, 2026-10-24). Only once BOTH the
+ * hero's own estimate button (#hero-cta) and the estimator form itself
+ * (#estimator) are off screen: while the hero button is visible the pill
+ * would be a duplicate of it, and while the form is visible the pill would
+ * sit over its fields. One IntersectionObserver watches both; no scroll
+ * listener. It starts hidden, which is also correct for the first paint —
+ * the page loads at the hero. Hidden, it is `inert` (out of the tab order
+ * and the accessibility tree) as well as invisible.
  *
  * Below `sm` the pill sits LEFT of the WhatsApp circle on the same row
  * (centres aligned) instead of dead centre, because a centred pill wide
  * enough to read would run under the circle. See "FLOATING ACTIONS" in
- * globals.css. Always visible — no scroll-driven hiding (MIDIS
- * instruction, 2026-10-22); the nav panel (z-40) and popups (z-70) layer
- * above both.
+ * globals.css. The nav panel (z-40) and popups (z-70) layer above both.
  */
 export function FloatingCta() {
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    /* Both live in the hero, which every page mounting this component has. */
+    const targets = ["hero-cta", "estimator"]
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    const visible = new Map<Element, boolean>();
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) visible.set(entry.target, entry.isIntersecting);
+      setShown(![...visible.values()].some(Boolean));
+    });
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
-      <div className="sticky-cta">
+      <div className="sticky-cta" data-shown={shown} inert={!shown}>
         <a
           href="#estimator"
           className="sticky-cta-btn"

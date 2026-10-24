@@ -38,8 +38,8 @@ import { hero } from "@/content/sections";
  *     that used to sit empty under the statistics on desktop. Its copy
  *     describes the approach (no invented metrics); "Built Around Your
  *     Goals", the old third strip item, lives on as the first benefit's
- *     description. On phones the strip renders AFTER the estimator, so the
- *     approved first-screen form position is unchanged — see the grid
+ *     description. Since 2026-10-24 the stacked layout shows the strip
+ *     BEFORE the estimator (it used to follow it) — see the grid
  *     placement notes inline.
  *
  * THE TRUST STRIP FIGURES. "20+ Clients" is MIDIS's own figure, instructed
@@ -87,10 +87,16 @@ export function Hero() {
        eyebrow ~39px under the fixed nav's bottom edge at every phone width
        (--header-h already includes the nav at each breakpoint), where it
        was a cramped 19px on phones and an inconsistent 47px at 640–767.
-       From md the original clearances are unchanged. */
+       LAYOUT REFINEMENT (2026-10-24), measured from the nav pill's bottom
+       edge to the top of the eyebrow / form card (`--header-h` already
+       includes the nav and its inset at each breakpoint):
+         phones   ~30px   `--header-h` + 1.5rem
+         tablets  ~38px   `--header-h` + 2rem (from sm)
+         desktop  ~56px   `--header-h` + 3.25rem (from lg)
+       No min-height: the section is exactly as tall as its content. */
     <section
       aria-labelledby="hero-heading"
-      className="relative isolate overflow-hidden pt-[calc(var(--header-h)+1.5rem)] pb-10 sm:pb-16 md:pt-[calc(var(--header-h)+2rem)] lg:pt-[calc(var(--header-h)+4rem)] lg:pb-16"
+      className="relative isolate overflow-hidden pt-[calc(var(--header-h)+1.5rem)] pb-10 sm:pt-[calc(var(--header-h)+2rem)] sm:pb-16 lg:pt-[calc(var(--header-h)+3.25rem)] lg:pb-16"
     >
       {/*
         The hero's veils over the site backdrop — see THE PHOTOGRAPH above.
@@ -109,17 +115,21 @@ export function Hero() {
           estimator on large displays. The columns stay inside the shared
           container-site so the hero keeps the page's left and right edges.
 
-          THREE GRID CHILDREN, TWO ORDERS (2026-10-21). The children are
-          (1) the message, (2) the estimator, (3) the MIDIS Advantage strip.
-          In the stacked flow below xl that DOM order IS the layout: the
-          form stays directly after the trust strip, exactly where the
-          approved mobile hero puts it, and the benefits follow the form
-          instead of pushing it off the first screen. From xl the explicit
-          placements below re-compose it: the form spans both rows of the
-          right column, and the benefits land under the statistics in the
-          left column — filling the area that used to sit empty.
+          THREE GRID CHILDREN, TWO ORDERS. The children are (1) the
+          message, (2) the estimator, (3) the MIDIS Advantage strip. Below
+          xl the layout stacks message → benefits → form (`max-xl:order-*`;
+          MIDIS layout refinement, 2026-10-24 — it was message → form →
+          benefits), so the form follows ALL the hero content. From xl the
+          explicit placements below re-compose it: the form spans both rows
+          of the right column, and the benefits land under the CTA in the
+          left column.
+
+          STACKED GAPS: 24px between grid items on phones, 40px from sm;
+          the form adds 12px of its own below sm (`max-sm:mt-3`) so the
+          benefits → form break reads at ~36px, a step larger than the
+          rhythm inside the hero copy.
         */}
-        <div className="grid items-start gap-3.5 sm:gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:gap-x-10 xl:gap-y-8">
+        <div className="grid items-start gap-6 sm:gap-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:gap-x-10 xl:gap-y-8">
           {/* ================= left: the message ================= */}
           {/* max-w-none from xl: the grid column is the constraint there,
               and the heading needs the full column to hold its two lines. */}
@@ -180,26 +190,13 @@ export function Hero() {
             </p>
 
             {/*
-              ONE CTA (MIDIS brief, 2026-10-21): the primary orange estimate
-              action, which scrolls to the hero form and focuses its first
-              question — see EstimateCta. The secondary consultation button
-              was removed from the hero by the same brief (the navbar keeps
-              its consultation CTA). Still rendered through ButtonGroup so
-              the phone treatment — full column width at 48px — is the same
-              shared layout every other CTA row uses.
-            */}
-            <ButtonGroup
-              className="hero-rise mt-4 gap-2 sm:mt-7 sm:gap-3.5 xl:mt-7"
-              style={{ "--d": "260ms" } as React.CSSProperties}
-            >
-              <EstimateCta className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base" />
-            </ButtonGroup>
-
-            {/*
               The statistics: the page's two countable facts, promoted to a
               display element (MIDIS brief, 2026-10-21) — large accent
               numerals over small uppercase labels, split by one hairline.
               No cards, no shadows: the numbers themselves are the visual.
+              They sit directly under the description and ABOVE the CTA
+              (MIDIS instruction, 2026-10-24), so the proof is read before
+              the ask.
 
               ON A PHONE NOTHING CHANGES: the base classes are the approved
               2026-10-20 2-cell bordered strip, byte-for-byte — the same
@@ -213,8 +210,8 @@ export function Hero() {
               reduced-motion and no-layout-shift reasoning.
             */}
             <ul
-              className="hero-rise mt-3.5 grid grid-cols-2 items-stretch overflow-hidden rounded-xl border border-line bg-surface sm:mt-7 sm:flex sm:items-center sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent xl:mt-7"
-              style={{ "--d": "340ms" } as React.CSSProperties}
+              className="hero-rise mt-4 grid grid-cols-2 items-stretch overflow-hidden rounded-xl border border-line bg-surface sm:mt-7 sm:flex sm:items-center sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent"
+              style={{ "--d": "260ms" } as React.CSSProperties}
             >
               <li className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2.5 text-center sm:items-start sm:justify-start sm:gap-1.5 sm:p-0 sm:text-left">
                 {/* MIDIS-instructed figure (raised 20+ → 30+ on MIDIS's
@@ -247,6 +244,24 @@ export function Hero() {
                 </span>
               </li>
             </ul>
+
+            {/*
+              ONE CTA (MIDIS brief, 2026-10-21): the primary orange estimate
+              action, which scrolls to the hero form and focuses its first
+              question — see EstimateCta. The secondary consultation button
+              was removed from the hero by the same brief (the navbar keeps
+              its consultation CTA). Still rendered through ButtonGroup so
+              the phone treatment — full column width at 48px — is the same
+              shared layout every other CTA row uses. 24px below the
+              statistics on phones, 32px from `sm`.
+            */}
+            <ButtonGroup
+              id="hero-cta"
+              className="hero-rise mt-6 gap-2 sm:mt-8 sm:gap-3.5"
+              style={{ "--d": "340ms" } as React.CSSProperties}
+            >
+              <EstimateCta className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base" />
+            </ButtonGroup>
           </div>
 
           {/* ================= right: the estimator ================= */}
@@ -265,7 +280,7 @@ export function Hero() {
           */}
           <div
             id="estimator"
-            className="hero-settle w-full xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:max-w-[38rem] xl:justify-self-end"
+            className="hero-settle w-full max-xl:order-2 max-sm:mt-3 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:max-w-[38rem] xl:justify-self-end"
             style={{ "--d": "240ms" } as React.CSSProperties}
           >
             <div className="hero-form-shell p-4 sm:p-7">
@@ -297,17 +312,18 @@ export function Hero() {
             claims or invented metrics. "Built around your business goals"
             carries forward the old trust-strip positioning line.
 
-            PLACEMENT — see the grid note at the top of the layout: third
-            in the DOM so phones read content → form → benefits (the form
-            keeps its approved first-screen position), re-placed under the
-            statistics in the left column from xl, where it fills the area
-            that used to end the column early.
+            PLACEMENT — see the grid note at the top of the layout: below xl
+            `order` puts it before the form, so the stacked layout reads
+            content → benefits → form (MIDIS layout refinement, 2026-10-24:
+            the form sits below ALL the hero content); from xl it is placed
+            under the CTA in the left column. It holds no focusable controls,
+            so the visual reorder never desyncs keyboard order.
 
             One hairline above, hairlines between from `sm`, no cards, no
             background, no shadows. Each item enters on the hero's own
             CSS-only rise, staggered after the statistics.
           */}
-          <ul className="grid gap-y-4 border-t border-line pt-5 sm:grid-cols-3 sm:gap-y-0 sm:divide-x sm:divide-line xl:col-start-1 xl:row-start-2 xl:self-start">
+          <ul className="grid gap-y-4 border-t border-line pt-5 max-xl:order-1 sm:grid-cols-3 sm:gap-y-0 sm:divide-x sm:divide-line xl:col-start-1 xl:row-start-2 xl:self-start">
             {advantages.map((item, index) => (
               <li
                 key={item.title}

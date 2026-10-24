@@ -176,6 +176,7 @@ export function ButtonGroup({
   align = "start",
   className,
   style,
+  id,
 }: {
   children: ReactNode;
   align?: "start" | "center" | "between";
@@ -183,9 +184,12 @@ export function ButtonGroup({
   /** For the hero's CSS entrance delay — it animates the group, not each
       button, so the pair arrives together. */
   style?: React.CSSProperties;
+  /** A hook for observers — the hero row is watched by the sticky CTA. */
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       style={style}
       className={cn(
         "flex flex-col items-stretch gap-3",
