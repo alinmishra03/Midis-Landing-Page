@@ -74,22 +74,24 @@ export function Trust() {
       className="pb-[calc(var(--space-section)*0.5)]"
     >
       <div className="container-site">
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-16">
-          <div>
-            <Reveal>
-              <Eyebrow className="mb-3 md:mb-5">Trusted by</Eyebrow>
-            </Reveal>
-            <RevealText
-              id="trust-heading"
-              delay={60}
-              className="text-[length:var(--text-display-md)] leading-[1.06]"
-            >
-              {trust.headline}
-            </RevealText>
-          </div>
+        {/* Heading and description stacked at every width, the description
+            directly under the heading on the same left edge (MIDIS,
+            2026-10-24 — it used to sit in a right-hand column from lg).
+            Spacing and measure match SectionHeader's sub. */}
+        <div className="max-w-3xl">
+          <Reveal>
+            <Eyebrow className="mb-3 md:mb-5">Trusted by</Eyebrow>
+          </Reveal>
+          <RevealText
+            id="trust-heading"
+            delay={60}
+            className="text-[length:var(--text-display-md)] leading-[1.06]"
+          >
+            {trust.headline}
+          </RevealText>
 
           <Reveal delay={120}>
-            <p className="text-base leading-relaxed text-muted sm:text-lg lg:pt-2">
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
               {trust.content}
             </p>
           </Reveal>

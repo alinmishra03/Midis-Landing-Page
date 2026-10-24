@@ -710,11 +710,11 @@ export function Services() {
   return (
     <Section id="services" tone="surface" veil="soft" labelledBy="services-heading">
       {/* ================= the editorial header ================= */}
-      {/* Tighter than the last pass on MIDIS's note: two masked lines
-          instead of three, column widths that keep the paragraph beside
-          the heading from lg, no dead band above the grid. */}
+      {/* Two masked lines, no dead band above the grid. The paragraph sits
+          directly under the heading at every width (MIDIS, 2026-10-24 — it
+          used to sit beside it from lg), spaced like SectionHeader's sub. */}
       <div className="container-site">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end lg:gap-14">
+        <div>
           <div>
             <Reveal>
               <Eyebrow className="mb-5">What we do</Eyebrow>
@@ -751,7 +751,7 @@ export function Services() {
           </div>
 
           <Reveal delay={180}>
-            <p className="max-w-md text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
               {servicesSection.subheadline}
             </p>
           </Reveal>
