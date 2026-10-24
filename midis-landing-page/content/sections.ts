@@ -19,8 +19,6 @@ export const hero = {
     "MIDIS helps businesses build high-performing websites and digital experiences designed to strengthen their brand, attract the right audience, and drive measurable growth.",
   primaryCta: { label: "Get a Free Consultation", href: "#estimator" },
   secondaryCta: { label: "Explore Our Work", href: "#work" },
-  supportingLine:
-    "From strategy and design to development and optimisation, we help turn your digital vision into reality.",
 } as const;
 
 /* ==========================================================================
@@ -148,12 +146,12 @@ export const services: readonly Service[] = [
 
 /* ==========================================================================
    SECTION 5 — WEBSITE PROJECT ESTIMATOR  (MIDIS.pdf p.6–7)
+   --------------------------------------------------------------------------
+   The form lives in the hero; its standalone supporting band was removed
+   (MIDIS, 2026-10-24). What remains is the copy the form itself renders.
    ========================================================================== */
 
 export const estimator = {
-  headline: "Let's Bring Your Website Idea to Life",
-  subheadline:
-    "Tell us a little about your project to help us understand your requirements and recommend the right approach.",
   cta: "Get My Project Estimate",
   supportingText:
     "Every project is different. Share your requirements and our team will help you understand the potential scope, timeline, and next steps.",
@@ -203,62 +201,6 @@ export const processSteps: readonly ProcessStep[] = [
     body: "We help prepare your website for launch and identify opportunities for ongoing improvement.",
   },
 ];
-
-/* ==========================================================================
-   SECTION 7 — CASE STUDIES  (MIDIS.pdf p.9)
-   --------------------------------------------------------------------------
-   MIDIS.pdf p.10 carries three testimonials, each explicitly labelled
-   "Placeholder Only" with a developer note reading: "These testimonials are
-   fictional examples for layout and design testing. Do not publish them as
-   genuine customer reviews."
-
-   They are therefore NOT in this file, and there is no testimonial component
-   on the page. No approved client review has been supplied. The section
-   renders the case-study framing below instead, which is the PDF's own
-   alternative. See docs/open-questions.md, item 1.
-   ========================================================================== */
-
-export const caseStudies = {
-  headline: "Built Around Real Business Goals",
-  subheadline:
-    "The best digital work combines a strong user experience with outcomes that matter to the business.",
-  preview: {
-    title: "From Website Challenges to a Better Digital Experience",
-    body: "Discover how a well-planned website can improve usability, communicate value, and create a clearer journey from visitor to enquiry.",
-  },
-  cta: { label: "Explore Our Projects", href: "#work" },
-} as const;
-
-/**
- * The case-study structure MIDIS.pdf p.3 defines.
- *
- * Rendered as the framework MIDIS works to — NOT populated with outcomes.
- * The PDF's own template says "The Results: Add verified metrics". No
- * verified metric has been supplied for any project, so none is shown; the
- * section explains the method and sends the visitor to the live sites, which
- * are real and checkable. See docs/open-questions.md, item 3.
- */
-export const caseStudyFramework = [
-  {
-    label: "The Challenge",
-    /* SUPPORTING — the PDF gives the prompt question; this states it as the
-       stage it describes, so the section reads as a method rather than a
-       half-filled template. */
-    body: "What the business needed to solve, in commercial terms rather than design ones.",
-  },
-  {
-    label: "Our Approach",
-    body: "How MIDIS planned the work — the research, the structure, and the decisions behind it.",
-  },
-  {
-    label: "The Solution",
-    body: "What was designed and developed, and why each part of it earns its place.",
-  },
-  {
-    label: "The Results",
-    body: "Measured against the goals set at the start. Published only once verified with the client.",
-  },
-] as const;
 
 /* ==========================================================================
    SECTION 8 — PRICING & PROJECT SCOPE  (MIDIS.pdf p.11)

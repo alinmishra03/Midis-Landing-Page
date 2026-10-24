@@ -19,9 +19,9 @@ import { hero } from "@/content/sections";
  * ONE FORM, ONE ANCHOR. The shell carries `id="estimator"` — the anchor
  * every CTA on the page already points at (nav, Work, Process, Pricing,
  * the final CTA, the footer) — so moving the form moved the destination
- * with it and no link needed touching. The old estimator section is now a
- * concise supporting band (see Estimator.tsx) that routes here too, so
- * the page never shows the same long form twice.
+ * with it and no link needed touching. The old estimator section, later a
+ * concise supporting band, was removed entirely (MIDIS, 2026-10-24), so
+ * the hero is the only place the form appears.
  *
  * THE 2026-10-21 REDESIGN (MIDIS hero brief of that date):
  *
@@ -48,10 +48,11 @@ import { hero } from "@/content/sections";
  * (recorded in docs/open-questions.md style: confirm before launch).
  * "6 Live Projects" is counted from content/work.ts.
  *
- * THE SUPPORTING LINE ("From strategy and design…") moved to the
- * estimator's supporting band (Estimator.tsx): on a phone it was pure
- * height between the CTA and the form, and MIDIS asked for the estimator
- * to be reachable without scrolling past it. It renders once, there.
+ * THE SUPPORTING LINE ("From strategy and design…") left the hero: on a
+ * phone it was pure height between the CTA and the form, and MIDIS asked
+ * for the estimator to be reachable without scrolling past it. It moved
+ * to the estimator's supporting band and went with that band when it was
+ * removed (2026-10-24).
  *
  * THE SPLIT STARTS AT `xl`, NOT `lg` — measured in the previous pass: at
  * 1024 the text column came out 471px and the CTAs squashed to two-line

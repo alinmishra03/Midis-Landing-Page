@@ -5,9 +5,7 @@ import { Hero } from "@/components/home/Hero";
 import { Trust } from "@/components/home/Trust";
 import { Work } from "@/components/home/Work";
 import { Services } from "@/components/home/Services";
-import { Estimator } from "@/components/home/Estimator";
 import { Process } from "@/components/home/Process";
-import { CaseStudies } from "@/components/home/CaseStudies";
 import { Testimonials } from "@/components/home/Testimonials";
 import { Pricing } from "@/components/home/Pricing";
 import { Faqs } from "@/components/home/Faqs";
@@ -20,18 +18,18 @@ import { site } from "@/content/site";
 /**
  * The MIDIS landing page.
  *
- * Section order follows MIDIS.pdf exactly, 1 through 10. The conversion
- * journey runs hero -> proof -> work -> services -> ENQUIRY -> process ->
- * method -> cost -> objections -> final CTA, so the estimator sits at the
- * point where a visitor has seen the work and the services but has not yet
- * had to read about process. Everything after it exists to catch the people
- * who were not ready at that moment, and each of those sections routes back
- * to the same form rather than introducing a competing action.
+ * Section order follows MIDIS.pdf. The conversion journey runs hero (with
+ * the estimator form) -> proof -> work -> services -> process -> clients ->
+ * cost -> objections -> final CTA. Everything after the hero exists to catch
+ * the people who were not ready at that moment, and each of those sections
+ * routes back to the same form rather than introducing a competing action.
  *
- * TESTIMONIALS sit between the case studies and the cost section: social
- * proof lands best directly after the work that earned it, and just before
- * the visitor starts thinking about price. The section renders only when an
- * approved client quote exists, so the order holds either way.
+ * The standalone estimator band and the "Purpose-driven work" case-study
+ * section were removed on MIDIS's instruction of 2026-10-24; the form and
+ * its `#estimator` anchor remain in the hero.
+ *
+ * TESTIMONIALS sit between the process and the cost section: social proof
+ * lands best just before the visitor starts thinking about price.
  *
  * ONE H1. The hero owns it. Every section below is an h2, every card an h3.
  */
@@ -79,9 +77,7 @@ export default function HomePage() {
         <Trust />
         <Work />
         <Services />
-        <Estimator />
         <Process />
-        <CaseStudies />
         {/* The client showcase: nine named client businesses as factual
             project spotlights. Verified quotes, when they exist in
             content/testimonials.ts, render in place of the spotlights. */}
