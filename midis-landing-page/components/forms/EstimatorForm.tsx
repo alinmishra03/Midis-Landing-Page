@@ -8,7 +8,8 @@ import { FieldError, Honeypot, OptionGroup, TextField } from "./Fields";
 import { PhoneField } from "./PhoneField";
 import { BUDGETS, EXISTING_SITE, PROJECT_TYPES } from "@/content/forms";
 import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
-import { projectEstimateSchema } from "@/lib/project-estimate";
+import { projectEstimateSchema, type Stage } from "@/lib/project-estimate";
+import { footerLegal } from "@/content/site";
 import { markLeadSubmitted } from "@/lib/popups";
 import { estimator } from "@/content/sections";
 import { cn } from "@/lib/utils";
@@ -47,10 +48,35 @@ import { cn } from "@/lib/utils";
  * keypress landing on the button, and a re-submit after a slow response all
  * resolve to one POST.
  *
- * WHERE IT GOES (2026-10-23): /api/project-estimate, which stores ONE
- * record per completed form in the MIDIS admin's portfolio-project-estimates
- * collection (field mapping and stored values: lib/project-estimate.ts).
+ * WHERE IT GOES: /api/project-estimate → ONE record per visitor in the
+ * MIDIS admin's portfolio-project-estimates collection, SAVED AS THEY GO
+ * (2026-10-26; mapping and stages: lib/project-estimate.ts):
+ *   - Step 1 auto-saves 1.2s after typing pauses, once the email is valid
+ *     (the notice under the fields says so) — the lead survives even if
+ *     the visitor leaves before Step 2;
+ *   - "Save & Continue" saves each step and moves on only when the server
+ *     confirms; a failed save keeps the visitor, and every answer, there;
+ *   - the final button submits and marks the lead completed.
+ * Saves run ONE AT A TIME, in order: the first creates the record, every
+ * later one updates it through the signed lead token the server returns.
  */
+
+const PRIVACY_URL = footerLegal.find((link) => /privacy/i.test(link.label))?.href;
+/* Survives a reload, so a refreshed page keeps updating the same lead.
+   Only the opaque token and a random id — never the visitor's details. */
+const LEAD_KEY = "midis-estimate-lead";
+const AUTOSAVE_MS = 1200;
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+type SaveResult =
+  | { ok: true }
+  | { ok: false; message?: string; fieldErrors?: Partial<Record<FieldName, string>> };
+
+function randomId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
 
 /*
  * THE FOUR-STEP SHAPE IS UNCHANGED in count. Step titles and which fields
@@ -115,6 +141,112 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
 
   const sent = useRef(false);
   const stepHeadingRef = useRef<HTMLParagraphElement>(null);
+
+  /* ---- step-by-step saving ---- */
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  /* A "Save & Continue" in flight: disables the button. */
+  const [advancing, setAdvancing] = useState(false);
+  const valuesRef = useRef(values);
+  const honeyRef = useRef(honey);
+  useEffect(() => {
+    valuesRef.current = values;
+    honeyRef.current = honey;
+  });
+  const lead = useRef<{ token?: string; formId: string } | null>(null);
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const lastDraft = useRef("");
+  /* The save that failed last — what the indicator's Retry re-runs. */
+  const failedStage = useRef<Stage | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function leadState() {
+    if (!lead.current) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(LEAD_KEY) ?? "null");
+        if (saved?.formId) lead.current = saved;
+      } catch {
+        /* Storage blocked: a fresh lead. */
+      }
+      lead.current ??= { formId: randomId() };
+    }
+    return lead.current;
+  }
+
+  /** The answers a stage carries — a draft sends only what is valid yet. */
+  function stageValues(stage: Stage, current: Record<FieldName, string>) {
+    if (stage === "draft") {
+      const shape = projectEstimateSchema.shape;
+      const valid = (field: "name" | "phone") =>
+        shape[field].safeParse(current[field]).success ? { [field]: current[field] } : {};
+      return { email: current.email, company: current.company, ...valid("name"), ...valid("phone") };
+    }
+    const fields = STEP_FIELDS.slice(0, stage).flat();
+    return Object.fromEntries(fields.map((field) => [field, current[field]]));
+  }
+
+  /**
+   * Saves one stage, queued behind any save still running, with the
+   * answers as they are when it runs. "Saved" shows only once the server
+   * has confirmed the record.
+   */
+  function save(stage: Stage): Promise<SaveResult> {
+    const run = async (): Promise<SaveResult> => {
+      const state = leadState();
+      const payload = stageValues(stage, valuesRef.current);
+      const fingerprint = JSON.stringify(payload);
+      if (stage === "draft" && fingerprint === lastDraft.current) return { ok: true };
+      setSaveState("saving");
+      try {
+        const response = await fetch("/api/project-estimate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stage,
+            values: payload,
+            leadToken: state.token,
+            formId: state.formId,
+            website: honeyRef.current,
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.ok || !body.leadToken) {
+          failedStage.current = stage;
+          setSaveState("error");
+          return { ok: false, message: body.message, fieldErrors: body.fieldErrors };
+        }
+        state.token = body.leadToken;
+        try {
+          sessionStorage.setItem(LEAD_KEY, JSON.stringify(state));
+        } catch {
+          /* Not essential. */
+        }
+        if (stage === "draft") lastDraft.current = fingerprint;
+        failedStage.current = null;
+        setSaveState("saved");
+        return { ok: true };
+      } catch {
+        failedStage.current = stage;
+        setSaveState("error");
+        return {
+          ok: false,
+          message: "We could not reach our server. Please check your connection and try again.",
+        };
+      }
+    };
+    const next = queue.current.then(run, run);
+    queue.current = next;
+    return next;
+  }
+
+  /* STEP 1 AUTO-SAVE: once typing pauses and the email is valid. Never
+     per keystroke, never on later steps, never after submission. */
+  useEffect(() => {
+    if (step !== 0 || sent.current) return;
+    if (!projectEstimateSchema.shape.email.safeParse(values.email).success) return;
+    const timer = window.setTimeout(() => void save("draft"), AUTOSAVE_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- save() reads the latest answers itself
+  }, [step, values.name, values.email, values.phone, values.company]);
 
   const set = (field: FieldName) => (value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }));
@@ -183,8 +315,28 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
     requestAnimationFrame(() => stepHeadingRef.current?.focus());
   }
 
-  function onNext() {
-    if (validateStep(step)) goTo(step + 1);
+  /* "Not saved — Retry": re-run the save that failed, through the same
+     path as the visitor's own action (so validation and moving on apply). */
+  function retrySave() {
+    const stage = failedStage.current;
+    if (stage === "draft") void save("draft");
+    else if (stage === 4) formRef.current?.requestSubmit();
+    else if (stage !== null) void onNext();
+  }
+
+  /* SAVE & CONTINUE: validate, save, and move on only once it is saved. */
+  async function onNext() {
+    if (advancing || !validateStep(step)) return;
+    setAdvancing(true);
+    setFormError(null);
+    const result = await save((step + 1) as Stage);
+    setAdvancing(false);
+    if (result.ok) {
+      goTo(step + 1);
+      return;
+    }
+    if (result.fieldErrors) setErrors(result.fieldErrors);
+    setFormError(result.message ?? "We couldn't save your progress. Please try again.");
   }
 
   async function onSubmit(event: React.FormEvent) {
@@ -218,43 +370,36 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
     setStatus("submitting");
     setFormError(null);
 
-    try {
-      const response = await fetch("/api/project-estimate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-
-      const body = await response.json().catch(() => ({}));
-
-      if (!response.ok || !body.ok) {
-        setStatus("idle");
-        setFormError(
-          body.message ??
-            "We could not submit your request just now. Please email us at hello@midis.in.",
-        );
-        if (body.fieldErrors) setErrors(body.fieldErrors);
-        return;
-      }
-
-      /* Only now — the CMS has confirmed the record. Never before. */
-      sent.current = true;
-      /* A lead has landed: the promotional popups stay away for the rest
-         of this session (see lib/popups.ts). */
-      markLeadSubmitted();
-      router.push("/thank-you/project-enquiry");
-    } catch {
+    /* The final save: the whole form, marking the lead completed. */
+    const result = await save(4);
+    if (!result.ok) {
       setStatus("idle");
       setFormError(
-        "We could not reach our server. Please check your connection, or email us at hello@midis.in.",
+        result.message ??
+          "We could not submit your request just now. Please email us at hello@midis.in.",
       );
+      if (result.fieldErrors) setErrors(result.fieldErrors);
+      return;
     }
+
+    /* Only now — the CMS has confirmed the record. Never before. */
+    sent.current = true;
+    try {
+      sessionStorage.removeItem(LEAD_KEY);
+    } catch {
+      /* Not essential. */
+    }
+    /* A lead has landed: the promotional popups stay away for the rest
+       of this session (see lib/popups.ts). */
+    markLeadSubmitted();
+    router.push("/thank-you/project-enquiry");
   }
 
   const isLast = step === STEPS.length - 1;
 
   return (
     <form
+      ref={formRef}
       onSubmit={onSubmit}
       noValidate
       className={cn(
@@ -273,7 +418,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
             tabIndex={-1}
             className="text-sm font-semibold text-fg outline-none"
           >
-            <span className="text-accent-ink">
+            <span className="whitespace-nowrap text-accent-ink">
               Step {step + 1} of {STEPS.length}
             </span>
             <span className="mx-2 text-line" aria-hidden="true">
@@ -281,6 +426,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
             </span>
             {STEPS[step].title}
           </p>
+          <SaveStatus state={saveState} onRetry={retrySave} />
         </div>
 
         {/*
@@ -366,6 +512,24 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
                 error={errors.company}
               />
             </div>
+            {/* Shown before anything is saved: Step 1 saves as they type. */}
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              We save your contact details as you fill them in, so our team can follow up even if you don&rsquo;t
+              finish. We won&rsquo;t add you to any mailing list.
+              {PRIVACY_URL ? (
+                <>
+                  {" "}
+                  <a
+                    href={PRIVACY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-accent-ink underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
+                  >
+                    Privacy policy
+                  </a>
+                </>
+              ) : null}
+            </p>
           </div>
         ) : null}
 
@@ -498,19 +662,78 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
           <Button
             type="button"
             size="lg"
-            onClick={onNext}
+            onClick={() => void onNext()}
+            disabled={advancing}
           >
-            Continue
-            <Arrow />
+            {advancing ? (
+              <>
+                <Spinner />
+                Saving…
+              </>
+            ) : (
+              <>
+                Save &amp; Continue
+                <Arrow />
+              </>
+            )}
           </Button>
         )}
       </ButtonGroup>
 
       {/* Politely announces the in-flight state to assistive technology. */}
       <p aria-live="polite" className="sr-only">
-        {status === "submitting" ? "Sending your project details." : ""}
+        {status === "submitting" ? "Sending your project details." : advancing ? "Saving your progress." : ""}
       </p>
     </form>
+  );
+}
+
+/**
+ * The save indicator in the progress row: "Saving…", "Saved" (only once
+ * the server confirmed the record), or "Not saved — Retry" — a button
+ * that re-runs the failed save. It must never push the step label onto a
+ * second line (the form would jump), so it narrows with the row: the icon
+ * alone below 380px (the words stay for screen readers and on hover).
+ */
+function SaveStatus({ state, onRetry }: { state: SaveState; onRetry: () => void }) {
+  if (state === "idle") return <span role="status" className="sr-only" />;
+  const words = "sr-only min-[380px]:not-sr-only";
+  if (state === "error") {
+    return (
+      <span role="status" className="flex shrink-0">
+        <button
+          type="button"
+          onClick={onRetry}
+          title="Not saved — retry"
+          className="-my-2 flex min-h-9 items-center gap-1.5 rounded-full px-1 text-xs font-medium text-danger underline-offset-4 hover:underline"
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 4.75v4M8 11.1v.15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <span className={words}>
+            <span className="hidden sm:inline">Not saved — </span>Retry
+          </span>
+          <span className="sr-only min-[380px]:hidden">Not saved — Retry</span>
+        </button>
+      </span>
+    );
+  }
+  return (
+    <span
+      role="status"
+      title={state === "saving" ? "Saving…" : "Saved"}
+      className="flex shrink-0 items-center gap-1.5 text-xs text-muted"
+    >
+      {state === "saving" ? (
+        <Spinner />
+      ) : (
+        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" aria-hidden="true" className="text-accent-ink">
+          <path d="m2.5 6.3 2.3 2.4 4.7-5.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+      <span className={words}>{state === "saving" ? "Saving…" : "Saved"}</span>
+    </span>
   );
 }
 
