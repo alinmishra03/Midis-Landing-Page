@@ -148,15 +148,21 @@ function attr(tag: string, name: string): string | null {
   return match ? (match[2] ?? match[3] ?? match[4] ?? "").trim() : null;
 }
 
+/* The named entities page titles and descriptions actually use (WordPress
+   and Shopify emit &ndash; and friends in <title>). */
+const ENTITIES: Record<string, string> = {
+  lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  ndash: "–", mdash: "—", hellip: "…", lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”",
+  laquo: "«", raquo: "»", middot: "·", bull: "•", copy: "©", reg: "®", trade: "™",
+};
+
 function decode(text: string): string {
   return text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&nbsp;/g, " ")
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&([a-z]+);/gi, (match, name: string) => ENTITIES[name.toLowerCase()] ?? match)
+    /* Last, so "&amp;ndash;" stays the literal text "&ndash;". */
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
 }

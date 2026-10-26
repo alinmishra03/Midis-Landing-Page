@@ -26,6 +26,12 @@ export interface Delivery {
   id?: string;
 }
 
+/** Whether the visitor's report can be emailed at all — the form words
+    its promises to match (no "we'll email it" when it can't). */
+export function emailEnabled(): boolean {
+  return Boolean(process.env.RESEND_API_KEY && process.env.AUDIT_EMAIL_FROM);
+}
+
 /* Overridable only to route through a proxy or a local test double. */
 const RESEND_ENDPOINT = process.env.RESEND_ENDPOINT ?? "https://api.resend.com/emails";
 
@@ -98,7 +104,7 @@ function esc(value: string): string {
 function scoreLine(result: AuditResult, strategy: "mobile" | "desktop"): string | null {
   const scores = result.lighthouse[strategy]?.scores;
   if (!scores) return null;
-  return CATEGORIES.map((c) => `${c.label} ${scores[c.key] ?? "n/a"}`).join(" · ");
+  return CATEGORIES.map((c) => `${c.label} ${scores[c.key] ?? "not scored"}`).join(" · ");
 }
 
 function summaryRows(result: AuditResult): [string, string][] {
@@ -163,7 +169,7 @@ ${table(summaryRows(opts.result))}
 ${opts.top.length ? `<p style="margin-bottom:0"><strong>Your top improvement opportunities</strong></p>${issueList(opts.top)}` : ""}
 <p>Your full website audit report is attached to this email as a PDF (reference ${esc(opts.reference)}).</p>
 <p>We hope these insights help you take the next step toward a better-performing website.</p>
-<p style="margin:24px 0"><a href="${cta}" style="background:#ef8716;color:#141518;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:999px;display:inline-block">Discuss your results with MIDIS</a></p>
+<p style="margin:24px 0"><a href="${cta}" style="background:#ef8716;color:#141518;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:999px;display:inline-block">Get a free project estimate</a></p>
 <p>Best regards,<br>Team MIDIS</p>`;
   const text = [
     `Hi ${opts.firstName},`,
@@ -179,7 +185,7 @@ ${opts.top.length ? `<p style="margin-bottom:0"><strong>Your top improvement opp
     "",
     "We hope these insights help you take the next step toward a better-performing website.",
     "",
-    `Discuss your results with MIDIS: ${cta}`,
+    `Get a free project estimate from MIDIS: ${cta}`,
     "",
     "Best regards,",
     "Team MIDIS",
@@ -187,7 +193,7 @@ ${opts.top.length ? `<p style="margin-bottom:0"><strong>Your top improvement opp
 
   return send({
     to: opts.to,
-    subject: "Your Free Website Audit Report | MIDIS",
+    subject: "Your Website Audit Report | MIDIS",
     html: layout(inner),
     text,
     replyTo: site.email,
@@ -211,6 +217,7 @@ export function sendLeadNotification(opts: {
     return Promise.resolve({ status: "not_configured" });
   }
   const rows: [string, string][] = [
+    ["Audit ID", opts.result.auditId],
     ["Name", opts.lead.name],
     ["Email", opts.lead.email],
     ["Phone", opts.lead.phone],
@@ -227,7 +234,7 @@ export function sendLeadNotification(opts: {
   }<p style="font-size:13px;color:#666663">${opts.pdf ? "The lead's full report is attached." : "The report PDF could not be generated for this lead."}</p>`;
   return send({
     to,
-    subject: `New audit lead: ${opts.lead.name} — ${opts.result.finalUrl}`,
+    subject: "New Website Audit Lead — MIDIS",
     html: layout(inner),
     text: rows.map(([k, v]) => `${k}: ${v}`).join("\n"),
     replyTo: opts.lead.email,

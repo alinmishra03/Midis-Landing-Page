@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
+import { EstimatorForm } from "@/components/forms/EstimatorForm";
 import { Checkbox, FieldError, TextField } from "@/components/forms/Fields";
+import { Eyebrow } from "@/components/ui/Section";
 import { consent } from "@/content/forms";
 import { footerLegal } from "@/content/site";
 import {
@@ -49,24 +51,64 @@ const STEPS = [
   { title: "Your Audit Results" },
 ] as const;
 
-const LOADING_LINES = [
-  "Connecting to your website…",
-  "Analysing performance…",
-  "Checking SEO fundamentals…",
-  "Reviewing accessibility…",
-  "Checking technical best practices…",
-  "Preparing your results…",
+/* The audit's REAL stages, driven by the server's progress stream
+   (app/api/audit/route.ts): a stage is shown as finished only once the
+   server has said so — never on a timer. Mobile and desktop run in
+   parallel, so both can be in progress at once. */
+type StageState = "pending" | "running" | "done" | "failed";
+interface Progress {
+  connect: StageState;
+  mobile: StageState;
+  desktop: StageState;
+  prepare: StageState;
+}
+const STAGES: { key: keyof Progress; label: string }[] = [
+  { key: "connect", label: "Connecting to Google PageSpeed Insights" },
+  { key: "mobile", label: "Analysing mobile performance" },
+  { key: "desktop", label: "Analysing desktop performance" },
+  { key: "prepare", label: "Preparing your audit results" },
 ];
+const START: Progress = { connect: "running", mobile: "pending", desktop: "pending", prepare: "pending" };
 
-const STORE_KEY = "midis-audit-v1";
+function advance(progress: Progress, event: { stage?: string; outcome?: string }): Progress {
+  switch (event.stage) {
+    case "lighthouse":
+      return { ...progress, connect: "done", mobile: "running", desktop: "running" };
+    case "mobile":
+    case "desktop":
+      return { ...progress, [event.stage]: event.outcome === "done" ? "done" : "failed" };
+    case "preparing":
+      return { ...progress, prepare: "running" };
+    default:
+      return progress;
+  }
+}
+
+/** The line announced (and shown first): the earliest unfinished stage. */
+function currentLine(progress: Progress): string {
+  const mobile = progress.mobile === "running";
+  const desktop = progress.desktop === "running";
+  if (progress.connect === "running") return STAGES[0].label;
+  if (mobile && desktop) return "Analysing mobile and desktop performance";
+  if (mobile) return STAGES[1].label;
+  if (desktop) return STAGES[2].label;
+  return STAGES[3].label;
+}
+
+/* v2: audits now carry an ID — a v1 session from before is not restored. */
+const STORE_KEY = "midis-audit-v2";
 const CLIENT_TIMEOUT_MS = 75_000;
 const PRIVACY_URL = footerLegal.find((l) => /privacy/i.test(l.label))?.href;
 
 interface Preview {
+  auditId: string;
   url: string;
   analyzedAt: string;
   status: "complete" | "partial";
   note?: string;
+  /** False until Resend is configured: Step 2 then promises a download,
+      not an email. */
+  emailEnabled?: boolean;
 }
 
 interface Report {
@@ -107,7 +149,9 @@ export function WebsiteAuditTool() {
   const [url, setUrl] = useState("");
   const [urlError, setUrlError] = useState<string>();
   const [running, setRunning] = useState(false);
-  const [line, setLine] = useState(0);
+  const [progress, setProgress] = useState<Progress>(START);
+  /* Step 1 failed in a way worth retrying: offer a retry button. */
+  const [retryable, setRetryable] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [requestId, setRequestId] = useState("");
@@ -118,12 +162,16 @@ export function WebsiteAuditTool() {
   const [submitting, setSubmitting] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
+  /* "Discuss These Improvements" opens the Project Estimator right here. */
+  const [estimating, setEstimating] = useState(false);
+  const estimatorRef = useRef<HTMLDivElement>(null);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [honey, setHoney] = useState("");
   const stepHeadingRef = useRef<HTMLParagraphElement>(null);
   const firstRender = useRef(true);
   const busy = useRef(false);
+  const emails = preview?.emailEnabled !== false;
 
   /* Restore an in-progress audit (after a reload or coming back). */
   useEffect(() => {
@@ -154,13 +202,6 @@ export function WebsiteAuditTool() {
     stepHeadingRef.current?.closest("form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [step]);
 
-  /* Rotate the loading lines while an audit runs; hold on the last one. */
-  useEffect(() => {
-    if (!running) return;
-    const timer = window.setInterval(() => setLine((n) => Math.min(n + 1, LOADING_LINES.length - 1)), 2800);
-    return () => window.clearInterval(timer);
-  }, [running]);
-
   function persist(next: { url: string; token: string; preview: Preview; requestId: string } | null) {
     try {
       if (next) sessionStorage.setItem(STORE_KEY, JSON.stringify(next));
@@ -184,29 +225,63 @@ export function WebsiteAuditTool() {
     busy.current = true;
     setUrlError(undefined);
     setFormError(null);
+    setRetryable(false);
     setRunning(true);
-    setLine(0);
+    setProgress(START);
     try {
       const response = await fetch("/api/audit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
         body: JSON.stringify({ url: value, hp: honey }),
         signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
       });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok || !body.ok) {
+      /* Input errors come back as plain JSON before any audit starts; a
+         running audit streams its progress, then its result. */
+      let status = response.status;
+      let body: { ok?: boolean; field?: string; message?: string; retryable?: boolean; token?: string; preview?: Preview } = {};
+      if (response.body && response.headers.get("content-type")?.includes("application/x-ndjson")) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let finished = false;
+        for (;;) {
+          const { done, value: chunk } = await reader.read();
+          if (chunk) buffer += decoder.decode(chunk, { stream: true });
+          let newline: number;
+          while ((newline = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, newline).trim();
+            buffer = buffer.slice(newline + 1);
+            if (!line) continue;
+            const event = JSON.parse(line);
+            if (event.type === "progress") setProgress((p) => advance(p, event));
+            else if (event.type === "result") {
+              status = event.status;
+              body = event.body ?? {};
+              finished = true;
+            }
+          }
+          if (done) break;
+        }
+        /* The stream ended without a result: the platform cut it off. */
+        if (!finished) status = 504;
+      } else {
+        body = await response.json().catch(() => ({}));
+      }
+      if (status !== 200 || !body.ok || !body.token || !body.preview) {
+        setRetryable(body.field !== "url" && status !== 429 && status !== 400);
         /* The server's message is written for visitors; fall back only when
            there is none (e.g. the platform itself failed). */
         if (body.field === "url") setUrlError(body.message);
         else
           setFormError(
             body.message ??
-              (response.status >= 500
+              (status >= 500
                 ? "Our audit service is temporarily unavailable. Please try again shortly."
                 : "We couldn't analyze this website. Please check the URL and try again."),
           );
         return;
       }
+      setProgress((p) => ({ ...p, prepare: "done" }));
       const id = newRequestId();
       setToken(body.token);
       setPreview(body.preview);
@@ -219,6 +294,7 @@ export function WebsiteAuditTool() {
           ? "The audit is taking longer than expected. Your website may be slow to respond — please try again."
           : "We couldn't reach our audit service. Please check your connection and try again.",
       );
+      setRetryable(true);
     } finally {
       busy.current = false;
       setRunning(false);
@@ -280,10 +356,25 @@ export function WebsiteAuditTool() {
     setToken(null);
     setPreview(null);
     setReport(null);
+    setEstimating(false);
     setFormError(null);
+    setRetryable(false);
     setUrl("");
     setStep(0);
   }
+
+  /* Open the estimator below the results, then bring it into view and put
+     focus on its first question — what every estimator link does. */
+  useEffect(() => {
+    if (!estimating) return;
+    const shell = estimatorRef.current;
+    if (!shell) return;
+    shell.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* The first real field — never the hidden spam trap (tabIndex -1). */
+    shell
+      .querySelector<HTMLElement>("form :is(input, select, textarea):not([tabindex='-1'])")
+      ?.focus({ preventScroll: true });
+  }, [estimating]);
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -297,6 +388,7 @@ export function WebsiteAuditTool() {
   };
 
   return (
+    <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
     <form
       onSubmit={onSubmit}
       noValidate
@@ -353,7 +445,7 @@ export function WebsiteAuditTool() {
             }}
             error={urlError}
             running={running}
-            line={LOADING_LINES[line]}
+            progress={progress}
           />
         ) : null}
 
@@ -362,7 +454,9 @@ export function WebsiteAuditTool() {
             <div>
               <h2 className="text-[length:var(--text-display-sm)] leading-[1.1]">Your Website Audit Is Ready.</h2>
               <p className="mt-2 text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
-                Tell us where to send your complete website audit report.
+                {emails
+                  ? "Tell us where to send your complete website audit report."
+                  : "Enter your details to see your results and download your complete website audit report."}
               </p>
             </div>
 
@@ -424,7 +518,8 @@ export function WebsiteAuditTool() {
             </div>
 
             <p className="text-xs leading-relaxed text-muted">
-              MIDIS will use these details to send your requested audit report and to follow up about it.
+              MIDIS will use these details to {emails ? "send" : "provide"} your requested audit report and to follow up about
+              it.
               {PRIVACY_URL ? (
                 <>
                   {" "}
@@ -457,6 +552,7 @@ export function WebsiteAuditTool() {
             retrying={retrying}
             onRetry={() => void deliver("retry-email")}
             onRestart={restart}
+            onDiscuss={() => setEstimating(true)}
           />
         ) : null}
       </div>
@@ -464,6 +560,15 @@ export function WebsiteAuditTool() {
       {formError ? (
         <div role="alert" className="mt-6 rounded-lg border border-danger/30 bg-danger-soft p-4">
           <FieldError id="audit-form-error">{formError}</FieldError>
+          {step === 0 && retryable && !running ? (
+            <button
+              type="button"
+              onClick={() => void runAudit()}
+              className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent-ink underline decoration-accent/50 underline-offset-4 hover:decoration-accent"
+            >
+              Try the analysis again
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -490,7 +595,7 @@ export function WebsiteAuditTool() {
               </>
             ) : (
               <>
-                Send My Free Audit Report
+                {emails ? "Send My Free Audit Report" : "View My Audit Results"}
                 <Arrow />
               </>
             )}
@@ -499,9 +604,26 @@ export function WebsiteAuditTool() {
       ) : null}
 
       <p aria-live="polite" className="sr-only">
-        {running ? LOADING_LINES[line] : submitting ? "Preparing and sending your report." : ""}
+        {running ? currentLine(progress) : submitting ? (emails ? "Preparing and sending your report." : "Preparing your report.") : ""}
       </p>
     </form>
+
+    {estimating ? (
+      /* The landing page's own Project Estimator — the same component and
+         the same shell as the homepage hero, opened in place. A sibling of
+         the audit form, never inside it (forms can't nest). */
+      <div ref={estimatorRef} id="estimator" className="hero-rise scroll-mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-8">
+        <Eyebrow className="mb-2 xl:mb-3">Start your project</Eyebrow>
+        <h2 className="text-[length:var(--text-display-sm)] leading-[1.1]">Get Your Project Estimate</h2>
+        <p className="mt-1.5 text-sm leading-snug text-muted sm:leading-relaxed">
+          Tell us a little about your project, and we&rsquo;ll help you plan the next steps.
+        </p>
+        <div className="mt-3.5 sm:mt-6">
+          <EstimatorForm variant="bare" />
+        </div>
+      </div>
+    ) : null}
+    </div>
   );
 }
 
@@ -512,13 +634,13 @@ function StepUrl({
   onUrl,
   error,
   running,
-  line,
+  progress,
 }: {
   url: string;
   onUrl: (value: string) => void;
   error?: string;
   running: boolean;
-  line: string;
+  progress: Progress;
 }) {
   return (
     <div className="flex flex-col gap-5">
@@ -548,10 +670,32 @@ function StepUrl({
 
       {running ? (
         <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-          <div className="flex items-center gap-3">
-            <Spinner className="text-accent-ink" />
-            <p className="text-sm font-medium text-fg">{line}</p>
-          </div>
+          <ul className="flex flex-col gap-2.5">
+            {STAGES.map(({ key, label }) => {
+              const state = progress[key];
+              return (
+                <li key={key} className="flex items-center gap-3">
+                  {state === "running" ? (
+                    <Spinner className="text-accent-ink" />
+                  ) : state === "done" ? (
+                    <CheckGlyph className="mt-0 size-4 text-accent-ink" />
+                  ) : state === "failed" ? (
+                    <span aria-hidden="true" className="grid size-4 shrink-0 place-items-center text-sm font-bold leading-none text-danger">
+                      ×
+                    </span>
+                  ) : (
+                    <span aria-hidden="true" className="grid size-4 shrink-0 place-items-center">
+                      <span className="size-1.5 rounded-full bg-line" />
+                    </span>
+                  )}
+                  <p className={cn("text-sm", state === "pending" ? "text-muted" : "font-medium text-fg")}>
+                    {label}
+                    {state === "failed" ? <span className="font-normal text-muted"> — not available</span> : null}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
           <div className="audit-shimmer mt-3.5" aria-hidden="true" />
           <p className="mt-3 text-xs leading-relaxed text-muted">
             We&rsquo;re running Google Lighthouse on mobile and desktop and checking your page directly. This usually
@@ -570,11 +714,13 @@ function StepResults({
   retrying,
   onRetry,
   onRestart,
+  onDiscuss,
 }: {
   report: Report;
   retrying: boolean;
   onRetry: () => void;
   onRestart: () => void;
+  onDiscuss: () => void;
 }) {
   const { result } = report;
   const available = (["mobile", "desktop"] as Strategy[]).filter((s) => result.lighthouse[s]);
@@ -609,10 +755,20 @@ function StepResults({
         <div className="flex items-start gap-3 rounded-lg border border-line bg-paper p-4 text-sm">
           <CheckGlyph className="text-accent-ink" />
           <p className="min-w-0 leading-relaxed">
-            <span className="font-semibold text-fg">We&rsquo;ve emailed your full website audit report.</span>{" "}
+            <span className="font-semibold text-fg">We&rsquo;ve sent your full website audit report to your email.</span>{" "}
             <span className="text-muted">
               It&rsquo;s on its way to <span className="font-medium text-fg [overflow-wrap:anywhere]">{report.email.address}</span>.
             </span>
+          </p>
+        </div>
+      ) : report.email.status === "not_configured" && report.pdf ? (
+        /* Email isn't set up: nothing failed, so no error styling — the
+           report is a download. */
+        <div className="flex items-start gap-3 rounded-lg border border-line bg-paper p-4 text-sm">
+          <CheckGlyph className="text-accent-ink" />
+          <p className="min-w-0 leading-relaxed">
+            <span className="font-semibold text-fg">Your full website audit report is ready.</span>{" "}
+            <span className="text-muted">Download it below — it&rsquo;s a PDF you can keep and share.</span>
           </p>
         </div>
       ) : (
@@ -758,15 +914,15 @@ function StepResults({
       </section>
 
       <ButtonGroup className="gap-3">
-        {/* Same-site link: this landing page's own Project Estimator. (site.url
-            is the separate main MIDIS website, which has no estimator.) */}
-        <Button href="/#estimator" size="lg">
+        {/* Opens this landing page's own Project Estimator in place, below
+            the results — no trip back to the homepage. */}
+        <Button type="button" size="lg" onClick={onDiscuss}>
           Discuss These Improvements
           <Arrow />
         </Button>
         {report.pdf ? (
           <Button type="button" variant="secondary" size="lg" onClick={download}>
-            Download Full Report (PDF)
+            Download Full Audit Report
           </Button>
         ) : null}
       </ButtonGroup>

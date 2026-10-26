@@ -82,6 +82,10 @@ export interface OnPageChecks {
 export type SourceStatus = "complete" | "unavailable";
 
 export interface AuditResult {
+  /** This audit's unique ID (e.g. MA-20261023-4F9A2C). Sealed with the
+      results, it is the report reference, the email reference and the
+      lead's link back to exactly these results. */
+  auditId: string;
   /** The address the visitor asked about (normalised). */
   url: string;
   /** Where it ended up after redirects, if the page was fetched. */

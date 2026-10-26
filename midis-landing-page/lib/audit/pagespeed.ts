@@ -100,20 +100,30 @@ async function attempt(url: string, strategy: Strategy, key: string, timeoutMs: 
   const body = (await response.json().catch(() => ({}))) as PsiResponse;
   if (!response.ok || body.error) {
     const status = body.error?.code ?? response.status;
+    const message = body.error?.message ?? "";
+    /* A bad key is a 400 ("API key not valid"), a disabled API a 403:
+       configuration, never the visitor's page — and never worth a retry. */
+    const badKey = status === 401 || status === 403 || /API key not valid|API_KEY_INVALID|API key expired/i.test(message);
+    /* A DAILY quota won't reset within this request: no retry. A
+       per-minute rate limit will. */
+    const dailyQuota = status === 429 && /per day/i.test(message);
     /* The log says exactly what went wrong; the visitor gets plain words. */
-    const hint =
-      status === 403 || status === 401
-        ? " — PAGESPEED_API_KEY was rejected: check the key, and that the PageSpeed Insights API is enabled for its Google Cloud project"
-        : status === 429
-          ? " — quota exhausted for this key"
-          : "";
+    const hint = badKey
+      ? " — PAGESPEED_API_KEY was rejected: check the key, and that the PageSpeed Insights API is enabled for its Google Cloud project"
+      : status === 429
+        ? dailyQuota
+          ? " — daily quota exhausted for this key (resets at midnight Pacific time)"
+          : " — rate limited"
+        : "";
     /* PSI answers 500 both for its own faults and for "couldn't load the
        page"; the message tells them apart. */
-    const pageFault = status === 400 || /FAILED_DOCUMENT_REQUEST|ERRORED_DOCUMENT_REQUEST|NO_FCP|DNS_FAILURE|Unable to process request/i.test(body.error?.message ?? "");
+    const pageFault =
+      !badKey &&
+      (status === 400 || /FAILED_DOCUMENT_REQUEST|ERRORED_DOCUMENT_REQUEST|NO_FCP|DNS_FAILURE|Unable to process request/i.test(message));
     throw new LighthouseError(
-      `PSI ${strategy} ${status}${hint}: ${body.error?.message ?? ""}`.slice(0, 500),
+      `PSI ${strategy} ${status}${hint}: ${message}`.slice(0, 500),
       pageFault ? "Google's analysis couldn't load your page." : "Google's analysis service is temporarily unavailable.",
-      TRANSIENT_STATUS.has(status) && !pageFault,
+      TRANSIENT_STATUS.has(status) && !pageFault && !dailyQuota,
     );
   }
   if (!body.lighthouseResult || body.lighthouseResult.runtimeError?.code) {
@@ -337,10 +347,21 @@ export interface LighthouseOutcome {
   issues: Issue[];
 }
 
+function report<T>(run: Promise<T>, strategy: Strategy, onSettled?: StrategyProgress): Promise<T> {
+  run.then(
+    () => onSettled?.(strategy, "done"),
+    () => onSettled?.(strategy, "failed"),
+  );
+  return run;
+}
+
 /** Total time Lighthouse may take, inside the route's 60s limit. */
 const BUDGET_MS = 52_000;
 
-export async function runLighthouse(url: string): Promise<LighthouseOutcome> {
+/** Called as each strategy settles — the real progress the form shows. */
+export type StrategyProgress = (strategy: Strategy, outcome: "done" | "failed") => void;
+
+export async function runLighthouse(url: string, onSettled?: StrategyProgress): Promise<LighthouseOutcome> {
   const key = process.env.PAGESPEED_API_KEY;
   if (!key) {
     /* A configuration gap for MIDIS, not something a visitor can act on:
@@ -354,8 +375,8 @@ export async function runLighthouse(url: string): Promise<LighthouseOutcome> {
   const deadline = Date.now() + BUDGET_MS;
   /* Exactly two requests, in parallel — never more. */
   const [mobile, desktop] = await Promise.allSettled([
-    runStrategy(url, "mobile", key, deadline),
-    runStrategy(url, "desktop", key, deadline),
+    report(runStrategy(url, "mobile", key, deadline), "mobile", onSettled),
+    report(runStrategy(url, "desktop", key, deadline), "desktop", onSettled),
   ]);
   const out: LighthouseOutcome = { status: "unavailable", missing: {}, issues: [] };
   let misconfigured = false;
@@ -370,7 +391,7 @@ export async function runLighthouse(url: string): Promise<LighthouseOutcome> {
     } else {
       const error = settled.reason as LighthouseError;
       out.missing[strategy] = error.reason ?? "Google's analysis failed.";
-      if (/rejected/.test(error.message)) misconfigured = true;
+      if (/rejected|daily quota/.test(error.message)) misconfigured = true;
     }
   }
   out.status = out.mobile && out.desktop ? "complete" : out.mobile || out.desktop ? "partial" : "unavailable";

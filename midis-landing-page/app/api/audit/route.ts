@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { emailEnabled } from "@/lib/audit/email";
 import { combineIssues, onPageIssues } from "@/lib/audit/findings";
 import { checkPage } from "@/lib/audit/page";
-import { runLighthouse, type LighthouseOutcome } from "@/lib/audit/pagespeed";
+import { runLighthouse, type LighthouseOutcome, type StrategyProgress } from "@/lib/audit/pagespeed";
 import { clientIp, makeLimiter } from "@/lib/audit/limits";
 import { seal } from "@/lib/audit/seal";
 import type { AuditResult, OnPageChecks } from "@/lib/audit/types";
@@ -23,7 +25,20 @@ import { AuditInputError, assertPublicHost, normaliseUrl } from "@/lib/audit/url
  *   - otherwise a complete audit.
  * The result goes back as an encrypted token (lib/audit/seal.ts) plus a
  * status-only preview: the scores are revealed after the contact step.
+ * Each audit gets a unique ID, sealed with its results.
+ *
+ * PROGRESS. A request sent with `Accept: application/x-ndjson` (the form)
+ * gets a stream of newline-delimited JSON events while the audit runs —
+ * {"type":"progress","stage":"lighthouse"} when the Google requests go out,
+ * {"type":"progress","stage":"mobile"|"desktop","outcome":"done"|"failed"}
+ * as each analysis actually finishes, {"type":"progress","stage":"preparing"}
+ * — then one {"type":"result","status":<http status>,"body":{…}} with
+ * exactly what the plain JSON response would have carried. Nothing is
+ * announced before it has happened. Input errors (bad URL, rate limit)
+ * are answered before any stream starts, as plain JSON.
  */
+
+type Emit = (event: Record<string, unknown>) => void;
 
 export const maxDuration = 60;
 
@@ -68,7 +83,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, field: "url", message }, { status: 422 });
   }
 
-  const [page, lighthouse] = await Promise.allSettled([checkPage(url), runLighthouse(url.toString())]);
+  if (request.headers.get("accept")?.includes("application/x-ndjson")) {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const emit: Emit = (event) => {
+          try {
+            controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+          } catch {
+            /* The visitor left; the audit's outcome is still logged. */
+          }
+        };
+        try {
+          const { status, body: result } = await audit(url, emit);
+          emit({ type: "result", status, body: result });
+        } catch (error) {
+          console.error("[audit] audit crashed:", error);
+          emit({
+            type: "result",
+            status: 500,
+            body: { ok: false, retryable: true, message: "Something went wrong while analysing your website. Please try again." },
+          });
+        }
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-store, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  const { status, body: result } = await audit(url, () => {});
+  return NextResponse.json(result, { status });
+}
+
+async function audit(url: URL, emit: Emit): Promise<{ status: number; body: Record<string, unknown> }> {
+  emit({ type: "progress", stage: "lighthouse" });
+  const onSettled: StrategyProgress = (strategy, outcome) => emit({ type: "progress", stage: strategy, outcome });
+  const [page, lighthouse] = await Promise.allSettled([checkPage(url), runLighthouse(url.toString(), onSettled)]);
+  emit({ type: "progress", stage: "preparing" });
 
   let checks: OnPageChecks | undefined;
   let pageReason: string | undefined;
@@ -90,7 +147,7 @@ export async function POST(request: Request) {
 
   /* The site itself couldn't be reached: that's about the URL. */
   if (!checks && page.status === "rejected" && page.reason instanceof AuditInputError && lh.status === "unavailable") {
-    return NextResponse.json({ ok: false, field: "url", message: pageReason }, { status: 422 });
+    return { status: 422, body: { ok: false, field: "url", message: pageReason } };
   }
 
   /* NO SCORES, NO AUDIT. Without Lighthouse there are no scores, and a
@@ -101,8 +158,9 @@ export async function POST(request: Request) {
     const config = lh.misconfigured ? " (CONFIGURATION: check PAGESPEED_API_KEY)" : "";
     console.error(`[audit] audit stopped — no Lighthouse results for ${url}: ${JSON.stringify(lh.missing)}${config}`);
     const pageFault = Object.values(lh.missing).every((m) => /couldn't load your page/.test(m ?? ""));
-    return NextResponse.json(
-      {
+    return {
+      status: 503,
+      body: {
         ok: false,
         retryable: true,
         message:
@@ -110,14 +168,15 @@ export async function POST(request: Request) {
             ? "We couldn't analyze this website: Google's analysis couldn't load the page. Please check the URL and that the site is publicly reachable, then try again."
             : "Our audit service is temporarily unavailable, so we couldn't score your website. Please try again in a moment.",
       },
-      { status: 503 },
-    );
+    };
   }
 
+  const analyzedAt = new Date().toISOString();
   const result: AuditResult = {
+    auditId: `MA-${analyzedAt.slice(0, 10).replace(/-/g, "")}-${randomBytes(3).toString("hex").toUpperCase()}`,
     url: url.toString(),
     finalUrl: checks?.finalUrl ?? url.toString(),
-    analyzedAt: new Date().toISOString(),
+    analyzedAt,
     lighthouse: {
       status: lh.status,
       reason: lh.reason,
@@ -133,19 +192,27 @@ export async function POST(request: Request) {
   };
 
   const complete = result.lighthouse.status === "complete" && result.onPage.status === "complete";
-  return NextResponse.json({
-    ok: true,
-    token: seal(result),
-    preview: {
-      url: result.finalUrl,
-      analyzedAt: result.analyzedAt,
-      status: complete ? "complete" : "partial",
-      /* Plain-language note shown with a partial audit. */
-      note: complete
-        ? undefined
-        : [result.lighthouse.reason, result.onPage.reason].filter(Boolean).join(" "),
+  console.info(`[audit] ${result.auditId} ${complete ? "complete" : "partial"} audit of ${result.finalUrl}`);
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      token: seal(result),
+      preview: {
+        auditId: result.auditId,
+        url: result.finalUrl,
+        analyzedAt: result.analyzedAt,
+        status: complete ? "complete" : "partial",
+        /* Step 2's wording follows this: email the report, or offer it
+           as a download only. */
+        emailEnabled: emailEnabled(),
+        /* Plain-language note shown with a partial audit. */
+        note: complete
+          ? undefined
+          : [result.lighthouse.reason, result.onPage.reason].filter(Boolean).join(" "),
+      },
     },
-  });
+  };
 }
 
 export function GET() {

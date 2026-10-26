@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendLeadNotification, sendVisitorReport, type Delivery } from "@/lib/audit/email";
+import { emailEnabled, sendLeadNotification, sendVisitorReport, type Delivery } from "@/lib/audit/email";
 import { topThree } from "@/lib/audit/findings";
 import { storeLead } from "@/lib/audit/lead";
 import { clientIp, makeLimiter } from "@/lib/audit/limits";
@@ -80,6 +80,10 @@ interface Outcome {
 }
 
 const handled = new Map<string, { at: number; outcome: Outcome }>();
+/* Submits still running, so a CONCURRENT duplicate (two requests in
+   flight at once) waits for the first instead of storing and sending
+   again. */
+const inflight = new Map<string, Promise<{ outcome: Outcome; pdf: Uint8Array | null }>>();
 
 function remember(id: string, outcome: Outcome) {
   const now = Date.now();
@@ -150,15 +154,21 @@ export async function POST(request: Request) {
   const top = topThree(result.issues);
   const previous = handled.get(requestId)?.outcome;
 
-  /* The reference is fixed per request, so a retry re-uses it. */
+  /* The reference IS the audit's own ID (sealed with its results in step
+     1), so the PDF, both emails and the saved lead all name these results. */
   const reference =
     previous?.reference ??
+    result.auditId ??
+    /* Audits sealed before IDs existed (an open tab across a deploy). */
     `MA-${result.analyzedAt.slice(0, 10).replace(/-/g, "")}-${randomBytes(3).toString("hex").toUpperCase()}`;
 
   let outcome: Outcome;
   let pdf: Uint8Array | null;
 
-  if (previous && mode === "submit") {
+  const running = mode === "submit" ? inflight.get(requestId) : undefined;
+  if (running) {
+    ({ outcome, pdf } = await running);
+  } else if (previous && mode === "submit") {
     /* A duplicate submit: answer as before; nothing is stored or sent again. */
     outcome = previous;
     pdf = await makePdf(result, reference, lead.name, siteUrl);
@@ -185,22 +195,31 @@ export async function POST(request: Request) {
          4. notify MIDIS, with the delivery result.
        A failure in 2–4 never discards the saved lead; the visitor still
        gets their results and an accurate status. */
-    const submittedAt = new Date().toISOString();
-    const leadStored = await storeLead({ lead, result, reference, visitorEmail: "sending", submittedAt });
-    pdf = await makePdf(result, reference, lead.name, siteUrl);
-    const email: Delivery = pdf
-      ? await sendVisitorReport({ to: lead.email, siteUrl, firstName, result, top, pdf, reference })
-      : { status: "failed" };
-    /* Independent of the visitor email: sent whatever happened above. */
-    const notification = await sendLeadNotification({ lead, result, pdf, reference, visitorEmail: email, submittedAt, leadStored });
-    console.info(
-      `[audit] ${reference} lead saved=${leadStored} pdf=${pdf ? "ok" : "failed"} visitor email=${email.status}${email.id ? " (" + email.id + ")" : ""} notification=${notification.status}`,
-    );
-    if (!leadStored && notification.status !== "accepted") {
-      console.error(`[audit] LEAD NOT CAPTURED — ${reference} ${lead.email} ${result.finalUrl}`);
+    const work = (async () => {
+      const submittedAt = new Date().toISOString();
+      const leadStored = await storeLead({ lead, result, reference, visitorEmail: emailEnabled() ? "sending" : "not_configured", submittedAt });
+      const built = await makePdf(result, reference, lead.name, siteUrl);
+      const email: Delivery = built
+        ? await sendVisitorReport({ to: lead.email, siteUrl, firstName, result, top, pdf: built, reference })
+        : { status: "failed" };
+      /* Independent of the visitor email: sent whatever happened above. */
+      const notification = await sendLeadNotification({ lead, result, pdf: built, reference, visitorEmail: email, submittedAt, leadStored });
+      console.info(
+        `[audit] ${reference} lead saved=${leadStored} pdf=${built ? "ok" : "failed"} visitor email=${email.status}${email.id ? " (" + email.id + ")" : ""} notification=${notification.status}`,
+      );
+      if (!leadStored && notification.status !== "accepted") {
+        console.error(`[audit] LEAD NOT CAPTURED — ${reference} ${lead.email} ${result.finalUrl}`);
+      }
+      const done: Outcome = { reference, email, leadStored, notification };
+      remember(requestId, done);
+      return { outcome: done, pdf: built };
+    })();
+    inflight.set(requestId, work);
+    try {
+      ({ outcome, pdf } = await work);
+    } finally {
+      inflight.delete(requestId);
     }
-    outcome = { reference, email, leadStored, notification };
-    remember(requestId, outcome);
   }
 
   return NextResponse.json({

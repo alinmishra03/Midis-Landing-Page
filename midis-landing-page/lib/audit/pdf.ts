@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
 import { site } from "@/content/site";
+import { topThree } from "./findings";
 import {
   BAND_LABEL,
   CATEGORIES,
@@ -184,8 +185,9 @@ function ring(ctx: Ctx, cx: number, cy: number, score: number | undefined, label
       });
     }
   }
-  const value = score === undefined ? "n/a" : String(score);
-  const size = score === undefined ? 10 : 15;
+  /* A category Lighthouse didn't score in a run that DID happen. */
+  const value = score === undefined ? "Not scored" : String(score);
+  const size = score === undefined ? 8 : 15;
   const w = ctx.bold.widthOfTextAtSize(value, size);
   ctx.page.drawText(value, { x: cx - w / 2, y: cy - size * 0.35, size, font: ctx.bold, color: score === undefined ? C.muted : C.ink });
   const lw = ctx.regular.widthOfTextAtSize(label, 8.5);
@@ -209,9 +211,17 @@ function issueBlock(ctx: Ctx, issue: Issue) {
   ctx.page.drawText(tag, { x: MARGIN, y: ctx.y - 10, size: 7.5, font: ctx.bold, color });
   ctx.y -= 12;
   text(ctx, issue.title, { size: 10.5, bold: true });
-  text(ctx, issue.detail, { size: 9, color: C.muted });
-  text(ctx, `Suggested improvement: ${issue.suggestion}`, { size: 9, gap: 4 });
+  /* What was MEASURED, and by what — kept apart from the advice below. */
+  text(ctx, `Measured finding (${SOURCE_LABEL[issue.source]}): ${issue.detail}`, { size: 9, color: C.muted });
+  text(ctx, `Recommendation (general guidance): ${issue.suggestion}`, { size: 9, gap: 4 });
 }
+
+const SOURCE_LABEL: Record<Issue["source"], string> = {
+  mobile: "Google Lighthouse, mobile",
+  desktop: "Google Lighthouse, desktop",
+  both: "Google Lighthouse, mobile and desktop",
+  page: "direct check of your page's HTML",
+};
 
 function categorySection(ctx: Ctx, result: AuditResult, key: CategoryKey) {
   const mobile = result.lighthouse.mobile?.scores[key];
@@ -283,8 +293,8 @@ export async function buildReportPdf(
     gap: 6,
   });
 
-  /* ---- 1. overview ---- */
-  heading(ctx, 1, "Website Overview");
+  /* ---- 1. executive summary ---- */
+  heading(ctx, 1, "Executive Summary");
   row(ctx, "Website", result.url);
   if (result.finalUrl !== result.url) row(ctx, "Final address", result.finalUrl);
   row(ctx, "Audit date", dateText);
@@ -294,6 +304,44 @@ export async function buildReportPdf(
     "Audit scope",
     `Home page. Google Lighthouse via PageSpeed Insights: ${scopeLabel(result)}. Direct page checks: ${result.onPage.status === "complete" ? "completed" : `not available (${result.onPage.reason ?? "the page could not be read"})`}.`,
   );
+  for (const strategy of ["mobile", "desktop"] as const) {
+    const scores = result.lighthouse[strategy]?.scores;
+    row(
+      ctx,
+      `${strategy === "mobile" ? "Mobile" : "Desktop"} scores`,
+      scores
+        ? CATEGORIES.map((c) => `${c.label} ${scores[c.key] ?? "not scored"}`).join("  ·  ")
+        : `Not available — ${result.lighthouse.missing?.[strategy] ?? "the analysis did not complete."}`,
+    );
+  }
+  {
+    /* Every sentence below is counted or read from the results. */
+    const count = (p: Issue["priority"]) => result.issues.filter((i) => i.priority === p).length;
+    const measured: { label: string; score: number }[] = [];
+    for (const strategy of ["mobile", "desktop"] as const) {
+      const scores = result.lighthouse[strategy]?.scores;
+      if (!scores) continue;
+      for (const c of CATEGORIES) {
+        const score = scores[c.key];
+        if (score !== undefined) measured.push({ label: `${strategy} ${c.label.toLowerCase()}`, score });
+      }
+    }
+    measured.sort((a, b) => a.score - b.score);
+    const weakest = measured[0];
+    const summary = [
+      `This audit identified ${count("critical")} critical, ${count("high")} high-priority and ${count("medium")} additional findings.`,
+      weakest ? `The lowest score measured was ${weakest.label} at ${weakest.score}/100 (${BAND_LABEL[band(weakest.score)].toLowerCase()}).` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    ctx.y -= 4;
+    text(ctx, summary, { size: 10, gap: 4 });
+    text(
+      ctx,
+      "How to read this report: scores, metrics and findings are measured — by Google Lighthouse or by a direct check of your page. Each finding's recommendation is general guidance on how such issues are usually fixed, not a measurement.",
+      { size: 8.5, color: C.muted, gap: 6 },
+    );
+  }
 
   /* ---- 2 & 3. Lighthouse results, one section per device ---- */
   const strategySection = (n: number, strategy: "mobile" | "desktop") => {
@@ -330,7 +378,7 @@ export async function buildReportPdf(
   const byCategory = (key: CategoryKey) => result.issues.filter((issue) => issue.category === key);
 
   /* ---- 4. performance metrics ---- */
-  heading(ctx, 4, "Performance Metrics");
+  heading(ctx, 4, "Performance Analysis");
   for (const strategy of ["mobile", "desktop"] as const) {
     const data = result.lighthouse[strategy];
     const label = strategy === "mobile" ? "Mobile" : "Desktop";
@@ -357,7 +405,7 @@ export async function buildReportPdf(
   }
 
   /* ---- 5. SEO findings ---- */
-  heading(ctx, 5, "SEO Findings");
+  heading(ctx, 5, "SEO Analysis");
   categorySection(ctx, result, "seo");
   const checks = result.onPage.checks;
   if (checks) {
@@ -390,7 +438,7 @@ export async function buildReportPdf(
   else text(ctx, "No SEO issues were flagged.", { size: 9.5, color: C.muted });
 
   /* ---- 6. accessibility findings ---- */
-  heading(ctx, 6, "Accessibility Findings");
+  heading(ctx, 6, "Accessibility Analysis");
   categorySection(ctx, result, "accessibility");
   if (checks) {
     row(
@@ -409,7 +457,7 @@ export async function buildReportPdf(
   text(ctx, "Automated checks catch only part of accessibility; a manual review is recommended for full coverage.", { size: 8, color: C.muted });
 
   /* ---- 7. best practices ---- */
-  heading(ctx, 7, "Best Practices");
+  heading(ctx, 7, "Best Practices Analysis");
   categorySection(ctx, result, "best-practices");
   if (checks) {
     row(ctx, "HTTPS", checks.https ? "The page is served over HTTPS" : "The page is NOT served over HTTPS");
@@ -419,8 +467,14 @@ export async function buildReportPdf(
   if (bp.length) bp.slice(0, 8).forEach((issue) => issueBlock(ctx, issue));
   else text(ctx, "No best-practice issues were flagged.", { size: 9.5, color: C.muted });
 
-  /* ---- 8. priority recommendations ---- */
-  heading(ctx, 8, "Priority Recommendations");
+  /* ---- 8. key improvement opportunities ---- */
+  heading(ctx, 8, "Key Improvement Opportunities");
+  const key = topThree(result.issues);
+  if (key.length) key.forEach((issue) => issueBlock(ctx, issue));
+  else text(ctx, "The audit didn't flag any significant issues.", { size: 9.5, color: C.muted });
+
+  /* ---- 9. priority recommendations ---- */
+  heading(ctx, 9, "Prioritised Recommendations");
   const groups: [string, Issue[]][] = [
     ["Critical issues", result.issues.filter((i) => i.priority === "critical")],
     ["High-priority improvements", result.issues.filter((i) => i.priority === "high")],
@@ -436,14 +490,14 @@ export async function buildReportPdf(
     ctx.y -= 6;
   }
 
-  /* ---- 9. how MIDIS can help ---- */
-  heading(ctx, 9, "How MIDIS Can Help");
+  /* ---- 10. how MIDIS can help ---- */
+  heading(ctx, 10, "Get a Free Project Estimate");
   text(
     ctx,
     "MIDIS designs, builds and improves business websites — website development and redesign, Shopify and e-commerce, UI/UX design, and SEO. We can turn the findings in this report into a prioritised plan and fix them for you.",
     { size: 10, gap: 8 },
   );
-  text(ctx, `Discuss your results or get a project estimate: ${meta.siteUrl}/#estimator`, { size: 10, bold: true, color: C.orangeInk });
+  text(ctx, `Request your free project estimate: ${meta.siteUrl}/#estimator`, { size: 10, bold: true, color: C.orangeInk });
   text(ctx, `Or email us at ${site.email}`, { size: 10, gap: 4 });
 
   return doc.save();
