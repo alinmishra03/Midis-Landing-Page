@@ -252,8 +252,11 @@ export function OptionGroup({
       <div
         className={cn(
           "mt-3 grid gap-2.5",
-          variant === "cards" && columns === 2 && "sm:grid-cols-2",
-          variant === "cards" && columns === 3 && "sm:grid-cols-2 lg:grid-cols-3",
+          /* Container queries: the estimator form (the only caller with
+             columns) is an @container, so the cards follow the form's
+             width rather than the viewport's. */
+          variant === "cards" && columns === 2 && "@md:grid-cols-2",
+          variant === "cards" && columns === 3 && "@md:grid-cols-2 @3xl:grid-cols-3",
         )}
       >
         {options.map((option) => {

@@ -11,7 +11,6 @@ import { Pricing } from "@/components/home/Pricing";
 import { Faqs } from "@/components/home/Faqs";
 import { FinalCta } from "@/components/home/FinalCta";
 import { FloatingCta } from "@/components/layout/FloatingCta";
-import { SiteBackdrop } from "@/components/layout/SiteBackdrop";
 import { buildJsonLd } from "@/lib/seo";
 import { site } from "@/content/site";
 
@@ -64,12 +63,11 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      {/* One fixed photograph behind the whole page; `data-atmosphere` on
-          <main> turns every section into a translucent veil over it (see
-          SiteBackdrop and "SITE ATMOSPHERE" in globals.css). Scoped to this
-          page: other routes keep their solid sections. */}
-      <SiteBackdrop />
-
+      {/* `data-atmosphere` on <main> gives every section the soft
+          page-colour transitions into and out of the charcoal bands (see
+          "SITE ATMOSPHERE" in globals.css). The fixed background photograph
+          it was built over was removed on MIDIS's instruction (2026-10-27),
+          so the veils now sit on the plain page colour. */}
       <Header />
 
       <main id="main" data-atmosphere="">

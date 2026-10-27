@@ -403,7 +403,10 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
       onSubmit={onSubmit}
       noValidate
       className={cn(
-        "relative",
+        /* `@container`: the field grids below size to the FORM's width,
+           not the viewport's, so the same form reads well full-width on a
+           tablet and in the hero's narrower desktop column. */
+        "@container relative",
         variant === "card" &&
           "rounded-2xl border border-line bg-surface p-5 sm:p-8",
       )}
@@ -467,7 +470,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
               Desktop: 2-column grid (Full Name + Email, then Phone + Company).
               Mobile: single column, all fields stack vertically.
             */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 @lg:grid-cols-2">
               <TextField
                 label="Full Name"
                 name="name"
@@ -572,7 +575,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Your project, so far
               </p>
-              <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm @lg:grid-cols-2">
                 {(
                   [
                     ["Name", values.name],
@@ -625,7 +628,7 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
       {/* `flex-col-reverse` keeps the forward action ABOVE Back on a phone —
           the primary path should not sit under the way out. twMerge lets it
           override ButtonGroup`s own flex-col. */}
-      <ButtonGroup align="between" className="mt-6 flex-col-reverse sm:mt-8">
+      <ButtonGroup align="between" className="estimator-actions mt-6 flex-col-reverse sm:mt-8">
         {step > 0 ? (
           <Button
             type="button"
