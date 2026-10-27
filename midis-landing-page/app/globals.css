@@ -662,46 +662,6 @@ p {
   text-wrap: balance;
 }
 
-/* THE SERVICE HIGHLIGHTS. From sm the three columns are separated by the
-   grid's 2.5rem column gap, with a hairline centred in it — drawn by each
-   column after the first, 1.25rem to its left — so the dividers never eat
-   into the columns and all three text blocks are the same width. */
-@media (min-width: 640px) {
-  .hero-benefit + .hero-benefit::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -1.25rem;
-    width: 1px;
-    background: var(--color-line);
-  }
-}
-
-/* Hover: the icon tile lifts 3px and the title takes the orange accent
-   (--color-accent-ink: the brand orange in dark mode, its 4.7:1 text shade
-   on paper). Reduced motion keeps the colour change, drops the movement. */
-.hero-benefit-icon {
-  transition: transform var(--dur-base) var(--ease-out-expo);
-}
-
-.hero-benefit-title {
-  transition: color var(--dur-fast) ease;
-}
-
-.hero-benefit:hover .hero-benefit-icon {
-  transform: translateY(-3px);
-}
-
-.hero-benefit:hover .hero-benefit-title {
-  color: var(--color-accent-ink);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-benefit:hover .hero-benefit-icon {
-    transform: none;
-  }
-}
 
 /* ==========================================================================
    SITE ATMOSPHERE (MIDIS hero + full-site background briefs, 2026-10-23)

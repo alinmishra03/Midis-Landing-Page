@@ -12,21 +12,22 @@ import mockup from "@/public/images/hero/midis-website-growth-mockup.webp";
  * two columns that both start on the same line under the navbar:
  *
  *   LEFT  (~57% at lg, ~61.5% from xl)  the laptop-and-phone mockup, the
- *         original heading and description, the statistics strip and the
- *         three service highlights — one continuous column, so there is no
- *         separate row and no gap waiting for the taller column
+ *         original heading and description, and the statistics strip — one
+ *         continuous column, so there is no separate row and no gap waiting
+ *         for the taller column
  *   RIGHT (the rest)  the existing four-step estimator in its white card
  *
  * Below `lg` it is one column in the brief's mobile order: image →
- * heading → description → statistics → highlights → form. That is simply
+ * heading → description → statistics → form. That is simply
  * the DOM order, so keyboard and reading order match at every width.
  *
  * SPACING (desktop / phones): navbar → content 24px (the section's top
  * padding past --header-h, which already includes the bar); image →
  * heading 20/16px; heading → description 16/12px; description →
- * statistics 24/20px; statistics → highlights 24/20px; section bottom
- * 48/32px. No min-height and no fixed heights: the section is exactly as
- * tall as its content.
+ * statistics 24/20px; section bottom 48/32px. No min-height and no fixed
+ * heights: the section is exactly as tall as its content. (The three
+ * feature blocks under the statistics were removed on MIDIS's
+ * instruction, 2026-10-27.)
  *
  * THE IMAGE is MIDIS's own mockup, a real <img> at its natural aspect ratio
  * — width 100% of the column, height auto (`.hero-visual`, globals.css),
@@ -143,53 +144,6 @@ export function Hero() {
               </li>
             ))}
           </ul>
-
-          {/* ---- the service highlights ----
-              Three highlights (MIDIS brief, 2026-10-21; icons unchanged)
-              under one hairline. Phones: a left-aligned list, icon beside
-              text. From `sm`: one row of three EQUAL columns
-              (`repeat(3, minmax(0, 1fr))`), icon above text, so every icon
-              sits at the same height and every title starts on the same
-              line. The columns are split by a 2.5rem gap with a hairline
-              centred in it (`.hero-benefit`, globals.css) rather than by
-              per-column padding, so all three text blocks are exactly the
-              same width. Hover: the icon lifts 3px and the title turns
-              orange. No cards, no shadows. */}
-          <ul className="mt-5 grid w-full gap-3.5 border-t border-line pt-5 text-left sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:gap-x-10 sm:gap-y-0 lg:mt-6">
-            {advantages.map((item, index) => (
-              <li
-                key={item.title}
-                className="hero-benefit hero-rise relative flex min-w-0 items-start gap-3 sm:flex-col sm:gap-3"
-                style={{ "--d": `${330 + index * 120}ms` } as React.CSSProperties}
-              >
-                <span
-                  aria-hidden="true"
-                  className="hero-benefit-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-ink"
-                >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {item.icon}
-                  </svg>
-                </span>
-                <div className="min-w-0">
-                  <h3 className="hero-benefit-title text-[0.9375rem] leading-snug">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 text-sm leading-[1.45] text-muted">
-                    {item.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* ================= right: the estimator ================= */}
@@ -244,49 +198,6 @@ const stats = [
       <>
         <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.5" />
         <path d="M1.75 5.75h12.5M4 4.25h.01M5.75 4.25h.01" />
-      </>
-    ),
-  },
-] as const;
-
-/**
- * SUPPORTING copy (MIDIS brief, 2026-10-21) — descriptions of how MIDIS
- * works, phrased like the approved service descriptions. Nothing here is a
- * measurable claim. Icons are inline line-work on `currentColor`, sized and
- * stroked to match the site's Arrow, so they read in both themes.
- */
-const advantages = [
-  {
-    title: "Strategy-Led Design",
-    body: "Built around your business goals.",
-    /* A target: the goal, aimed at. */
-    icon: (
-      <>
-        <circle cx="8" cy="8" r="6.25" />
-        <circle cx="8" cy="8" r="2.75" />
-      </>
-    ),
-  },
-  {
-    title: "Responsive Experiences",
-    body: "Designed for every screen.",
-    /* A monitor and a phone. */
-    icon: (
-      <>
-        <rect x="1.25" y="2.75" width="9.5" height="6.5" rx="1" />
-        <path d="M4.25 12.5h3.5M6 9.25v3.25" />
-        <rect x="11.5" y="6.5" width="3.25" height="6.5" rx="0.9" />
-      </>
-    ),
-  },
-  {
-    title: "Conversion-Focused Development",
-    body: "Created to guide visitors toward action.",
-    /* A rising line with an arrowhead. */
-    icon: (
-      <>
-        <path d="M1.75 11.75 6 7.5l2.75 2.75 5.5-5.5" />
-        <path d="M10.25 4.75h4v4" />
       </>
     ),
   },
