@@ -116,11 +116,6 @@
   --text-display-lg: clamp(2.125rem, 1.3rem + 3.6vw, 4.5rem);
   --text-display-md: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
   --text-display-sm: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
-  /* The hero h1 (2026-10-27): 32px through the phones, ~50px at 768 and
-     56px at most while the hero is stacked; from lg (below) 48px at 1024
-     rising to 64px at 1920, sized to the left column rather than the
-     viewport so it never crowds the form. */
-  --text-hero: clamp(2rem, 0.9rem + 4.6vw, 3.5rem);
 
   /* ---- Motion: one shared language ------------------------------------- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -130,13 +125,11 @@
   --dur-slow: 760ms;
 
   /* ---- Layout ---------------------------------------------------------- */
-  /* FULL-WIDTH LAYOUT PASS (MIDIS, 2026-10-27): 48px on phones, ~55px at
-     768, ~65px at 1024, ~82px at 1440, 88px ceiling (it was 56 -> 96px,
-     which with the background photo gone read as gaps rather than
-     breathing room). The block gap (header -> content) is 24px on phones
-     and ~36px at 1440. */
-  --space-section: clamp(3rem, 1.5rem + 4vw, 5.5rem);
-  --space-block: clamp(1.5rem, 2.5vw, 2.5rem);
+  /* 56px on phones (adjacent sections already stack two of these), ~73px
+     at 1024, ~90px at 1440, 96px ceiling (layout refinement, 2026-10-24;
+     it previously reached 112px). */
+  --space-section: clamp(3.5rem, 2rem + 4vw, 6rem);
+  --space-block: clamp(1.75rem, 2.5vw, 2.75rem);
 
   /*
    * CONTAINER WIDTHS, MEASURED AGAINST THE MAIN MIDIS SITE.
@@ -169,15 +162,12 @@
    * breakpoint (below). At 1920 that is 1360px of content inside 280px
    * margins, where the old 118rem cap ran content to 1716px.
    */
-  /* 2026-10-27: 92rem (1472px) of content, up from 85rem — at 1920 the
-     margins drop from 280px to 224px, so large displays use their width
-     while cards and measures stay proportionate. */
-  --container-site: calc(92rem + 2 * var(--gutter));
+  --container-site: calc(85rem + 2 * var(--gutter));
 
   /*
    * THE GUTTER, PER BREAKPOINT (2026-10-24):
-   *   < 640px      16px    phones (one value since 2026-10-27; it was
-   *                         20px from 360px)
+   *   < 360px      16px    the smallest phones
+   *   360–639px    20px    phones
    *   640–1023px   32→40px tablets
    *   1024–1535px  48→61px laptops (~55px at 1366, ~58px at 1440)
    *   ≥ 1536px     64→80px large desktops
@@ -197,6 +187,12 @@
 }
 
 /* The gutter steps — see THE GUTTER, PER BREAKPOINT in the theme block. */
+@media (min-width: 360px) {
+  :root {
+    --gutter: 1.25rem;
+  }
+}
+
 @media (min-width: 640px) {
   :root {
     --gutter: clamp(2rem, 4vw, 2.5rem);
@@ -596,39 +592,61 @@ p {
   }
 }
 
-/* THE HERO IMAGE (2026-10-27). Shown whole at its own aspect ratio (1692 x
-   930); only its WIDTH is set. Stacked (below lg) it is the smallest of the
-   column, 1100px, and the width at which its height reaches
-   --hero-visual-h; from lg it fills the left column (below). That height is
-   460px, or half of a short viewport, so on a 768px-tall laptop the
-   heading still starts on the first screen. The thin border and soft
-   shadow keep its bright edges defined on the dark page. */
+/* ==========================================================================
+   THE HERO (restored 2026-10-27 design, spacing refined)
+   --------------------------------------------------------------------------
+   No background of its own: the hero sits on the plain page colour, like
+   the rest of the page. Its one image is the mockup below.
+   ========================================================================== */
+
+/* THE HERO IMAGE. Shown whole at its own aspect ratio (1692 x 930), with
+   subtle rounded corners and a hairline border; only its WIDTH is set.
+   From lg it fills the left column (width: 100%, height: auto). Stacked,
+   it is the column width or whatever keeps it under ~460px tall (half a
+   short viewport), centred. */
 .hero-visual {
   --hero-visual-h: min(28.75rem, 50svh);
-  width: min(100%, 68.75rem, calc(var(--hero-visual-h) * 1692 / 930));
+  width: min(100%, calc(var(--hero-visual-h) * 1692 / 930));
   overflow: hidden;
   border: 1px solid var(--color-line);
   border-radius: 1rem;
   background: var(--color-surface);
-  box-shadow: 0 24px 48px -36px rgb(20 21 24 / 0.45);
+  box-shadow: 0 18px 40px -34px rgb(20 21 24 / 0.35);
 }
 
 @media (min-width: 640px) {
   .hero-visual {
-    border-radius: var(--radius-card-lg);
+    border-radius: 1.25rem;
   }
 }
 
 :root[data-theme="dark"] .hero-visual {
-  box-shadow: 0 24px 56px -32px rgb(0 0 0 / 0.8);
+  box-shadow: 0 18px 44px -32px rgb(0 0 0 / 0.7);
 }
 
-/* THE HERO ACCENT: the headline's "Win You Customers." and the statistic
-   numerals. The brand orange itself is 2.43:1 on paper, under even the
-   3:1 large-text minimum, and --color-accent-ink (#AA5A0A) reads brown at
-   display size. #D26E0A is the brightest orange that clears 3:1 on paper
-   (3.31:1); every use is 26px+ display type, which is what that minimum
-   covers. On the dark page the brand orange passes outright (7.1:1). */
+/* THE HERO HEADING SIZE: ~34px on phones, ~50px at 768 and 56px at most
+   while stacked; from lg 48px at 1024, ~55px at 1280, 60px from ~1440 —
+   the brief's 48-60px desktop range, sized to the left column. */
+:root {
+  --text-hero: clamp(2.125rem, 1rem + 4.6vw, 3.5rem);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --text-hero: clamp(3rem, 1.2rem + 2.8vw, 3.75rem);
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+}
+
+/* THE HERO ACCENT: "Into Customers." and the statistic numerals. The brand
+   orange itself is 2.43:1 on paper, under even the 3:1 large-text minimum,
+   and --color-accent-ink (#AA5A0A) reads brown at display size. #D26E0A is
+   the brightest orange that clears 3:1 on paper (3.31:1); every use is
+   26px+ display type, which is what that minimum covers. On the dark page
+   the brand orange passes outright (7.1:1). */
 .hero-accent {
   color: #d26e0a;
 }
@@ -637,43 +655,51 @@ p {
   color: var(--color-accent-ink);
 }
 
-/* The hero description is centred, where an uneven last line shows most:
-   balance it. (The base `p { text-wrap: pretty }` is unlayered, so a
-   Tailwind utility cannot override it; this class can.) */
+/* The description is centred while stacked, where an uneven last line
+   shows most: balance it. (The base `p { text-wrap: pretty }` is unlayered,
+   so a Tailwind utility cannot override it; this class can.) */
 .hero-sub {
   text-wrap: balance;
 }
 
-@media (min-width: 1024px) {
-  :root {
-    --text-hero: clamp(3rem, 0.6rem + 3.4vw, 4rem);
-  }
-
-  /* Two columns: the image fills the left column, edge to edge. */
-  .hero-visual {
-    width: 100%;
+/* THE SERVICE HIGHLIGHTS. From sm the three columns are separated by the
+   grid's 2.5rem column gap, with a hairline centred in it — drawn by each
+   column after the first, 1.25rem to its left — so the dividers never eat
+   into the columns and all three text blocks are the same width. */
+@media (min-width: 640px) {
+  .hero-benefit + .hero-benefit::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -1.25rem;
+    width: 1px;
+    background: var(--color-line);
   }
 }
 
-/* The hero benefits' icon tiles: a small lift on hover, nothing more. */
+/* Hover: the icon tile lifts 3px and the title takes the orange accent
+   (--color-accent-ink: the brand orange in dark mode, its 4.7:1 text shade
+   on paper). Reduced motion keeps the colour change, drops the movement. */
 .hero-benefit-icon {
   transition: transform var(--dur-base) var(--ease-out-expo);
 }
 
+.hero-benefit-title {
+  transition: color var(--dur-fast) ease;
+}
+
 .hero-benefit:hover .hero-benefit-icon {
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-3px);
+}
+
+.hero-benefit:hover .hero-benefit-title {
+  color: var(--color-accent-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-benefit:hover .hero-benefit-icon {
     transform: none;
-  }
-}
-
-/* Phones in landscape: never shrink below a legible size. */
-@media (max-height: 500px) {
-  .hero-visual {
-    --hero-visual-h: 16rem;
   }
 }
 
@@ -788,14 +814,11 @@ main[data-atmosphere] section[data-tone="ink"] {
   --ink-mid: var(--ink-veil);
   /* Never shorter than 7rem: on phones the section rhythm is ~56px, and a
      light-to-charcoal ramp that short reads as a shadow, not a dusk. */
-  --ink-ramp: max(var(--space-section), 5.5rem);
+  --ink-ramp: max(calc(var(--space-section) * 1.35), 7rem);
   --light-end: color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent);
   --ink-end: color-mix(in srgb, var(--color-ink) var(--ink-mid), transparent);
-  /* 1.25x the section rhythm (was 1.5x, min 124px): the ramp still ends
-     inside the padding, before any content, without the band opening on
-     a tall empty dusk. */
-  padding-top: max(calc(var(--space-section) * 1.25), 6.5rem);
-  padding-bottom: max(calc(var(--space-section) * 1.25), 6.5rem);
+  padding-top: max(calc(var(--space-section) * 1.5), 7.75rem);
+  padding-bottom: max(calc(var(--space-section) * 1.5), 7.75rem);
   background: linear-gradient(
     180deg,
     var(--light-end) 0,
@@ -869,9 +892,8 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
    The hero estimator's card (MIDIS reference brief, 2026-10-27)
    --------------------------------------------------------------------------
    A plain white card: thin neutral border, soft radius, a barely-there
-   shadow. The old frosted glass is gone with the background photograph —
-   with nothing behind it, blur had nothing to diffuse. --color-surface is
-   white in light mode and the raised charcoal in dark mode.
+   shadow. --color-surface is white in light mode and the raised charcoal
+   in dark mode.
 
    Inside it only (the same form elsewhere is unaffected):
      - the step actions stack, the orange primary full width on top and

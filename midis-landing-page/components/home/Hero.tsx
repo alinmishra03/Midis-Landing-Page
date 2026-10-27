@@ -1,9 +1,6 @@
 import Image from "next/image";
-import { ButtonGroup } from "@/components/ui/Button";
 import { CountUp } from "@/components/ui/CountUp";
-import { Reveal } from "@/components/ui/Reveal";
 import { Eyebrow } from "@/components/ui/Section";
-import { EstimateCta } from "./EstimateCta";
 import { EstimatorForm } from "@/components/forms/EstimatorForm";
 import { hero } from "@/content/sections";
 import mockup from "@/public/images/hero/midis-website-growth-mockup.webp";
@@ -11,52 +8,41 @@ import mockup from "@/public/images/hero/midis-website-growth-mockup.webp";
 /**
  * SECTION 1 — Hero.
  *
- * THE 2026-10-27 DESKTOP REDESIGN (MIDIS reference brief). One grid, from
- * `lg` two columns and two rows:
+ * THE 2026-10-27 DESIGN, RESTORED WITH TIGHTER SPACING. One grid, from `lg`
+ * two columns that both start on the same line under the navbar:
  *
- *   row 1  LEFT  (~57% at lg, ~61.5% from xl)  the image, the original
- *               heading and description
- *          RIGHT (the rest)  the existing four-step estimator, in a white
- *               card — never over the image
- *   row 2  THE PROOF BLOCK (`col-span-full`)  the statistics, then the three
- *               benefits as three equal columns. Spanning both columns puts
- *               its left edge on the image's and its right edge on the
- *               form card's — the same container, the same gutters, no
- *               offsets. It starts one row gap below the taller column.
+ *   LEFT  (~57% at lg, ~61.5% from xl)  the laptop-and-phone mockup, the
+ *         original heading and description, the statistics strip and the
+ *         three service highlights — one continuous column, so there is no
+ *         separate row and no gap waiting for the taller column
+ *   RIGHT (the rest)  the existing four-step estimator in its white card
  *
  * Below `lg` it is one column in the brief's mobile order: image →
- * heading → description → statistics → CTA → benefits → form. That is
- * simply the DOM order (message, proof, form); the desktop placement is
- * explicit `col-start` / `row-start`, so nothing is reordered with `order`,
- * and keyboard and reading order match at every width.
+ * heading → description → statistics → highlights → form. That is simply
+ * the DOM order, so keyboard and reading order match at every width.
  *
- * THE CTA is shown only while the layout is stacked. From `lg` the form it
- * scrolls to sits beside it, so it would be a button pointing at the
- * column next door. (FloatingCta watches `#hero` for the same reason.)
+ * SPACING (desktop / phones): navbar → content 24px (the section's top
+ * padding past --header-h, which already includes the bar); image →
+ * heading 20/16px; heading → description 16/12px; description →
+ * statistics 24/20px; statistics → highlights 24/20px; section bottom
+ * 48/32px. No min-height and no fixed heights: the section is exactly as
+ * tall as its content.
  *
- * THE IMAGE is MIDIS's own laptop-and-phone mockup, a real <img> (not a
- * CSS background) shown whole at its natural aspect ratio — its width and
- * height come from the static import, and `.hero-visual` (globals.css)
- * only ever sets its width: the full left column from `lg`, and below
- * that the column or whatever keeps it under ~460px tall.
+ * THE IMAGE is MIDIS's own mockup, a real <img> at its natural aspect ratio
+ * — width 100% of the column, height auto (`.hero-visual`, globals.css),
+ * with subtle rounded corners and a hairline border.
  *
  * ONE FORM, ONE ANCHOR. The card carries `id="estimator"` — the anchor
  * every CTA on the page points at — so no link needed touching. The form
- * itself (fields, validation, autosave, submission) is untouched; the
- * card only frames it. Its field grids are container queries, so they
- * follow the card's width rather than the viewport's (EstimatorForm).
+ * itself (fields, validation, autosave, submission) is untouched; the card
+ * only frames it. Its field grids are container queries, so they follow
+ * the card's width rather than the viewport's (EstimatorForm).
  *
- * MOTION. The image, heading, description and form use the CSS-only
- * `hero-rise` / `hero-settle` entrances, so the LCP never waits on
- * hydration. The proof block ALSO sits inside `Reveal` wrappers: on a
- * phone, where it is on screen at load, Reveal stays out of the way and
- * the hero-rise inside plays; on a desktop, where it starts below the
- * fold, Reveal holds it until it scrolls into view and then fades it up
- * (the benefits staggered 120ms apart). The two never fight over one
- * element — Reveal owns the wrapper, hero-rise the child. The numerals
- * count up from 0 when they enter the viewport (CountUp). Reduced motion
- * skips all of it, and Reveal's guards keep everything visible without
- * JavaScript.
+ * MOTION: the CSS-only `hero-rise` / `hero-settle` entrances (reduced-
+ * motion aware), so nothing waits on hydration and nothing starts hidden
+ * for long; the numerals count up once when they enter the viewport
+ * (CountUp). FloatingCta keeps its estimate pill hidden while `#hero` is on
+ * screen.
  *
  * THE STATISTICS. "30+ Clients" and "20+ Live Projects" are MIDIS's own
  * instructed figures (2026-10-22), not counted from content/clients.ts or
@@ -67,19 +53,14 @@ import mockup from "@/public/images/hero/midis-website-growth-mockup.webp";
 
 export function Hero() {
   return (
-    /* No bottom padding: the trust section's own top padding (48px on
-       phones, ~82px on desktop) is the whole gap after the hero, where the
-       two paddings used to stack to ~130px. */
     <section
       id="hero"
       aria-labelledby="hero-heading"
-      className="relative pt-[calc(var(--header-h)+1.25rem)] lg:pt-[calc(var(--header-h)+1.5rem)]"
+      className="relative pt-[calc(var(--header-h)+1.5rem)] pb-8 lg:pb-12"
     >
-      {/* Row gaps come from the children's own margins while stacked (each
-          break has its own size); from lg the grid gaps take over. */}
-      <div className="container-site grid items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-x-8 lg:gap-y-10 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] xl:gap-x-9">
-        {/* ================= row 1, left: image + message ================= */}
-        <div className="flex min-w-0 flex-col items-center text-center lg:col-start-1 lg:row-start-1 lg:items-start lg:text-left">
+      <div className="container-site grid items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-x-[clamp(20px,2.5vw,36px)] xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        {/* ================= left: image + message + proof ================= */}
+        <div className="flex min-w-0 flex-col items-center text-center lg:items-start lg:text-left">
           <figure
             className="hero-visual hero-rise"
             style={{ "--d": "0ms" } as React.CSSProperties}
@@ -90,21 +71,19 @@ export function Hero() {
               priority
               placeholder="blur"
               sizes="(min-width: 1280px) 60vw, (min-width: 1024px) 55vw, (min-width: 768px) 80vw, 100vw"
-              className="block h-auto w-full object-contain"
+              className="block h-auto w-full"
             />
           </figure>
 
           {/*
             The page's only h1, in the original wording. "Into Customers."
             is the accent and never splits across lines (`whitespace-nowrap`);
-            `text-wrap: balance` (globals.css) evens the lines around it at
-            every width. The accent colour is `.hero-accent`: the brightest
-            orange that clears the large-text contrast minimum on paper, and
-            the brand orange itself in dark mode.
+            `text-wrap: balance` (globals.css) evens the lines around it, so
+            no line is left holding a single word.
           */}
           <h1
             id="hero-heading"
-            className="hero-rise mt-6 max-w-[62.5rem] text-[length:var(--text-hero)] leading-[1.05] tracking-[-0.03em] lg:mt-7"
+            className="hero-rise mt-4 max-w-[62.5rem] text-[length:var(--text-hero)] font-bold leading-[1.06] tracking-[-0.035em] lg:mt-5"
             style={{ "--d": "90ms" } as React.CSSProperties}
           >
             Websites That Turn Visitors{" "}
@@ -112,129 +91,108 @@ export function Hero() {
           </h1>
 
           <p
-            className="hero-sub hero-rise mt-3 max-w-[40rem] text-base leading-relaxed text-muted sm:mt-4 sm:text-lg"
+            className="hero-sub hero-rise mt-3 max-w-[40rem] text-base leading-relaxed text-muted sm:text-lg lg:mt-4"
             style={{ "--d": "170ms" } as React.CSSProperties}
           >
             {hero.subheadline}
           </p>
-        </div>
-
-        {/* ================= row 2: the proof block ================= */}
-        <div className="mt-5 flex min-w-0 flex-col items-center sm:mt-6 lg:col-span-full lg:row-start-2 lg:mt-0 lg:items-stretch">
-          {/*
-            The statistics: ONE horizontal strip — two equal cells split by
-            a hairline, each a 40px icon tile, an accent numeral and its
-            uppercase label, centred on one line. 500px wide at most, so on
-            desktop it holds the left of the row and the benefits below run
-            the full width.
-          */}
-          <Reveal className="hero-stats w-full max-w-[31.25rem]">
-            <ul
-              className="hero-rise grid grid-cols-2 divide-x divide-line rounded-2xl border border-line bg-surface"
-              style={{ "--d": "250ms" } as React.CSSProperties}
-            >
-              {stats.map((stat) => (
-                <li
-                  key={stat.label}
-                  className="flex min-w-0 items-center justify-center gap-2.5 px-3 py-3 sm:gap-3.5 sm:px-5 sm:py-3.5"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink min-[400px]:flex"
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      {stat.icon}
-                    </svg>
-                  </span>
-                  <span className="flex min-w-0 flex-col items-start text-left">
-                    <CountUp
-                      value={stat.value}
-                      suffix="+"
-                      delay={250}
-                      className="hero-accent font-display text-[1.625rem] font-semibold leading-none tracking-[-0.02em] sm:text-[2rem]"
-                    />
-                    <span className="mt-1 text-[0.6875rem] font-medium uppercase tracking-wider text-muted sm:text-xs">
-                      {stat.label}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
 
           {/*
-            ONE CTA, stacked layouts only — see THE CTA above. Scrolls to
-            the form (EstimateCta). Full column width on phones
-            (ButtonGroup), its natural width from `sm`.
+            The statistics: ONE compact strip — two equal cells split by a
+            hairline, each an icon tile, an accent numeral and its uppercase
+            label on one line. The numerals render server-side at their final
+            values; CountUp animates them once when they come into view.
           */}
-          <ButtonGroup
-            id="hero-cta"
-            className="hero-rise mt-5 w-full justify-center sm:mt-6 sm:w-auto lg:hidden"
-            style={{ "--d": "330ms" } as React.CSSProperties}
+          <ul
+            className="hero-rise mt-5 grid w-full max-w-[30rem] grid-cols-2 divide-x divide-line rounded-xl border border-line bg-surface lg:mt-6"
+            style={{ "--d": "250ms" } as React.CSSProperties}
           >
-            <EstimateCta className="min-h-12 text-[0.9375rem] sm:min-h-[3.25rem] sm:text-base" />
-          </ButtonGroup>
-
-          {/* ---- the MIDIS Advantage ----
-              Three benefits (MIDIS brief, 2026-10-21; copy and icons
-              unchanged) under one hairline. Phones: a left-aligned list.
-              From `md`: three EQUAL columns (`repeat(3, minmax(0, 1fr))`)
-              split by hairlines — icon over text and centred on a tablet,
-              icon beside text and flush left from `lg`, where the row
-              spans the full hero width. */}
-          <ul className="hero-benefits mt-6 grid w-full gap-4 border-t border-line pt-6 text-left sm:mt-8 md:grid-cols-[repeat(3,minmax(0,1fr))] md:gap-0 md:divide-x md:divide-line lg:mt-6">
-            {advantages.map((item, index) => (
-              <Reveal
-                as="li"
-                key={item.title}
-                delay={index * 120}
-                className="hero-benefit min-w-0 md:px-5 lg:px-8 lg:first:pl-0 lg:last:pr-0"
+            {stats.map((stat) => (
+              <li
+                key={stat.label}
+                className="flex min-w-0 items-center justify-center gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3"
               >
-                <div
-                  className="hero-rise flex items-start gap-3 md:flex-col md:items-center md:text-center lg:flex-row lg:items-start lg:gap-3.5 lg:text-left"
-                  style={{ "--d": `${420 + index * 120}ms` } as React.CSSProperties}
+                <span
+                  aria-hidden="true"
+                  className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-ink min-[400px]:flex"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="hero-benefit-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink"
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      {item.icon}
-                    </svg>
+                    {stat.icon}
+                  </svg>
+                </span>
+                <span className="flex min-w-0 flex-col items-start text-left">
+                  <CountUp
+                    value={stat.value}
+                    suffix="+"
+                    delay={250}
+                    className="hero-accent font-display text-[1.5rem] font-semibold leading-none tracking-[-0.02em] sm:text-[1.75rem]"
+                  />
+                  <span className="mt-1 text-[0.6875rem] font-medium uppercase tracking-wider text-muted sm:text-xs">
+                    {stat.label}
                   </span>
-                  <div className="min-w-0">
-                    <h3 className="text-[0.9375rem] leading-snug sm:text-base">
-                      {item.title}
-                    </h3>
-                    <p className="mt-0.5 text-sm leading-snug text-muted">
-                      {item.body}
-                    </p>
-                  </div>
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* ---- the service highlights ----
+              Three highlights (MIDIS brief, 2026-10-21; icons unchanged)
+              under one hairline. Phones: a left-aligned list, icon beside
+              text. From `sm`: one row of three EQUAL columns
+              (`repeat(3, minmax(0, 1fr))`), icon above text, so every icon
+              sits at the same height and every title starts on the same
+              line. The columns are split by a 2.5rem gap with a hairline
+              centred in it (`.hero-benefit`, globals.css) rather than by
+              per-column padding, so all three text blocks are exactly the
+              same width. Hover: the icon lifts 3px and the title turns
+              orange. No cards, no shadows. */}
+          <ul className="mt-5 grid w-full gap-3.5 border-t border-line pt-5 text-left sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:gap-x-10 sm:gap-y-0 lg:mt-6">
+            {advantages.map((item, index) => (
+              <li
+                key={item.title}
+                className="hero-benefit hero-rise relative flex min-w-0 items-start gap-3 sm:flex-col sm:gap-3"
+                style={{ "--d": `${330 + index * 120}ms` } as React.CSSProperties}
+              >
+                <span
+                  aria-hidden="true"
+                  className="hero-benefit-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-ink"
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {item.icon}
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <h3 className="hero-benefit-title text-[0.9375rem] leading-snug">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-sm leading-[1.45] text-muted">
+                    {item.body}
+                  </p>
                 </div>
-              </Reveal>
+              </li>
             ))}
           </ul>
         </div>
 
-        {/* ================= row 1, right: the estimator ================= */}
+        {/* ================= right: the estimator ================= */}
         {/*
           `id="estimator"` is on the card, so every `#estimator` link lands
           on the form (the html scroll-padding clears the fixed header).
@@ -242,7 +200,7 @@ export function Hero() {
         */}
         <div
           id="estimator"
-          className="hero-form-shell hero-settle mt-9 w-full p-5 sm:mt-10 sm:p-7 lg:col-start-2 lg:row-start-1 lg:mt-0 xl:p-8"
+          className="hero-form-shell hero-settle mt-8 w-full p-5 sm:mt-10 sm:p-7 lg:mt-0 xl:p-8"
           style={{ "--d": "200ms" } as React.CSSProperties}
         >
           {/* Wording from MIDIS's hero-estimator brief of 2026-10-20. */}

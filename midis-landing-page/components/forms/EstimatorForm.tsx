@@ -403,9 +403,9 @@ export function EstimatorForm({ variant = "card" }: EstimatorFormProps) {
       onSubmit={onSubmit}
       noValidate
       className={cn(
-        /* `@container`: the field grids below size to the FORM's width,
-           not the viewport's, so the same form reads well full-width on a
-           tablet and in the hero's narrower desktop column. */
+        /* `@container`: the field grids below follow the FORM's width,
+           not the viewport's, so the form reads well both full width and in
+           the hero's narrower desktop column. */
         "@container relative",
         variant === "card" &&
           "rounded-2xl border border-line bg-surface p-5 sm:p-8",

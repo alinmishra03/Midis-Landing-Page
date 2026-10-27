@@ -16,13 +16,11 @@ import { whatsappHref } from "@/content/site";
  *     still exactly one estimator on the page.
  *   - WhatsApp: the green circle bottom-right, unchanged and always shown.
  *
- * WHEN THE PILL SHOWS (layout refinement, 2026-10-24). Only once BOTH the
- * hero (#hero, which holds its own estimate button) and the estimator form
- * itself (#estimator) are off screen: while the hero is visible the pill
- * would duplicate its button (and, since the 2026-10-27 redesign put the
- * image first, would sit over the statistics on a laptop where that button
- * starts just below the fold), and while the form is visible the pill
- * would sit over its fields. One IntersectionObserver watches both; no scroll
+ * WHEN THE PILL SHOWS (layout refinement, 2026-10-24; hero redesign,
+ * 2026-10-27). Only once BOTH the hero (#hero) and the estimator form itself
+ * (#estimator) are off screen: while the hero is visible the pill would sit
+ * over its content, and while the form is visible it would sit over its
+ * fields. One IntersectionObserver watches both; no scroll
  * listener. It starts hidden, which is also correct for the first paint —
  * the page loads at the hero. Hidden, it is `inert` (out of the tab order
  * and the accessibility tree) as well as invisible.
@@ -36,8 +34,7 @@ export function FloatingCta() {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    /* The hero and the band under it, which every page mounting this
-       component has. */
+    /* Both live in the hero, which every page mounting this component has. */
     const targets = ["hero", "estimator"]
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
