@@ -150,7 +150,7 @@ export function Hero() {
             alt="The MIDIS logo above a laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”, on a desk with an orange MIDIS mug"
             priority
             placeholder="blur"
-            sizes="(min-width: 1600px) 1440px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"
+            sizes="(min-width: 1830px) 1600px, 93vw"
             className="block h-auto w-full"
           />
         </figure>

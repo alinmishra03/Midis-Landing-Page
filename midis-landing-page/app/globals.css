@@ -163,22 +163,22 @@
    * breakpoint (below). At 1920 that is 1360px of content inside 280px
    * margins, where the old 118rem cap ran content to 1716px.
    */
-  /* 2026-10-27: 90rem (1440px) of content, up from 85rem — at 1920 the
-     side margins drop from 280px to 240px, so large displays use their
-     width while cards and text measures stay proportionate. Every section,
-     the navbar and the footer share it. */
-  --container-site: calc(90rem + 2 * var(--gutter));
+  /* THE SITE CONTAINER (full-width pass, 2026-10-28): 100rem (1600px) of
+     content, up from 90rem — at 1920 the side margins drop from 240px to
+     160px, at 2560 from 560px to 480px. Section BACKGROUNDS always run
+     edge to edge; only content sits in the container. Every section, the
+     navbar and the footer share it (`container-site`; `container-wide`
+     is the same box under a second name). Reading measures inside it stay
+     capped per component (max-w-2xl / 3xl / ch), never the container. */
+  --container-site: calc(100rem + 2 * var(--gutter));
 
   /*
-   * THE GUTTER, PER BREAKPOINT (2026-10-24):
-   *   < 640px      16px    phones (one value since 2026-10-27; it was
-   *                         20px from 360px)
-   *   640–1023px   32→40px tablets
-   *   1024–1535px  48→61px laptops (~55px at 1366, ~58px at 1440)
-   *   ≥ 1536px     64→80px large desktops
-   * Overrides below, after this block.
+   * THE GUTTER — ONE FLUID VALUE (full-width pass, 2026-10-28; it was four
+   * breakpoint steps: 16 / 32-40 / 48-61 / 64-80px):
+   *   16px to ~460px (every phone), ~27px at 768, ~36px at 1024, ~45px at
+   *   1280, ~50px at 1440, 64px from ~1830.
    */
-  --gutter: 1rem;
+  --gutter: clamp(1rem, 3.5vw, 4rem);
 
   --header-h: 4.5rem;
 }
@@ -189,25 +189,6 @@
 
 :root {
   color-scheme: light;
-}
-
-/* The gutter steps — see THE GUTTER, PER BREAKPOINT in the theme block. */
-@media (min-width: 640px) {
-  :root {
-    --gutter: clamp(2rem, 4vw, 2.5rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  :root {
-    --gutter: clamp(3rem, 4vw, 4rem);
-  }
-}
-
-@media (min-width: 1536px) {
-  :root {
-    --gutter: clamp(4rem, 4.2vw, 5rem);
-  }
 }
 
 html {
@@ -881,16 +862,17 @@ main[data-atmosphere] section[data-veil="rich"] {
 
 main[data-atmosphere] section[data-tone="ink"] {
   --ink-mid: var(--ink-veil);
-  /* Never shorter than 7rem: on phones the section rhythm is ~56px, and a
-     light-to-charcoal ramp that short reads as a shadow, not a dusk. */
-  --ink-ramp: max(var(--space-section), 5.5rem);
+  /* The light-to-charcoal ramp: ~44px on phones, ~62px on large screens
+     (full-width pass, 2026-10-28; it was 88px+, which with the padding
+     below opened every band on 104px+ of mostly empty dusk). */
+  --ink-ramp: max(calc(var(--space-section) * 0.7), 2.75rem);
   --light-end: color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent);
   --ink-end: color-mix(in srgb, var(--color-ink) var(--ink-mid), transparent);
-  /* 1.25x the section rhythm (was 1.5x, min 124px): the ramp still ends
-     inside the padding, before any content, without the band opening on
-     a tall empty dusk. */
-  padding-top: max(calc(var(--space-section) * 1.25), 6.5rem);
-  padding-bottom: max(calc(var(--space-section) * 1.25), 6.5rem);
+  /* The section rhythm, or the ramp plus 20px if that is taller — so the
+     ramp always ends inside the padding, before any content: 64px on
+     phones, 88px on large screens (was 104-110px everywhere). */
+  padding-top: max(var(--space-section), calc(var(--ink-ramp) + 1.25rem));
+  padding-bottom: max(var(--space-section), calc(var(--ink-ramp) + 1.25rem));
   background: linear-gradient(
     180deg,
     var(--light-end) 0,

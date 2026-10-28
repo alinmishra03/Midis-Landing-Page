@@ -84,7 +84,7 @@ export default function FreeWebsiteAuditPage() {
 
       <main id="main" className="bg-paper py-10 sm:py-16">
         <div className="container-site">
-          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start lg:gap-14">
             {/* ---- intro panel (MIDIS.pdf p.15) ---- */}
             <div className="lg:sticky lg:top-10">
               <div className="on-dark rounded-2xl bg-ink p-6 text-white sm:p-8">
