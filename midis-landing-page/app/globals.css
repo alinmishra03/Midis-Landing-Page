@@ -584,8 +584,9 @@ p {
   animation-delay: var(--d, 0ms);
 }
 
-/* The 2026-10-28 hero: the showcase settles in from a touch larger and the
-   marker under "Into Customers." draws left to right once. */
+/* The 2026-10-28 hero: the showcase settles in from a touch larger. (The
+   orange marker under "Into Customers." was removed on MIDIS's
+   instruction, 2026-10-28.) */
 @keyframes hero-reveal {
   from {
     opacity: 0;
@@ -597,15 +598,6 @@ p {
   }
 }
 
-@keyframes hero-mark {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
 .hero-reveal {
   animation: hero-reveal 900ms var(--ease-out-expo) both;
   animation-delay: var(--d, 0ms);
@@ -614,8 +606,7 @@ p {
 @media (prefers-reduced-motion: reduce) {
   .hero-rise,
   .hero-settle,
-  .hero-reveal,
-  .hero-mark::after {
+  .hero-reveal {
     animation: none;
   }
 }
@@ -698,19 +689,28 @@ p {
     0 30px 60px -36px rgb(0 0 0 / 0.75);
 }
 
-/* THE EDITORIAL HEADLINE (2026-10-28). Full width below 1280px: ~36px at
-   390, ~57px at 768, 72px from ~1000. From 1280px it shares the row with
-   the description: ~65px at 1280, ~71px at 1440, 80px from ~1680 — always
-   two lines there ("Websites That Turn / Visitors Into Customers."). */
+/* THE EDITORIAL HEADLINE (2026-10-28; enlarged in the alignment pass).
+   Full width below 1200px: 34px to 390 (the longest line, "Visitors Into
+   Customers.", then fits a 375px phone in two lines; 320-360px take three,
+   never a lone word), ~55px at 768, 72px from ~1040.
+   From 1200px it fills the 62% column: ~63px at 1200, ~74px at 1440,
+   81.6px from 1600 (where the container stops growing) — always two lines
+   there ("Websites That Turn / Visitors Into Customers."), the longer
+   second line kept inside the column. Weight 750 on desktop (Inter Tight
+   is variable); 700 below 1200px, where 750's extra width would push a
+   390px phone from two lines to three. */
 .hero-title {
-  font-size: clamp(2.25rem, 0.9rem + 5.6vw, 4.5rem);
+  font-size: clamp(2.125rem, 0.75rem + 5.6vw, 4.5rem);
+  font-weight: 700;
   line-height: 1.02;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1200px) {
   .hero-title {
-    font-size: clamp(3.5rem, 1rem + 3.8vw, 5rem);
+    font-size: clamp(3.75rem, 0.5rem + 4.6vw, 5.1rem);
+    font-weight: 750;
+    letter-spacing: -0.05em;
   }
 }
 
@@ -743,30 +743,11 @@ p {
 
 /* The description is centred while stacked, where an uneven last line
    shows most: balance it. (The base `p { text-wrap: pretty }` is unlayered,
-   so a Tailwind utility cannot override it; this class can.) */
+   so a Tailwind utility cannot override it; this class can.)
+   Since the left-aligned editorial hero, `pretty`: balance shortened
+   every line and left the description looking narrow. */
 .hero-sub {
-  text-wrap: balance;
-}
-
-/* THE MARKER under "Into Customers.": a short orange stroke fading out to
-   the right, drawn once after the heading lands. */
-.hero-mark {
-  position: relative;
-}
-
-.hero-mark::after {
-  content: "";
-  position: absolute;
-  left: 0.04em;
-  right: 0.35em;
-  bottom: -0.06em;
-  height: 0.085em;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 0%, transparent));
-  opacity: 0.6;
-  transform-origin: left center;
-  animation: hero-mark 900ms var(--ease-out-expo) 650ms both;
-  pointer-events: none;
+  text-wrap: pretty;
 }
 
 /* THE STATISTICS' icon tile: soft orange, a hairline of the accent line.

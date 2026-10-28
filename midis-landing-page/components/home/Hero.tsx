@@ -14,11 +14,11 @@ import heroImage from "@/public/images/hero/MIDIS Workspace_ Websites That Conve
  * one shared container so every edge matches the navbar:
  *
  *   1. THE INTRODUCTION — an editorial split. The h1 is set large on the
- *      left (about 60% of the width from 1280px); the description and the
- *      two statistics sit in the right column, aligned to the headline's
- *      last line. Below 1280px the headline runs full width and the
- *      description + statistics share a row beneath it (from 1024px) or
- *      stack (phones and tablets).
+ *      left (62% of the width from 1200px); the description and the two
+ *      statistics sit grouped in the right 38%, centred on the headline
+ *      (alignment passes, 2026-10-28). Below 1200px the headline runs full
+ *      width and the description + statistics share a row beneath it
+ *      (from 1024px) or stack (phones and tablets).
  *   2. THE SHOWCASE — MIDIS's branded workspace image (the MIDIS logo, the
  *      site on a laptop and a phone, the MIDIS mug; supplied 2026-10-28) at
  *      the container's full width and its natural 1672x941 ratio (nothing
@@ -55,11 +55,17 @@ export function Hero() {
     <section
       id="hero"
       aria-labelledby="hero-heading"
-      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.75rem)] pb-12 sm:pt-[calc(var(--header-h)+2.25rem)] lg:pb-16"
+      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.5rem)] pb-12 sm:pt-[calc(var(--header-h)+1.75rem)] lg:pb-16"
     >
       <div className="container-site">
         {/* ================= 1. the introduction ================= */}
-        <div className="grid gap-y-5 sm:gap-y-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] xl:items-end xl:gap-x-16">
+        {/* Two columns from 1200px: 62/38 (the 48px gap comes out of both
+            in proportion), so the headline's longer line still fits at
+            1200. `items-center` centres the headline and the description +
+            statistics group on each other; with the 14–16px description
+            the two blocks are within ~25px of the same height, so neither
+            sits visibly higher. Stacked below 1200px. */}
+        <div className="grid gap-y-5 sm:gap-y-6 min-[1200px]:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] min-[1200px]:items-center min-[1200px]:gap-x-12">
           {/*
             "Into Customers." never splits (`whitespace-nowrap`) and
             `text-wrap: balance` evens the lines around it, so no line is
@@ -67,18 +73,21 @@ export function Hero() {
           */}
           <h1
             id="hero-heading"
-            className="hero-rise hero-title text-balance font-bold"
+            className="hero-rise hero-title text-balance"
             style={{ "--d": "0ms" } as React.CSSProperties}
           >
             Websites That Turn Visitors{" "}
-            <span className="hero-accent hero-mark whitespace-nowrap">
+            <span className="hero-accent whitespace-nowrap">
               Into Customers.
             </span>
           </h1>
 
-          <div className="grid gap-y-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end lg:gap-x-10 xl:grid-cols-1 xl:gap-y-6 xl:pb-2">
+          {/* One block: description, then the statistics 16px below. Beside
+              each other at 1024–1199px only — a bounded range, so the rule
+              never competes with the desktop layout above it. */}
+          <div className="grid gap-y-4 lg:max-[1200px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:max-[1200px]:items-end lg:max-[1200px]:gap-x-8">
             <p
-              className="hero-sub hero-rise max-w-[34rem] text-base leading-relaxed text-muted sm:text-[1.0625rem] xl:text-lg"
+              className="hero-sub hero-rise max-w-[34rem] text-sm leading-[1.6] text-muted md:text-[0.9375rem] 2xl:text-base"
               style={{ "--d": "100ms" } as React.CSSProperties}
             >
               {hero.subheadline}
@@ -90,7 +99,7 @@ export function Hero() {
               animates them once when they come into view.
             */}
             <ul
-              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-4 lg:max-w-none xl:max-w-[26rem]"
+              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-3.5 lg:max-[1200px]:max-w-none"
               style={{ "--d": "180ms" } as React.CSSProperties}
             >
               {stats.map((stat, index) => (
@@ -133,7 +142,7 @@ export function Hero() {
 
         {/* ================= 2. the showcase ================= */}
         <figure
-          className="hero-showcase hero-reveal mt-7 sm:mt-9 lg:mt-12"
+          className="hero-showcase hero-reveal mt-6 sm:mt-8 lg:mt-10"
           style={{ "--d": "160ms" } as React.CSSProperties}
         >
           <Image
