@@ -226,7 +226,7 @@ export type ConsultationService = (typeof CONSULTATION_SERVICES)[number];
 export const MEETING_URL = "https://meetings-na2.hubspot.com/mohit-mayank";
 
 export const consultationForm = {
-  heading: "Let’s Build a Website That Grows Your Business",
+  heading: "Let’s Build a Website That Grows Your Business.",
   description:
     "Looking to build a new website or improve your existing one? Tell us a little about your requirements, and let’s explore how MIDIS can help your business grow.",
   fields: {
@@ -251,7 +251,7 @@ export const consultationForm = {
     meetingHeading: "Schedule Your Free Consultation",
     meetingDescription:
       "Choose a convenient date and time to discuss your business goals, website requirements, and how MIDIS can help.",
-    meetingCta: "Book Your Free 20-Minute Meeting",
+    meetingCta: "Book Your Free 30-Minute Meeting",
     followUp: [
       "Prefer not to schedule right now? No problem! Our team may follow up using the contact details you provided.",
       "We look forward to connecting with you!",

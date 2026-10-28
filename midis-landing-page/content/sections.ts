@@ -15,8 +15,9 @@
 
 export const hero = {
   headline: "Websites That Turn Visitors Into Customers.",
+  /* Client-approved replacement, 2026-10-28. */
   subheadline:
-    "MIDIS helps businesses build high-performing websites and digital experiences designed to strengthen their brand, attract the right audience, and drive measurable growth.",
+    "We build modern websites that attract customers, generate enquiries, and help your business grow.",
   primaryCta: { label: "Get a Free Consultation", href: "#estimator" },
   secondaryCta: { label: "Explore Our Work", href: "#work" },
 } as const;
