@@ -125,11 +125,12 @@
   --dur-slow: 760ms;
 
   /* ---- Layout ---------------------------------------------------------- */
-  /* 56px on phones (adjacent sections already stack two of these), ~73px
-     at 1024, ~90px at 1440, 96px ceiling (layout refinement, 2026-10-24;
-     it previously reached 112px). */
-  --space-section: clamp(3.5rem, 2rem + 4vw, 6rem);
-  --space-block: clamp(1.75rem, 2.5vw, 2.75rem);
+  /* FULL-WIDTH LAYOUT PASS (MIDIS, 2026-10-27): 48px on phones, ~55px at
+     768, ~65px at 1024, ~82px at 1440, 88px ceiling (it was 56 -> 96px).
+     The block gap (section header -> its content) is 24px on phones and
+     ~36px at 1440 (it was 28 -> 44px). */
+  --space-section: clamp(3rem, 1.5rem + 4vw, 5.5rem);
+  --space-block: clamp(1.5rem, 2.5vw, 2.5rem);
 
   /*
    * CONTAINER WIDTHS, MEASURED AGAINST THE MAIN MIDIS SITE.
@@ -162,12 +163,16 @@
    * breakpoint (below). At 1920 that is 1360px of content inside 280px
    * margins, where the old 118rem cap ran content to 1716px.
    */
-  --container-site: calc(85rem + 2 * var(--gutter));
+  /* 2026-10-27: 90rem (1440px) of content, up from 85rem — at 1920 the
+     side margins drop from 280px to 240px, so large displays use their
+     width while cards and text measures stay proportionate. Every section,
+     the navbar and the footer share it. */
+  --container-site: calc(90rem + 2 * var(--gutter));
 
   /*
    * THE GUTTER, PER BREAKPOINT (2026-10-24):
-   *   < 360px      16px    the smallest phones
-   *   360–639px    20px    phones
+   *   < 640px      16px    phones (one value since 2026-10-27; it was
+   *                         20px from 360px)
    *   640–1023px   32→40px tablets
    *   1024–1535px  48→61px laptops (~55px at 1366, ~58px at 1440)
    *   ≥ 1536px     64→80px large desktops
@@ -187,12 +192,6 @@
 }
 
 /* The gutter steps — see THE GUTTER, PER BREAKPOINT in the theme block. */
-@media (min-width: 360px) {
-  :root {
-    --gutter: 1.25rem;
-  }
-}
-
 @media (min-width: 640px) {
   :root {
     --gutter: clamp(2rem, 4vw, 2.5rem);
@@ -774,11 +773,14 @@ main[data-atmosphere] section[data-tone="ink"] {
   --ink-mid: var(--ink-veil);
   /* Never shorter than 7rem: on phones the section rhythm is ~56px, and a
      light-to-charcoal ramp that short reads as a shadow, not a dusk. */
-  --ink-ramp: max(calc(var(--space-section) * 1.35), 7rem);
+  --ink-ramp: max(var(--space-section), 5.5rem);
   --light-end: color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent);
   --ink-end: color-mix(in srgb, var(--color-ink) var(--ink-mid), transparent);
-  padding-top: max(calc(var(--space-section) * 1.5), 7.75rem);
-  padding-bottom: max(calc(var(--space-section) * 1.5), 7.75rem);
+  /* 1.25x the section rhythm (was 1.5x, min 124px): the ramp still ends
+     inside the padding, before any content, without the band opening on
+     a tall empty dusk. */
+  padding-top: max(calc(var(--space-section) * 1.25), 6.5rem);
+  padding-bottom: max(calc(var(--space-section) * 1.25), 6.5rem);
   background: linear-gradient(
     180deg,
     var(--light-end) 0,
@@ -1502,7 +1504,14 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
  * 360px, which is where the previous scale started breaking awkwardly.
  */
 @utility cta-headline {
-  font-size: clamp(2.5rem, 1.1rem + 6.1vw, 6.5rem);
+  /* The min() cap only binds on the narrowest phones: "Something Better?"
+     is ~8.5em wide, and at 320px the 2.5rem floor made it wrap, leaving
+     "Better?" alone on a line. Capping the size at the content width / 8.6
+     keeps that line whole (34px at 320px); from ~375px the clamp governs. */
+  font-size: min(
+    clamp(2.5rem, 1.1rem + 6.1vw, 6.5rem),
+    calc((100vw - 2 * var(--gutter)) / 8.6)
+  );
   line-height: 1.02;
   letter-spacing: -0.038em;
   text-wrap: balance;

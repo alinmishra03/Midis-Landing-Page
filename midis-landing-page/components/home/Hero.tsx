@@ -135,7 +135,7 @@ export function Hero() {
                     value={stat.value}
                     suffix="+"
                     delay={250}
-                    className="hero-accent font-display text-[1.5rem] font-semibold leading-none tracking-[-0.02em] sm:text-[1.75rem]"
+                    className="hero-accent font-display text-[1.5rem] font-semibold leading-none tracking-[-0.02em] sm:text-[1.75rem] lg:text-[2rem]"
                   />
                   <span className="mt-1 text-[0.6875rem] font-medium uppercase tracking-wider text-muted sm:text-xs">
                     {stat.label}
