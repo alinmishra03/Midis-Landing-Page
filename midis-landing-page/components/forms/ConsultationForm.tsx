@@ -16,6 +16,7 @@ import {
 import { consultationSchema, type ConsultationSource } from "@/lib/consultation";
 import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
 import { markLeadSubmitted } from "@/lib/popups";
+import { cn } from "@/lib/utils";
 
 /**
  * THE CONSULTATION FORM (MIDIS client-approved brief, 2026-10-28).
@@ -58,11 +59,17 @@ const ORDER: FieldName[] = ["name", "email", "phone", "website", "service"];
 
 export function ConsultationForm({
   source,
+  layout = "stacked",
   titleId,
   descriptionId,
 }: {
   /** Where the lead came from — stored with it. */
   source: ConsultationSource;
+  /** "wide" (the homepage hero panel): from xl the heading block sits
+      beside the fields instead of above them. "popup" (the lead popup):
+      tighter spacing and never more than two columns, however wide the
+      dialog. Content is identical in every layout. */
+  layout?: "stacked" | "wide" | "popup";
   /** Lets a dialog name itself after the visible heading. */
   titleId?: string;
   descriptionId?: string;
@@ -168,26 +175,52 @@ export function ConsultationForm({
   }
 
   if (sent) {
-    return <ThankYou headingId={headingId} headingRef={thanksRef} />;
+    return (
+      <ThankYou
+        headingId={headingId}
+        headingRef={thanksRef}
+        className={layout === "wide" ? "mx-auto max-w-xl" : undefined}
+      />
+    );
   }
 
   const fields = copy.fields;
+  const wide = layout === "wide";
+  const popup = layout === "popup";
 
   return (
     /* COMPACT LAYOUT (MIDIS brief, 2026-10-28): 44px fields (46px on
        phones), 13px labels 6px above them, 14px rows, 12px columns, a 48px
        submit — sizes in globals.css under `.consult-form`. */
-    <div className="consult-form">
-      <Eyebrow className="mb-1.5">Start your project</Eyebrow>
-      <h2
-        id={headingId}
-        className="font-display text-[1.375rem] font-semibold leading-[1.2] tracking-[-0.02em] text-balance sm:text-[1.5rem]"
-      >
-        {copy.heading}
-      </h2>
-      <p id={introId} className="mt-1.5 text-sm leading-[1.55] text-muted">
-        {copy.description}
-      </p>
+    <div
+      className={cn(
+        "consult-form",
+        popup && "consult-popup",
+        wide && "xl:grid xl:grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] xl:items-start xl:gap-x-12",
+      )}
+    >
+      <div>
+        <Eyebrow className={popup ? "mb-1" : "mb-1.5"}>Start your project</Eyebrow>
+        <h2
+          id={headingId}
+          className={cn(
+            "font-display text-[1.375rem] font-semibold leading-[1.2] tracking-[-0.02em] text-balance sm:text-[1.5rem]",
+            wide && "xl:text-[1.75rem] xl:leading-[1.15]",
+          )}
+        >
+          {copy.heading}
+        </h2>
+        <p
+          id={introId}
+          className={cn(
+            "mt-1.5 text-sm leading-[1.55] text-muted",
+            wide && "xl:mt-3",
+            popup && "mt-1 text-[0.8125rem] leading-[1.5] sm:text-[0.84375rem]",
+          )}
+        >
+          {copy.description}
+        </p>
+      </div>
 
       <form
         ref={formRef}
@@ -197,14 +230,22 @@ export function ConsultationForm({
         /* `@container`: the field PAIRS (name + email, phone + website)
            sit side by side only when the FORM itself is at least 25rem
            (400px) wide — each half then keeps ~194px, enough for the phone
-           field's country code plus a usable number box. Narrower (phones,
-           the hero column below ~1265px) it is one column. The viewport is
-           never consulted: the same form lives in a sidebar and a dialog. */
-        className="@container relative mt-4"
+           field's country code plus a usable number box; from 42rem (672px,
+           the hero's wide panel) THREE per row — name / email / phone, then
+           website / service / the submit. Narrower (phones) it is one
+           column. The viewport is never consulted: the same form lives in
+           the hero, a dialog and the audit page. */
+        className={cn("@container relative mt-4", wide && "xl:mt-0", popup && "mt-3.5")}
       >
         <Honeypot value={honey} onChange={setHoney} />
 
-        <div className="consult-fields grid gap-x-3 gap-y-3.5 @[25rem]:grid-cols-2">
+        <div
+          className={cn(
+            "consult-fields grid gap-x-3 @[25rem]:grid-cols-2",
+            /* The popup stays at two columns (its brief), 12px rows. */
+            popup ? "gap-y-3" : "gap-y-3.5 @[42rem]:grid-cols-3",
+          )}
+        >
           <TextField
             label={fields.name.label}
             name="name"
@@ -249,7 +290,7 @@ export function ConsultationForm({
             onChange={(event) => set("website")(event.target.value)}
             error={errors.website}
           />
-          <div className="@[25rem]:col-span-2">
+          <div className={cn("@[25rem]:col-span-2", !popup && "@[42rem]:col-span-1")}>
             <SelectField
               label={fields.service.label}
               name="service"
@@ -261,37 +302,50 @@ export function ConsultationForm({
               error={errors.service}
             />
           </div>
+
+          {/* In three columns the submit is the row's third cell: the top
+              padding is a label's height plus its gap, so the button lines
+              up with the inputs beside it, even when they show errors. */}
+          <div className={cn("@[25rem]:col-span-2", !popup && "@[42rem]:col-span-1 @[42rem]:pt-[1.625rem]")}>
+            <Button
+              type="submit"
+              size="md"
+              disabled={status === "submitting"}
+              className={cn(
+                "consult-submit w-full whitespace-nowrap",
+                popup ? "min-h-[2.875rem]" : "mt-0.5 @[42rem]:mt-0 @[42rem]:min-h-11",
+              )}
+            >
+              {status === "submitting" ? (
+                <>
+                  <SpinnerGlyph />
+                  Submitting…
+                </>
+              ) : (
+                <>
+                  {copy.submit}
+                  <Arrow />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {formError ? (
+            <div
+              role="alert"
+              className="col-span-full rounded-lg border border-danger/30 bg-danger-soft p-3"
+            >
+              <FieldError id={`${headingId}-form-error`}>{formError}</FieldError>
+            </div>
+          ) : null}
         </div>
 
-        {formError ? (
-          <div
-            role="alert"
-            className="mt-4 rounded-lg border border-danger/30 bg-danger-soft p-3"
-          >
-            <FieldError id={`${headingId}-form-error`}>{formError}</FieldError>
-          </div>
-        ) : null}
-
-        <Button
-          type="submit"
-          size="md"
-          disabled={status === "submitting"}
-          className="consult-submit mt-4 w-full whitespace-nowrap"
-        >
-          {status === "submitting" ? (
-            <>
-              <SpinnerGlyph />
-              Submitting…
-            </>
-          ) : (
-            <>
-              {copy.submit}
-              <Arrow />
-            </>
+        <p
+          className={cn(
+            "consult-consent text-xs leading-normal sm:text-[0.8125rem]",
+            popup ? "mt-2" : "mt-2.5",
           )}
-        </Button>
-
-        <p className="consult-consent mt-2.5 text-xs leading-normal sm:text-[0.8125rem]">
+        >
           {copy.consent}
         </p>
 
@@ -308,13 +362,15 @@ export function ConsultationForm({
 function ThankYou({
   headingId,
   headingRef,
+  className,
 }: {
   headingId: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
+  className?: string;
 }) {
   const t = copy.thankYou;
   return (
-    <div className="hero-rise text-center">
+    <div className={cn("hero-rise text-center", className)}>
       <span aria-hidden="true" className="consult-success">
         <svg viewBox="0 0 24 24" width="26" height="26">
           <path

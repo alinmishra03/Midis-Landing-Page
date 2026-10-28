@@ -297,9 +297,33 @@ export function LeadPopups() {
     };
     document.addEventListener("keydown", onKeyDown);
 
+    /* Touch devices: once the on-screen keyboard has opened, bring the
+       focused field back into the middle of the dialog's own scroll area
+       so the keyboard never sits over it. */
+    const panelNode = panelRef.current;
+    let keyboardTimer: number | undefined;
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (
+        !(target instanceof HTMLElement) ||
+        !target.matches("input, select, textarea") ||
+        !window.matchMedia("(pointer: coarse)").matches
+      ) {
+        return;
+      }
+      window.clearTimeout(keyboardTimer);
+      keyboardTimer = window.setTimeout(
+        () => target.scrollIntoView({ block: "center", behavior: "smooth" }),
+        320,
+      );
+    };
+    panelNode?.addEventListener("focusin", onFocusIn);
+
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
+      panelNode?.removeEventListener("focusin", onFocusIn);
+      window.clearTimeout(keyboardTimer);
     };
   }, [open, dismiss]);
 
@@ -348,6 +372,7 @@ export function LeadPopups() {
             marks the session, so neither popup opens again this visit. */}
         <ConsultationForm
           source="popup"
+          layout="popup"
           titleId={headingId}
           descriptionId={descriptionId}
         />

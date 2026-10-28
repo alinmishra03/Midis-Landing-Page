@@ -2,55 +2,47 @@ import Image from "next/image";
 import { CountUp } from "@/components/ui/CountUp";
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import { hero } from "@/content/sections";
-import mockup from "@/public/images/hero/midis-website-growth-mockup.webp";
+/* MIDIS's own branded hero image (supplied 2026-10-28; filename as given). */
+import heroImage from "@/public/images/hero/MIDIS Workspace_ Websites That Convert (1).png";
 
 /**
  * SECTION 1 — Hero.
  *
- * THE 2026-10-28 REDESIGN (MIDIS brief: "completely redesign the homepage
- * hero"). Same three elements — the laptop-and-phone visual, the message
- * with its proof, the four-step estimator — rebuilt as one composition:
+ * THE EDITORIAL HERO (MIDIS brief, 2026-10-28: "an entirely new homepage
+ * hero ... not another modification of the old one"). The image-beside-a-
+ * tall-form columns are gone. Three layers, read top to bottom, all in the
+ * one shared container so every edge matches the navbar:
  *
- *   - THE STAGE. The section carries its own warm wash: a soft orange glow
- *     behind the visual fading into the page colour (`.hero-stage`,
- *     globals.css). Gradients only, no blur filters, no shapes.
- *   - THE VISUAL sits in a framed "print" — a thin surface mat, a large
- *     radius and a layered shadow — over its own ambient glow, and reveals
- *     with a gentle scale-down. Shown whole at its natural 1692x930 ratio:
- *     nothing is cropped, nothing stretched.
- *   - THE MESSAGE. The original h1 and description, left-aligned at every
- *     width; "Into Customers." in orange over a short marker stroke that
- *     draws in once. The statistics sit under a hairline as two quiet
- *     figures — icon, charcoal numeral with an orange "+", small label —
- *     not boxed tiles.
- *   - THE CONSULTATION FORM in a white panel with an orange top edge; it
- *     slides in from the right.
+ *   1. THE INTRODUCTION — an editorial split. The h1 is set large on the
+ *      left (about 60% of the width from 1280px); the description and the
+ *      two statistics sit in the right column, aligned to the headline's
+ *      last line. Below 1280px the headline runs full width and the
+ *      description + statistics share a row beneath it (from 1024px) or
+ *      stack (phones and tablets).
+ *   2. THE SHOWCASE — MIDIS's branded workspace image (the MIDIS logo, the
+ *      site on a laptop and a phone, the MIDIS mug; supplied 2026-10-28) at
+ *      the container's full width and its natural 1672x941 ratio (nothing
+ *      cropped, nothing stretched), with a large radius and a hairline
+ *      ring. It is the section's visual anchor, not a card beside a form.
+ *      The panel below overlaps only its marble desk edge, never the
+ *      devices or the logo.
+ *   3. THE CONSULTATION — the shared ConsultationForm in its "wide" layout,
+ *      a white panel that overlaps the bottom of the showcase (inset from
+ *      its sides, over the desk, clear of the laptop and phone). From
+ *      1280px the heading sits beside the fields, which run three per row:
+ *      a two-row form instead of a tall column.
  *
- * GRID: one CSS grid in the shared container, so both columns share the
- * navbar's edges. From 1200px two columns, 60/40 with a 40px gap, that
- * start on the same line. 60/40 rather than 58/42 keeps the form panel
- * under the estimator's 512px two-column switch, so its fields stay one
- * column and the panel ends level with the left column (within ~30px at
- * 1440/1920) instead of leaving a gap under either. Below 1200px it is one
- * column, at most 736px wide and centred — visual, heading, description,
- * statistics, form, which is also the DOM order, so reading and keyboard
- * order match. Two columns at 1024 would leave ~200px empty under the
- * statistics beside the taller form.
- * No min-height, no fixed heights: the section is as tall as its content.
- *
- * SPACING (desktop / phones): navbar -> content 28/24px; visual -> heading
- * 24/20px; heading -> description 16/12px; description -> statistics
- * 24/20px; statistics -> form (stacked) 32/28px; section bottom 56/40px.
+ * Reading order = DOM order = the brief's sequence: headline, description,
+ * statistics, visual, form. Normal flow throughout — the overlap is a
+ * negative margin, not absolute positioning — and no fixed heights.
  *
  * ONE FORM, ONE ANCHOR. The panel carries `id="estimator"`, the anchor every
- * CTA points at. Inside it is the shared single-step ConsultationForm
- * (2026-10-28; the same component as the lead popup). Its field pairs are
- * container queries, so they follow the panel's width.
+ * CTA points at; the form inside is the same component as the popup's.
  *
- * MOTION is CSS-only (`hero-reveal`, `hero-rise`, `hero-slide`, globals.css)
- * so nothing waits on hydration — the h1 is the LCP element — and all of it
- * is off under prefers-reduced-motion. FloatingCta keeps its estimate pill
- * hidden while `#hero` is on screen.
+ * MOTION is CSS-only (globals.css) so nothing waits on hydration — the h1 is
+ * the LCP element: the headline rises, the description and statistics
+ * follow, the showcase settles in, the panel rises last; the numerals count
+ * up once in view. All of it is off under prefers-reduced-motion.
  *
  * THE STATISTICS. "30+ Clients" and "20+ Live Projects" are MIDIS's own
  * instructed figures (2026-10-22) — confirm before launch.
@@ -63,34 +55,20 @@ export function Hero() {
     <section
       id="hero"
       aria-labelledby="hero-heading"
-      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.5rem)] pb-10 lg:pt-[calc(var(--header-h)+1.75rem)] lg:pb-14"
+      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.75rem)] pb-12 sm:pt-[calc(var(--header-h)+2.25rem)] lg:pb-16"
     >
-      <div className="container-site grid items-start gap-y-7 sm:gap-y-8 min-[1200px]:grid-cols-[minmax(0,60fr)_minmax(0,40fr)] min-[1200px]:gap-x-10">
-        {/* ================= left: visual + message + proof ================= */}
-        <div className="mx-auto flex w-full min-w-0 max-w-[46rem] flex-col min-[1200px]:max-w-none">
-          <figure className="hero-visual hero-reveal">
-            <span aria-hidden="true" className="hero-visual-glow" />
-            <div className="hero-visual-frame">
-              <Image
-                src={mockup}
-                alt="A MIDIS-designed website on a laptop and a smartphone, with “More Enquiries” and “Grow Your Business” callouts and a rising growth arrow"
-                priority
-                placeholder="blur"
-                sizes="(min-width: 1440px) 840px, (min-width: 1200px) 58vw, (min-width: 768px) 736px, 100vw"
-                className="block h-auto w-full"
-              />
-            </div>
-          </figure>
-
+      <div className="container-site">
+        {/* ================= 1. the introduction ================= */}
+        <div className="grid gap-y-5 sm:gap-y-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] xl:items-end xl:gap-x-16">
           {/*
-            The page's only h1, in the original wording. "Into Customers."
-            never splits (`whitespace-nowrap`), and `text-wrap: balance`
-            evens the lines around it, so no line holds a single word.
+            "Into Customers." never splits (`whitespace-nowrap`) and
+            `text-wrap: balance` evens the lines around it, so no line is
+            left holding a single word at any width.
           */}
           <h1
             id="hero-heading"
-            className="hero-rise mt-5 max-w-[40rem] text-[length:var(--text-hero)] font-bold leading-[1.04] tracking-[-0.035em] text-balance lg:mt-6"
-            style={{ "--d": "120ms" } as React.CSSProperties}
+            className="hero-rise hero-title text-balance font-bold"
+            style={{ "--d": "0ms" } as React.CSSProperties}
           >
             Websites That Turn Visitors{" "}
             <span className="hero-accent hero-mark whitespace-nowrap">
@@ -98,74 +76,90 @@ export function Hero() {
             </span>
           </h1>
 
-          <p
-            className="hero-sub hero-rise mt-3 max-w-[36rem] text-base leading-relaxed text-muted sm:text-[1.0625rem] lg:mt-4 xl:text-lg"
-            style={{ "--d": "200ms" } as React.CSSProperties}
-          >
-            {hero.subheadline}
-          </p>
+          <div className="grid gap-y-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end lg:gap-x-10 xl:grid-cols-1 xl:gap-y-6 xl:pb-2">
+            <p
+              className="hero-sub hero-rise max-w-[34rem] text-base leading-relaxed text-muted sm:text-[1.0625rem] xl:text-lg"
+              style={{ "--d": "100ms" } as React.CSSProperties}
+            >
+              {hero.subheadline}
+            </p>
 
-          {/*
-            The statistics: two equal figures under a hairline, split by a
-            second hairline. The numerals render server-side at their final
-            values; CountUp animates them once when they come into view.
-          */}
-          <ul
-            className="hero-rise mt-5 grid max-w-[30rem] grid-cols-2 border-t border-line pt-5 lg:mt-6"
-            style={{ "--d": "280ms" } as React.CSSProperties}
-          >
-            {stats.map((stat, index) => (
-              <li
-                key={stat.label}
-                className={
-                  index === 0
-                    ? "flex min-w-0 items-center gap-3 pr-4"
-                    : "flex min-w-0 items-center gap-3 border-l border-line pl-4 sm:pl-6"
-                }
-              >
-                <span aria-hidden="true" className="hero-stat-icon">
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {stat.icon}
-                  </svg>
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="font-display text-[1.625rem] font-bold leading-none tracking-[-0.03em] sm:text-[1.875rem] lg:text-[2rem]">
-                    <CountUp value={stat.value} delay={280} />
-                    <span className="hero-accent">+</span>
+            {/*
+              Two figures under a hairline, split by a second hairline. The
+              numerals render server-side at their final values; CountUp
+              animates them once when they come into view.
+            */}
+            <ul
+              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-4 lg:max-w-none xl:max-w-[26rem]"
+              style={{ "--d": "180ms" } as React.CSSProperties}
+            >
+              {stats.map((stat, index) => (
+                <li
+                  key={stat.label}
+                  className={
+                    index === 0
+                      ? "flex min-w-0 items-center gap-3 pr-4"
+                      : "flex min-w-0 items-center gap-3 border-l border-line pl-4 sm:pl-6"
+                  }
+                >
+                  <span aria-hidden="true" className="hero-stat-icon">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {stat.icon}
+                    </svg>
                   </span>
-                  <span className="mt-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted sm:text-xs">
-                    {stat.label}
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-display text-[1.625rem] font-bold leading-none tracking-[-0.03em] sm:text-[1.875rem]">
+                      <CountUp value={stat.value} delay={200} />
+                      <span className="hero-accent">+</span>
+                    </span>
+                    <span className="mt-1.5 whitespace-nowrap text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted sm:text-xs">
+                      {stat.label}
+                    </span>
                   </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* ================= right: the consultation form ================= */}
+        {/* ================= 2. the showcase ================= */}
+        <figure
+          className="hero-showcase hero-reveal mt-7 sm:mt-9 lg:mt-12"
+          style={{ "--d": "160ms" } as React.CSSProperties}
+        >
+          <Image
+            src={heroImage}
+            alt="The MIDIS logo above a laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”, on a desk with an orange MIDIS mug"
+            priority
+            placeholder="blur"
+            sizes="(min-width: 1600px) 1440px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"
+            className="block h-auto w-full"
+          />
+        </figure>
+
+        {/* ================= 3. the consultation ================= */}
         {/*
           `id="estimator"` is on the panel, so every `#estimator` link lands
           on the form (the html scroll-padding clears the fixed header). The
-          id predates the 2026-10-28 single-step form and is kept so no
-          link, the CTA focus helper or the popup's "form in progress"
-          check needed changing. No fixed height: the panel fits the form
-          and, after a submission, the thank-you screen.
+          negative top margin lifts it over the showcase's lower edge — the
+          desk, below the devices — and the side margins inset it so the
+          image frames it.
         */}
         <div
           id="estimator"
-          className="hero-form-shell hero-slide mx-auto w-full min-w-0 max-w-[46rem] p-5 sm:p-6 min-[1200px]:max-w-none"
-          style={{ "--d": "220ms" } as React.CSSProperties}
+          className="hero-form-shell hero-panel hero-rise relative z-10 mt-5 p-5 sm:-mt-6 sm:mx-6 sm:p-7 lg:-mt-10 lg:mx-10 xl:-mt-14 xl:px-10 xl:py-9"
+          style={{ "--d": "300ms" } as React.CSSProperties}
         >
-          <ConsultationForm source="homepage" />
+          <ConsultationForm source="homepage" layout="wide" />
         </div>
       </div>
     </section>

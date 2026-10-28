@@ -584,35 +584,12 @@ p {
   animation-delay: var(--d, 0ms);
 }
 
-/* The 2026-10-28 hero: the visual settles in from a touch larger, the
-   estimator slides in from the right (from below while stacked), and the
+/* The 2026-10-28 hero: the showcase settles in from a touch larger and the
    marker under "Into Customers." draws left to right once. */
 @keyframes hero-reveal {
   from {
     opacity: 0;
     transform: translateY(18px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes hero-slide {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes hero-slide-x {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
   }
   to {
     opacity: 1;
@@ -634,22 +611,10 @@ p {
   animation-delay: var(--d, 0ms);
 }
 
-.hero-slide {
-  animation: hero-slide 760ms var(--ease-out-expo) both;
-  animation-delay: var(--d, 0ms);
-}
-
-@media (min-width: 1200px) {
-  .hero-slide {
-    animation-name: hero-slide-x;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-rise,
   .hero-settle,
   .hero-reveal,
-  .hero-slide,
   .hero-mark::after {
     animation: none;
   }
@@ -687,73 +652,66 @@ p {
     radial-gradient(36% 38% at 86% 22%, color-mix(in srgb, var(--color-accent) 5%, transparent), transparent 70%);
 }
 
-/* THE VISUAL. The mockup whole, at its own 1692x930 ratio (width 100%,
-   height auto — never cropped or stretched), in a framed print: a thin
-   surface mat, a large radius, a hairline ring and a layered shadow. Its
-   ambient glow sits behind it, offset toward the growth arrow. */
-.hero-visual {
+/* THE SHOWCASE (editorial hero, 2026-10-28). MIDIS's branded hero image at
+   the container's full width and its natural 1672x941 ratio — width 100%,
+   height auto, so nothing is cropped or stretched. A large radius, a
+   hairline ring and one soft, low shadow give it depth without a frame;
+   on hover the image drifts in a fraction of a percent. */
+.hero-showcase {
   position: relative;
   isolation: isolate;
-  width: 100%;
-  margin: 0;
-}
-
-.hero-visual-glow {
-  position: absolute;
-  inset: 10% -2% -5% 8%;
-  z-index: -1;
-  border-radius: 2rem;
-  background: radial-gradient(60% 62% at 68% 56%, color-mix(in srgb, var(--color-accent) 26%, transparent), transparent 72%);
-  pointer-events: none;
-}
-
-.hero-visual-frame {
   overflow: hidden;
-  padding: 4px;
+  /* Sides only: the top margin is the hero's spacing (mt-* utilities). */
+  margin-inline: 0;
   border-radius: 1rem;
   background: var(--color-surface);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-fg) 7%, transparent),
-    0 2px 4px rgb(20 21 24 / 0.04),
-    0 26px 52px -30px rgb(20 21 24 / 0.38);
-  transition:
-    transform 500ms var(--ease-out-quart),
-    box-shadow 500ms var(--ease-out-quart);
+    0 30px 60px -42px rgb(20 21 24 / 0.4);
 }
 
-.hero-visual-frame img {
-  border-radius: calc(1rem - 4px);
+.hero-showcase img {
+  transition: transform 1200ms var(--ease-out-quart);
 }
 
 @media (min-width: 640px) {
-  .hero-visual-frame {
-    padding: 6px;
-    border-radius: 1.375rem;
-  }
-
-  .hero-visual-frame img {
-    border-radius: calc(1.375rem - 6px);
+  .hero-showcase {
+    border-radius: 1.5rem;
   }
 }
 
-@media (hover: hover) {
-  .hero-visual:hover .hero-visual-frame {
-    transform: translateY(-3px);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--color-fg) 7%, transparent),
-      0 2px 4px rgb(20 21 24 / 0.04),
-      0 34px 60px -30px rgb(20 21 24 / 0.42);
+@media (min-width: 1024px) {
+  .hero-showcase {
+    border-radius: 2rem;
   }
 }
 
-:root[data-theme="dark"] .hero-visual-frame {
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .hero-showcase:hover img {
+    transform: scale(1.012);
+  }
+}
+
+:root[data-theme="dark"] .hero-showcase {
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.06),
-    0 26px 52px -28px rgb(0 0 0 / 0.75);
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 30px 60px -36px rgb(0 0 0 / 0.75);
 }
 
-:root[data-theme="dark"] .hero-visual-glow {
-  opacity: 0.6;
+/* THE EDITORIAL HEADLINE (2026-10-28). Full width below 1280px: ~36px at
+   390, ~57px at 768, 72px from ~1000. From 1280px it shares the row with
+   the description: ~65px at 1280, ~71px at 1440, 80px from ~1680 — always
+   two lines there ("Websites That Turn / Visitors Into Customers."). */
+.hero-title {
+  font-size: clamp(2.25rem, 0.9rem + 5.6vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+@media (min-width: 1280px) {
+  .hero-title {
+    font-size: clamp(3.5rem, 1rem + 3.8vw, 5rem);
+  }
 }
 
 /* THE HERO HEADING SIZE: ~34px on phones, ~50px at 768 and 56px at most
@@ -2679,28 +2637,29 @@ body:has(.sticky-cta) footer {
      phones); the panel scrolls inside itself when the form is taller. */
   align-items: center;
   justify-content: center;
-  padding: 0.75rem;
-  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  /* 16px all round (compact popup, 2026-10-28): the panel is at most
+     100vw - 32px wide and 100dvh - 32px tall. */
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   background: rgb(9 9 11 / 0.55);
   animation: popup-backdrop-in 300ms var(--ease-out-quart) both;
   transition: opacity 180ms var(--ease-out-quart);
 }
 
-@media (min-width: 640px) {
-  .popup-backdrop {
-    align-items: center;
-    padding: 1.5rem;
-  }
-}
-
 .popup-panel {
   position: relative;
   width: 100%;
-  max-width: 32rem;
-  max-height: calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px));
+  /* COMPACT POPUP (MIDIS brief, 2026-10-28): 720px wide where the screen
+     allows, so the fields pair up and the heading fits one line; 18px of
+     padding on phones, 24px from 640px. Scrolls inside itself when the
+     viewport is shorter than the form; scroll-padding keeps a focused
+     field clear of the edges. */
+  max-width: 45rem;
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 1.25rem;
+  scroll-padding-block: 1rem;
+  padding: 1.125rem;
   border: 1px solid var(--color-line);
   border-radius: 1.25rem;
   background: var(--color-surface);
@@ -2712,8 +2671,6 @@ body:has(.sticky-cta) footer {
 
 @media (min-width: 640px) {
   .popup-panel {
-    /* 24px (was 28px): with the compact form the content is 464px wide,
-       so the field pairs sit side by side. */
     padding: 1.5rem;
   }
 }
@@ -2852,6 +2809,11 @@ body:has(.sticky-cta) footer {
   .consult-fields [data-phone-field] :is(button, input) {
     font-size: 0.875rem;
   }
+}
+
+/* The popup layout: labels 5px above their fields (6px elsewhere). */
+.consult-popup .consult-fields label + * {
+  margin-top: 0.3125rem;
 }
 
 /* The consent line: small, muted, aligned with the fields. */
