@@ -202,11 +202,12 @@ export function ConsultationForm({
       )}
     >
       <div>
-        <Eyebrow className={popup ? "mb-1" : "mb-1.5"}>Start your project</Eyebrow>
+        <Eyebrow className={popup ? "mb-1" : "mb-1 md:mb-1.5"}>Start your project</Eyebrow>
         <h2
           id={headingId}
           className={cn(
-            "font-display text-[1.375rem] font-semibold leading-[1.2] tracking-[-0.02em] text-balance sm:text-[1.5rem]",
+            /* 20px below 768px (mobile compact pass, 2026-10-28), 24px above. */
+            "font-display text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.02em] text-balance md:text-[1.5rem]",
             wide && "xl:text-[1.75rem] xl:leading-[1.15]",
           )}
         >
@@ -215,9 +216,9 @@ export function ConsultationForm({
         <p
           id={introId}
           className={cn(
-            "mt-1.5 text-sm leading-[1.55] text-muted",
+            "mt-1 text-[0.8125rem] leading-[1.5] text-muted md:mt-1.5 md:text-sm md:leading-[1.55]",
             wide && "xl:mt-3",
-            popup && "mt-1 text-[0.8125rem] leading-[1.5] sm:text-[0.84375rem]",
+            popup && "md:mt-1 md:text-[0.84375rem] md:leading-[1.5]",
           )}
         >
           {copy.description}
@@ -237,7 +238,7 @@ export function ConsultationForm({
            website / service / the submit. Narrower (phones) it is one
            column. The viewport is never consulted: the same form lives in
            the hero, a dialog and the audit page. */
-        className={cn("@container relative mt-4", wide && "xl:mt-0", popup && "mt-3.5")}
+        className={cn("@container relative mt-3 md:mt-4", wide && "xl:mt-0", popup && "md:mt-3.5")}
       >
         <Honeypot value={honey} onChange={setHoney} />
 
@@ -245,7 +246,8 @@ export function ConsultationForm({
           className={cn(
             "consult-fields grid gap-x-3 @[25rem]:grid-cols-2",
             /* The popup stays at two columns (its brief), 12px rows. */
-            popup ? "gap-y-3" : "gap-y-3.5 @[42rem]:grid-cols-3",
+            /* Rows: 10px (popup) / 12px on phones, 12 / 14px from 768px. */
+            popup ? "gap-y-2.5 md:gap-y-3" : "gap-y-3 md:gap-y-3.5 @[42rem]:grid-cols-3",
           )}
         >
           <TextField
@@ -315,7 +317,10 @@ export function ConsultationForm({
               disabled={status === "submitting"}
               className={cn(
                 "consult-submit w-full whitespace-nowrap",
-                popup ? "min-h-[2.875rem]" : "mt-0.5 @[42rem]:mt-0 @[42rem]:min-h-11",
+                /* 44px (popup) / 46px on phones; 46 / 48px from 768px. */
+                popup
+                  ? "min-h-11 md:min-h-[2.875rem]"
+                  : "mt-0.5 min-h-[2.875rem] md:min-h-12 @[42rem]:mt-0 @[42rem]:min-h-11",
               )}
             >
               {status === "submitting" ? (
@@ -345,7 +350,7 @@ export function ConsultationForm({
         <p
           className={cn(
             "consult-consent text-xs leading-normal sm:text-[0.8125rem]",
-            popup ? "mt-2" : "mt-2.5",
+            popup ? "mt-2" : "mt-2 md:mt-2.5",
           )}
         >
           {copy.consent}

@@ -389,7 +389,6 @@ p {
   margin-bottom: -0.28em;
 }
 
-
 [data-reveal="pending"][data-reveal-variant="lines"] {
   opacity: 1;
   transform: none;
@@ -513,14 +512,6 @@ p {
   display: none;
 }
 
-:root[data-theme='dark'] .theme-logo-dark {
-  display: block;
-}
-
-:root[data-theme='dark'] .theme-logo-light {
-  display: none;
-}
-
 /* ==========================================================================
    Hero entrance
    --------------------------------------------------------------------------
@@ -596,78 +587,91 @@ p {
    THE HERO (redesigned 2026-10-28 — see components/home/Hero.tsx)
    ========================================================================== */
 
-/* THE STAGE. The hero's own warm wash, full bleed behind the container: a
-   soft orange glow behind the visual, a fainter one toward the form, over
-   a warm tint that fades into the page colour by the section's foot, so
-   the next section joins without a seam. Gradients only — no blur filter,
-   no shapes. `overflow-x: clip` keeps the visual's glow from ever adding
-   horizontal scroll. */
+/* THE STAGE. The hero sits on the plain page colour, like every other
+   section. (Its orange wash — two radial accent glows and an accent-tinted
+   top band — and the coloured halos around the image were removed on
+   MIDIS's instruction, 2026-10-28: they read as an orange glow along the
+   image's top and right.) `overflow-x: clip` stays as a guard for the
+   phone layout, where the image runs edge to edge. */
 .hero-stage {
   overflow-x: clip;
 }
 
-.hero-stage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(55% 42% at 24% 30%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 72%),
-    radial-gradient(36% 38% at 86% 22%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-paper)) 0%, var(--color-paper) 100%);
-}
+/* THE SHOWCASE (2026-10-28). MIDIS's product scene ("MIDIS Website
+   Workspace in Warm Cream.png", 1670x941) at its natural ratio — width 100%, height
+   auto, never cropped or stretched — with no card: no radius, ring,
+   shadow, background or coloured layer of any kind.
 
-:root[data-theme="dark"] .hero-stage::before {
-  background:
-    radial-gradient(55% 42% at 24% 30%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 72%),
-    radial-gradient(36% 38% at 86% 22%, color-mix(in srgb, var(--color-accent) 5%, transparent), transparent 70%);
-}
+   Its edges get a NEUTRAL fade only: a transparency mask, no colour, so
+   what shows through is the page itself. The image's own margins are
+   already close to the page colour (a cream wall on top, light marble
+   below), so the fade just removes the hard line. It covers only quiet
+   margins — plain wall at the top, marble below row ~860, the far sides —
+   never the laptop, phone or mug.
 
-/* THE SHOWCASE (editorial hero, 2026-10-28). MIDIS's branded hero image at
-   the container's full width and its natural 1672x941 ratio — width 100%,
-   height auto, so nothing is cropped or stretched. A large radius, a
-   hairline ring and one soft, low shadow give it depth without a frame;
-   on hover the image drifts in a fraction of a percent. */
+   Phones: the image runs edge to edge (the gutter is cancelled), so only
+   its top and bottom fade.
+
+   THE TOP CROP (2026-10-28). The source's top ~29% is empty wall: the
+   first content rows are 278 (left plant), 306 (laptop, flowers) and 420
+   (phone) of 941. The frame therefore has its own aspect ratio and the
+   image fills it with `object-fit: cover` anchored to the BOTTOM, so the
+   crop comes off the empty wall only — never the devices, the desk or the
+   mug. 252 rows come off on tablets and laptops (689 of 941 shown), 262
+   from 1280px (679 shown), a gentler 236 on phones (705 shown); a short wall strip stays above the
+   tallest leaf, and the top fade stays inside it. */
 .hero-showcase {
+  --fade-x: 0%;
+  --fade-top: 4%;
+  --fade-bottom: 90%;
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
+  aspect-ratio: 1670 / 705;
   /* Sides only: the top margin is the hero's spacing (mt-* utilities). */
-  margin-inline: 0;
-  border-radius: 1rem;
-  background: var(--color-surface);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-fg) 7%, transparent),
-    0 30px 60px -42px rgb(20 21 24 / 0.4);
-}
-
-.hero-showcase img {
-  transition: transform 1200ms var(--ease-out-quart);
+  margin-inline: calc(var(--gutter) * -1);
 }
 
 @media (min-width: 640px) {
   .hero-showcase {
-    border-radius: 1.5rem;
+    --fade-x: 6%;
+    --fade-top: 3%;
+    --fade-bottom: 90%;
+    aspect-ratio: 1670 / 689;
+    margin-inline: 0;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .hero-showcase {
-    border-radius: 2rem;
+    --fade-x: 5%;
+    --fade-top: 2%;
+    --fade-bottom: 91%;
+    /* 262 rows off on wide screens (679 shown): the devices then start
+       ~30px under the statistics, not ~40. */
+    aspect-ratio: 1670 / 679;
   }
 }
 
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .hero-showcase:hover img {
-    transform: scale(1.012);
-  }
+.hero-showcase img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 100%;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0, #000 var(--fade-x), #000 calc(100% - var(--fade-x)), transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+  mask-composite: intersect;
 }
 
-:root[data-theme="dark"] .hero-showcase {
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.07),
-    0 30px 60px -36px rgb(0 0 0 / 0.75);
+/* Phones: no side fade (the image meets the screen edges). */
+@media (max-width: 639px) {
+  .hero-showcase img {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+  }
 }
 
 /* THE EDITORIAL HEADLINE (2026-10-28; enlarged in the alignment pass).
@@ -718,10 +722,6 @@ p {
   color: #d26e0a;
 }
 
-:root[data-theme="dark"] .hero-accent {
-  color: var(--color-accent-ink);
-}
-
 /* The description is centred while stacked, where an uneven last line
    shows most: balance it. (The base `p { text-wrap: pretty }` is unlayered,
    so a Tailwind utility cannot override it; this class can.)
@@ -751,7 +751,6 @@ p {
     display: flex;
   }
 }
-
 
 /* ==========================================================================
    SITE ATMOSPHERE (MIDIS hero + full-site background briefs, 2026-10-23)
@@ -794,10 +793,9 @@ p {
   --ink-veil-rich: 88%;
 }
 
-/* PHONES, LIGHT MODE: thinner veils so the photograph reads (MIDIS mobile
-   brief, 2026-10-23 — "barely noticeable" at the values above). Desktop
-   and tablet keep the approved values; dark mode is untouched, because
-   :root[data-theme="dark"] below outranks this plain :root. */
+/* PHONES: thinner veils so the photograph reads (MIDIS mobile brief,
+   2026-10-23 — "barely noticeable" at the values above). Desktop and
+   tablet keep the approved values. */
 @media (max-width: 639.98px) {
   :root {
     --veil-edge: 84%;
@@ -806,16 +804,6 @@ p {
     --veil-soft: 80%;
     --veil-rich: 74%;
   }
-}
-
-:root[data-theme="dark"] {
-  --veil-edge: 87%;
-  --veil-clean: 93%;
-  --veil-subtle: 87%;
-  --veil-soft: 84%;
-  --veil-rich: 76%;
-  --ink-veil: 96%;
-  --ink-veil-rich: 86%;
 }
 
 /* ---- Layer 3 + 4: the light sections ----
@@ -962,10 +950,12 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   /* Redesign 2026-10-28: the faintest warm tint under the header, white
      (raised charcoal in dark mode) everywhere the fields are. */
   background: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 4%, var(--color-surface)) 0, var(--color-surface) 9rem);
+  /* Softened in the hero blend rework (2026-10-28): the panel keeps its
+     surface and hairline for readability, but no longer lifts off the
+     page as a separate card (the 34px, 30% layer is gone). */
   box-shadow:
     0 1px 2px rgb(20 21 24 / 0.04),
-    0 12px 24px -18px rgb(20 21 24 / 0.12),
-    0 34px 64px -40px rgb(20 21 24 / 0.3);
+    0 18px 40px -30px rgb(20 21 24 / 0.16);
 }
 
 /* The orange top edge, inset from the corners so it never meets the
@@ -980,12 +970,6 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   border-radius: 0 0 3px 3px;
   background: linear-gradient(90deg, transparent, var(--color-accent) 18%, var(--color-accent) 82%, transparent);
   pointer-events: none;
-}
-
-:root[data-theme="dark"] .hero-form-shell {
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.3),
-    0 34px 64px -36px rgb(0 0 0 / 0.75);
 }
 
 .hero-form-shell .estimator-actions {
@@ -2346,10 +2330,6 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   }
 }
 
-:root[data-theme="dark"] .fab {
-  border-color: rgb(255 255 255 / 0.16);
-}
-
 /* ---- the tooltips ----
    Compact labels sliding out LEFT of the hovered/focused button, never
    reflowing anything. Pointer devices only — touch stays icon-only and the
@@ -2462,12 +2442,6 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
     margin-inline: auto;
     bottom: calc(1.5rem - var(--ring) + env(safe-area-inset-bottom, 0px));
   }
-}
-
-:root[data-theme="dark"] .sticky-cta {
-  border-color: rgb(255 255 255 / 0.12);
-  background: rgb(24 24 27 / 0.5);
-  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.8);
 }
 
 .sticky-cta-btn {
@@ -2622,7 +2596,8 @@ body:has(.sticky-cta) footer {
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-padding-block: 1rem;
-  padding: 1.125rem;
+  /* 16px on phones (mobile compact pass, 2026-10-28; was 18px). */
+  padding: 1rem;
   border: 1px solid var(--color-line);
   border-radius: 1.25rem;
   background: var(--color-surface);
@@ -2721,9 +2696,10 @@ body:has(.sticky-cta) footer {
 
 /* THE COMPACT FIELDS (MIDIS brief, 2026-10-28), scoped to this form so the
    audit form's own fields keep their size. Every control — text, email,
-   URL, the phone field's wrapper and the select — is one height: 46px on
-   phones (16px text, which also stops iOS zooming into a focused field),
-   44px with 14px text from 640px. Labels 13px, 6px above their control;
+   URL, the phone field's wrapper and the select — is one height, 44px
+   (46px on phones until the mobile compact pass), with 16px text on
+   phones (which also stops iOS zooming into a focused field) and 14px
+   from 640px. Labels 13px, 6px above their control (4px below 768px);
    errors tighter under it. */
 .consult-fields label {
   font-size: 0.8125rem;
@@ -2735,7 +2711,7 @@ body:has(.sticky-cta) footer {
 }
 
 .consult-fields :is(input:not([type="search"], [type="tel"]), select) {
-  height: 2.875rem;
+  height: 2.75rem;
   padding-block: 0;
 }
 
@@ -2745,7 +2721,7 @@ body:has(.sticky-cta) footer {
 }
 
 .consult-fields [data-phone-field] {
-  height: 2.875rem;
+  height: 2.75rem;
 }
 
 /* A slimmer country-code button (flag, code, chevron), so the number box
@@ -2756,16 +2732,34 @@ body:has(.sticky-cta) footer {
   padding-right: 0.5rem;
 }
 
-
 .consult-fields [id$="-error"] {
   margin-top: 0.375rem;
   font-size: 0.8125rem;
 }
 
+/* MOBILE COMPACT PASS (2026-10-28): below 768px labels sit 4px above
+   their field on an 18px line, errors 4px under it. Every control is 44px
+   at every width; phones keep 16px text, which stops iOS zooming into a
+   focused field. */
+@media (max-width: 767px) {
+  .consult-fields label {
+    line-height: 1.125rem;
+  }
+
+  /* Two selectors: the second outranks the popup's own 5px rule below. */
+  .consult-fields label + *,
+  .consult-form.consult-popup .consult-fields label + * {
+    margin-top: 0.25rem;
+  }
+
+  .consult-fields [id$="-error"] {
+    margin-top: 0.25rem;
+  }
+}
+
 @media (min-width: 640px) {
   .consult-fields :is(input:not([type="search"], [type="tel"]), select),
   .consult-fields [data-phone-field] {
-    height: 2.75rem;
     font-size: 0.875rem;
   }
 
@@ -3749,9 +3743,6 @@ body:has(.sticky-cta) footer {
 
 /* Dark theme: a charcoal ribbon would vanish into the page, so the ribbon
    lifts to a graphite that still reads as the same object. */
-:root[data-theme="dark"] .pr-board {
-  --pr-ribbon: #34353b;
-}
 
 /* A soft, local lift of the page colour behind the chart, so the
    photograph never puts detail behind the descriptions. Feathered on all
@@ -3787,10 +3778,6 @@ body:has(.sticky-cta) footer {
   /* Depth: one soft settling shadow under the whole ribbon. Static, so it
      rasterises once — the moving fill is drawn above it, unfiltered. */
   filter: drop-shadow(0 12px 18px rgb(20 21 24 / 0.16));
-}
-
-:root[data-theme="dark"] .pr-base {
-  filter: drop-shadow(0 12px 22px rgb(0 0 0 / 0.5));
 }
 
 .pr-lit {
@@ -4088,20 +4075,6 @@ body:has(.sticky-cta) footer {
   }
 }
 
-:root[data-theme="dark"] .t-card {
-  border-color: rgb(255 255 255 / 0.1);
-  background: rgb(24 24 27 / 0.72);
-  box-shadow:
-    0 24px 60px -36px rgb(0 0 0 / 0.8),
-    inset 0 1px 0 rgb(255 255 255 / 0.06);
-}
-
-@media (hover: hover) {
-  :root[data-theme="dark"] .t-card:hover {
-    border-color: rgb(239 135 22 / 0.4);
-  }
-}
-
 /* Phones and tablets: one card, so the blur stays (unlike the many-card
    glass utilities), at a lighter radius and a more opaque fill. */
 @media (max-width: 1023px) {
@@ -4109,9 +4082,7 @@ body:has(.sticky-cta) footer {
     backdrop-filter: blur(10px) saturate(130%);
     background: rgb(255 255 255 / 0.84);
   }
-  :root[data-theme="dark"] .t-card {
-    background: rgb(24 24 27 / 0.84);
-  }
+  
 }
 
 @keyframes t-slide-in {
@@ -4171,121 +4142,9 @@ body:has(.sticky-cta) footer {
   }
 }
 
-/* ==========================================================================
-   DARK THEME
-   --------------------------------------------------------------------------
-   Applied ONLY through `:root[data-theme="dark"]` — an explicit choice, set
-   by the toggle, remembered in localStorage, and replayed before first
-   paint by the inline script in the layout. LIGHT IS THE DEFAULT (MIDIS
-   instruction, 2026-10-20): the OS preference is not consulted, so there is
-   no `prefers-color-scheme` block any more. The script always writes the
-   attribute, which also means `:not([data-theme="light"])` selectors that
-   remain elsewhere are simply equivalent to `[data-theme="dark"]`.
-
-   Only Group 1 moves. The dark bands go deeper rather than lighter, so a
-   section that was a dark band on a light page is still a distinct band on
-   a dark page instead of dissolving into it.
-   ========================================================================== */
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --color-paper: #111113;
-  --color-surface: #18181b;
-  --color-surface-2: #212125;
-  --color-fg: #f6f6f5;
-  /* 7.9:1 on the dark page — comfortably past AA for body text. */
-  --color-muted: #a8a8a4;
-  --color-muted-strong: #b8b8b4;
-  --color-line: #2b2b30;
-
-  /* The bands go DEEPER than the page, not lighter. */
-  --color-ink: #09090b;
-  --color-ink-soft: #141417;
-  --color-ink-raised: #161619;
-  --color-line-dark: #2b2b30;
-
-  /* The brand orange is 7.1:1 on #111113, so it needs no darkening here. */
-  --color-accent-ink: #ef8716;
-  /* A warm tint rather than a pale wash; #fdf1e4 would glare on a dark page. */
-  --color-accent-soft: #2a1b0b;
-  --color-accent-line: #46300f;
-
-  --color-danger: #ff8f85;
-  --color-danger-soft: #2a1210;
-
-  /* The floating header. Deeper than the page so the shell still reads
-     as a distinct surface once content scrolls beneath it. */
-  --nav-bg: rgb(24 24 27 / 0.7);
-  --nav-bg-scrolled: rgb(24 24 27 / 0.9);
-  --nav-border: rgb(255 255 255 / 0.1);
-  --nav-border-scrolled: rgb(255 255 255 / 0.14);
-  --nav-shadow: 0 10px 34px -22px rgb(0 0 0 / 0.75);
-  --nav-panel-bg: rgb(17 17 19 / 0.97);
-}
-
-/*
- * NO `prefers-color-scheme` BLOCK ANY MORE — deliberately. Light is the
- * DEFAULT theme on MIDIS's instruction (2026-10-20): a first-time visitor
- * sees light whatever their OS says, and only the toggle switches themes.
- * The inline script in layout.tsx always writes `data-theme` ("dark" only
- * for a stored dark choice), so the attribute selectors above are the whole
- * mechanism.
- */
-
-/* --------------------------------------------------------------------------
-   The switch itself
-   --------------------------------------------------------------------------
-   Only colour properties transition, and only on the elements that actually
-   carry a themed colour. `transition: all` here would animate every layout
-   property on every element on the page during a theme change, which is both
-   expensive and a source of visible reflow.
-
-   `.theme-switching` is set by the toggle for the length of the transition
-   and then removed, so these rules are inert during normal scrolling — a
-   permanent colour transition would otherwise fight every hover state.
-   -------------------------------------------------------------------------- */
-
-.theme-switching,
-.theme-switching *::before,
-.theme-switching *::after,
-.theme-switching * {
-  transition:
-    background-color 260ms var(--ease-out-quart),
-    border-color 260ms var(--ease-out-quart),
-    color 260ms var(--ease-out-quart),
-    fill 260ms var(--ease-out-quart),
-    stroke 260ms var(--ease-out-quart),
-    box-shadow 260ms var(--ease-out-quart) !important;
-  transition-delay: 0ms !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-switching,
-  .theme-switching *::before,
-  .theme-switching *::after,
-  .theme-switching * {
-    transition: none !important;
-  }
-}
-
 /* --------------------------------------------------------------------------
    Theme-dependent adjustments that a token swap cannot express
    -------------------------------------------------------------------------- */
-
-/*
- * Glass.
- *
- * The dark recipe over a dark page produces a barely-visible panel, so each
- * theme gets its own surface and border rather than the same alpha values
- * applied blindly. Readability wins over transparency: in light mode the
- * panel is opaque enough to carry text regardless of what sits behind it.
- */
-:root[data-theme="dark"] .glass-dark,
-:root:not([data-theme="light"]) .glass-dark {
-  border-color: rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.05);
-}
 
 /*
  * (The trust section's logo cells keep fixed light/dark tones in both
@@ -4302,57 +4161,6 @@ body:has(.sticky-cta) footer {
 
 .logo-on-dark {
   display: none;
-}
-
-:root[data-theme="dark"] .logo-on-light {
-  display: none;
-}
-
-:root[data-theme="dark"] .logo-on-dark {
-  display: block;
-}
-
-/* (No prefers-color-scheme fallback: data-theme is always set explicitly.) */
-
-/* --------------------------------------------------------------------------
-   Theme toggle icons
-   --------------------------------------------------------------------------
-   The sun shows while the page is light, the moon while it is dark — the
-   icon names the theme you are IN, and the button's accessible label names
-   the theme you would move TO. Both are rendered; CSS picks, for the same
-   first-paint reason as the wordmark.
-   -------------------------------------------------------------------------- */
-
-.theme-icon-sun,
-.theme-icon-moon {
-  transition:
-    opacity var(--dur-base) var(--ease-out-quart),
-    transform var(--dur-base) var(--ease-out-quart);
-}
-
-.theme-icon-moon {
-  opacity: 0;
-  transform: rotate(-70deg) scale(0.6);
-}
-
-:root[data-theme="dark"] .theme-icon-sun {
-  opacity: 0;
-  transform: rotate(70deg) scale(0.6);
-}
-
-:root[data-theme="dark"] .theme-icon-moon {
-  opacity: 1;
-  transform: none;
-}
-
-/* (No prefers-color-scheme fallback: data-theme is always set explicitly.) */
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-icon-sun,
-  .theme-icon-moon {
-    transition: opacity var(--dur-fast) linear;
-    transform: none !important;
-  }
 }
 
 /* ==========================================================================

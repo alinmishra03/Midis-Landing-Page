@@ -96,31 +96,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${interTight.variable}`}>
       <head>
         {/*
-          THEME, APPLIED BEFORE FIRST PAINT.
-
-          This runs synchronously in <head>, so `data-theme` is on <html>
-          before the browser paints anything — which is the whole reason it
-          is an inline string rather than a component. Deferring it to React
-          would mean painting one theme first and correcting it after
-          hydration, which is the flash this exists to prevent.
-
-          LIGHT IS THE DEFAULT, on MIDIS's instruction of 2026-10-20: a
-          first-time visitor sees the light theme regardless of their OS
-          preference, and only an explicit stored "dark" choice (made with
-          the toggle, remembered in localStorage) switches the page. The
-          attribute is therefore ALWAYS written — "dark" for a stored dark
-          choice, "light" otherwise — and globals.css no longer consults
-          `prefers-color-scheme` at all.
-
-          Wrapped in try/catch because reading localStorage throws outright
-          in some privacy modes; the catch still pins the light default.
+          ONE THEME (MIDIS instruction, 2026-10-28): the site is light only.
+          The dark theme, its toggle and the inline script that replayed a
+          stored dark choice before first paint were removed; a visitor who
+          had chosen dark simply sees the light site.
         */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              'try{var t=localStorage.getItem("midis-theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}',
-          }}
-        />
         {/*
           Without JavaScript, the IntersectionObserver in <Reveal> never
           runs. The component is written to render visible by default so

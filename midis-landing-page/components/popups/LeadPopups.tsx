@@ -297,32 +297,41 @@ export function LeadPopups() {
     };
     document.addEventListener("keydown", onKeyDown);
 
-    /* Touch devices: once the on-screen keyboard has opened, bring the
-       focused field back into the middle of the dialog's own scroll area
-       so the keyboard never sits over it. */
+    /* Touch devices: keep the focused field clear of the on-screen
+       keyboard. Once after focus (the keyboard is opening), and again
+       whenever the visible viewport resizes while a field in the dialog
+       has focus — the keyboard arriving or changing height — the field is
+       scrolled to the middle of the dialog's own scroll area. */
     const panelNode = panelRef.current;
     let keyboardTimer: number | undefined;
-    const onFocusIn = (event: FocusEvent) => {
-      const target = event.target;
-      if (
-        !(target instanceof HTMLElement) ||
-        !target.matches("input, select, textarea") ||
-        !window.matchMedia("(pointer: coarse)").matches
-      ) {
-        return;
-      }
-      window.clearTimeout(keyboardTimer);
-      keyboardTimer = window.setTimeout(
-        () => target.scrollIntoView({ block: "center", behavior: "smooth" }),
-        320,
-      );
+    const focusedField = () => {
+      const active = document.activeElement;
+      return active instanceof HTMLElement &&
+        panelNode?.contains(active) &&
+        active.matches("input, select, textarea")
+        ? active
+        : null;
     };
+    const recentre = () => focusedField()?.scrollIntoView({ block: "center" });
+    const onFocusIn = () => {
+      if (!focusedField() || !window.matchMedia("(pointer: coarse)").matches) return;
+      window.clearTimeout(keyboardTimer);
+      keyboardTimer = window.setTimeout(recentre, 320);
+    };
+    const onViewportResize = () => {
+      if (!window.matchMedia("(pointer: coarse)").matches) return;
+      window.clearTimeout(keyboardTimer);
+      keyboardTimer = window.setTimeout(recentre, 60);
+    };
+    const viewport = window.visualViewport ?? window;
     panelNode?.addEventListener("focusin", onFocusIn);
+    viewport.addEventListener("resize", onViewportResize);
 
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
       panelNode?.removeEventListener("focusin", onFocusIn);
+      viewport.removeEventListener("resize", onViewportResize);
       window.clearTimeout(keyboardTimer);
     };
   }, [open, dismiss]);

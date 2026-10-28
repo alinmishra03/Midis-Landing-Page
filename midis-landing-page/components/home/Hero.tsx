@@ -2,8 +2,9 @@ import Image from "next/image";
 import { CountUp } from "@/components/ui/CountUp";
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import { hero } from "@/content/sections";
-/* MIDIS's own branded hero image (supplied 2026-10-28; filename as given). */
-import heroImage from "@/public/images/hero/MIDIS Workspace_ Websites That Convert (1).png";
+/* MIDIS's hero image (supplied 2026-10-28, replacing "Midis Website
+   Product Hero Scene.png"; filename as given). */
+import heroImage from "@/public/images/hero/MIDIS Website Workspace in Warm Cream.png";
 
 /**
  * SECTION 1 — Hero.
@@ -19,11 +20,13 @@ import heroImage from "@/public/images/hero/MIDIS Workspace_ Websites That Conve
  *      (alignment passes, 2026-10-28). Below 1200px the headline runs full
  *      width and the description + statistics share a row beneath it
  *      (from 1024px) or stack (phones and tablets).
- *   2. THE SHOWCASE — MIDIS's branded workspace image (the MIDIS logo, the
- *      site on a laptop and a phone, the MIDIS mug; supplied 2026-10-28) at
- *      the container's full width and its natural 1672x941 ratio (nothing
- *      cropped, nothing stretched), with a large radius and a hairline
- *      ring. It is the section's visual anchor, not a card beside a form.
+ *   2. THE SHOWCASE — MIDIS's product scene (the MIDIS site on a laptop
+ *      and a phone, the MIDIS mug, on a cream wall and marble desk;
+ *      supplied 2026-10-28) at
+ *      the container's full width (edge to edge on phones) and its natural
+ *      1672x941 ratio (nothing cropped, nothing stretched). No card: its
+ *      margins fade into the hero's own background through a mask
+ *      (`.hero-showcase`, globals.css), so it reads as part of the page.
  *      The panel below overlaps only its marble desk edge, never the
  *      devices or the logo.
  *   3. THE CONSULTATION — the shared ConsultationForm in its "wide" layout,
@@ -142,16 +145,17 @@ export function Hero() {
 
         {/* ================= 2. the showcase ================= */}
         <figure
-          className="hero-showcase hero-reveal mt-6 sm:mt-8 lg:mt-10"
+          className="hero-showcase hero-reveal mt-2 sm:mt-4"
           style={{ "--d": "160ms" } as React.CSSProperties}
         >
           <Image
             src={heroImage}
-            alt="The MIDIS logo above a laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”, on a desk with an orange MIDIS mug"
+            alt="A laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”, on a marble desk with an orange MIDIS mug"
             priority
             placeholder="blur"
-            sizes="(min-width: 1830px) 1600px, 93vw"
-            className="block h-auto w-full"
+            sizes="(min-width: 1830px) 1600px, (min-width: 640px) 93vw, 100vw"
+            /* Size and the top crop: .hero-showcase img (globals.css). */
+            className="block"
           />
         </figure>
 
@@ -165,7 +169,7 @@ export function Hero() {
         */}
         <div
           id="estimator"
-          className="hero-form-shell hero-panel hero-rise relative z-10 mt-5 p-5 sm:-mt-6 sm:mx-6 sm:p-7 lg:-mt-10 lg:mx-10 xl:-mt-14 xl:px-10 xl:py-9"
+          className="hero-form-shell hero-panel hero-rise relative z-10 mt-1 p-4 sm:-mt-6 sm:mx-6 sm:p-5 md:p-7 lg:-mt-10 lg:mx-10 xl:-mt-14 xl:px-10 xl:py-9"
           style={{ "--d": "300ms" } as React.CSSProperties}
         >
           <ConsultationForm source="homepage" layout="wide" />

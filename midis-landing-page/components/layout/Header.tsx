@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Logo } from "./Logo";
-import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
 
@@ -226,8 +225,6 @@ export function Header() {
 
               {/* ================= right: the actions ================= */}
               <div className="nav-group-end">
-                <ThemeToggle />
-
                 <Button href="#estimator" size="sm" className="hidden sm:inline-flex">
                   Get a Free Consultation
                 </Button>
