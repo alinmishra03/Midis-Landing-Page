@@ -29,9 +29,9 @@ import { cn } from "@/lib/utils";
  * The "What moves the number" cost-factor cards that sat beneath the grid
  * were removed on MIDIS's instruction, 2026-10-28.
  *
- * The dark band is deliberate. It separates this section from the FAQ
- * accordion directly beneath it, and it gives the final CTA something to
- * build on rather than arriving as the page's only dark moment.
+ * No dark band (MIDIS, 2026-10-28): the section sits on the shared page
+ * background like every other, so the page reads as one continuous
+ * landing page. The featured package keeps MIDIS's charcoal as a card.
  */
 
 function Check() {
@@ -57,30 +57,12 @@ function Check() {
 
 export function Pricing() {
   return (
-    <Section
-      id="pricing"
-      tone="ink"
-      labelledBy="pricing-heading"
-      className="overflow-hidden"
-    >
-      {/* The wash the glass cards blur against. Two very soft orange pools,
-          drifting slowly. Decorative, so it is hidden from assistive tech
-          and stops entirely under reduced motion. */}
-      <div
-        aria-hidden="true"
-        className="ambient pointer-events-none absolute inset-0 -z-0"
-        style={{
-          background:
-            "radial-gradient(48rem 32rem at 12% 8%, rgba(239,135,22,0.16), transparent 60%), radial-gradient(42rem 30rem at 88% 92%, rgba(239,135,22,0.10), transparent 62%)",
-        }}
-      />
+    <Section id="pricing" tone="paper" labelledBy="pricing-heading">
       <SectionHeader
-        className="relative z-10"
         eyebrow="Investment"
         heading={pricing.headline}
         headingId="pricing-heading"
         sub={pricing.subheadline}
-        tone="ink"
         aside={
           <Button href={pricing.cta.href} size="lg">
             {pricing.cta.label}
@@ -90,7 +72,7 @@ export function Pricing() {
       />
 
       {/* ================= the package grid ================= */}
-      <div className="container-wide relative z-10 mt-[var(--space-block)]">
+      <div className="container-wide mt-[var(--space-block)]">
         <ul className="grid items-stretch gap-4 sm:gap-5 lg:grid-cols-3">
           {pricingTiers.map((tier, index) => (
             <Reveal
@@ -100,32 +82,36 @@ export function Pricing() {
               delay={index * 90}
               className="h-full"
             >
+              {/* On the shared page background (2026-10-28; the section was
+                  a full-width charcoal band): the standard packages are
+                  light cards, the featured one a charcoal card with an
+                  orange edge — MIDIS's charcoal kept inside the component. */}
               <article
                 className={cn(
-                  "glass-dark flex h-full flex-col rounded-[1.25rem] p-6 sm:p-8",
+                  "flex h-full flex-col rounded-[1.25rem] border p-6 sm:p-8",
                   "transition-[border-color,transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-out-quart)]",
-                  "lg:hover:-translate-y-1.5 lg:hover:shadow-[0_32px_70px_-32px_rgba(0,0,0,0.65)]",
+                  "lg:hover:-translate-y-1.5 lg:hover:shadow-[0_28px_60px_-34px_rgba(20,21,24,0.35)]",
                   "motion-reduce:transition-none motion-reduce:lg:hover:translate-y-0",
                   tier.featured
-                    ? "border-accent/45 bg-accent/[0.07] hover:border-accent/70"
-                    : "hover:border-white/25",
+                    ? "on-dark border-accent/60 bg-ink text-white hover:border-accent"
+                    : "border-line bg-surface hover:border-fg/20",
                 )}
               >
-                <h3 className="text-xl font-semibold leading-snug text-white">
+                <h3 className={cn("text-xl font-semibold leading-snug", tier.featured ? "text-white" : "text-fg")}>
                   {tier.name}
                 </h3>
-                <p className="mt-2.5 text-[0.9375rem] leading-relaxed text-muted-dark">
+                <p className={cn("mt-2.5 text-[0.9375rem] leading-relaxed", tier.featured ? "text-muted-dark" : "text-muted")}>
                   {tier.description}
                 </p>
 
                 {/* ---- the price slot ----
                     Where the reference shows a figure, this says plainly how
                     MIDIS prices — see the note at the top of this file. */}
-                <div className="mt-6 border-y border-white/10 py-5">
-                  <p className="font-display text-2xl font-semibold text-white">
+                <div className={cn("mt-6 border-y py-5", tier.featured ? "border-white/10" : "border-line")}>
+                  <p className={cn("font-display text-2xl font-semibold", tier.featured ? "text-white" : "text-fg")}>
                     {tier.priceLabel}
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-dark">
+                  <p className={cn("mt-1 text-xs leading-relaxed", tier.featured ? "text-muted-dark" : "text-muted")}>
                     {tier.priceNote}
                   </p>
                 </div>
@@ -134,7 +120,10 @@ export function Pricing() {
                   {tier.scope.map((line) => (
                     <li
                       key={line}
-                      className="flex items-start gap-2.5 text-sm leading-relaxed text-white/85"
+                      className={cn(
+                        "flex items-start gap-2.5 text-sm leading-relaxed",
+                        tier.featured ? "text-white/85" : "text-fg/85",
+                      )}
                     >
                       <Check />
                       {line}
@@ -145,7 +134,7 @@ export function Pricing() {
                 <Button
                   href={pricing.cta.href}
                   size="lg"
-                  variant={tier.featured ? "primary" : "onDark"}
+                  variant={tier.featured ? "primary" : "secondary"}
                   className="mt-8 w-full"
                 >
                   {pricing.cta.label}
@@ -158,7 +147,7 @@ export function Pricing() {
 
         {/* The policy the grid stands on, stated rather than implied. */}
         <Reveal delay={120}>
-          <p className="mx-auto mt-7 max-w-3xl text-center text-sm leading-relaxed text-muted-dark">
+          <p className="mx-auto mt-7 max-w-3xl text-center text-sm leading-relaxed text-muted">
             {pricingTiersNote}
           </p>
         </Reveal>

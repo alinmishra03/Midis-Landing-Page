@@ -36,10 +36,11 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
  * margin-bottom mirrors the override to keep the heading block height
  * identical.
  *
- * CONTRAST. White on #141518 is 15.8:1. The accent gradient runs white to
- * #EF8716, which is 7.26:1 at its orange end, so the treatment never costs
- * legibility — and an `@supports` fallback paints solid accent rather than
- * transparent text where `background-clip: text` is unavailable.
+ * CONTRAST. Charcoal on the page is 17:1. Since 2026-10-28 the section sits
+ * on the shared page background (it was a full-width charcoal band), so the
+ * accent gradient runs charcoal into the readable orange (#D26E0A) — an
+ * `@supports` fallback paints solid orange where `background-clip: text`
+ * is unavailable.
  *
  * TWO CTAs, BOTH REAL. "Start Your Project" goes to the estimator;
  * "Book a Consultation" goes to the audit form, which is the route that
@@ -47,46 +48,26 @@ import { WhatsAppIcon } from "@/components/ui/WhatsAppIcon";
  * rules it out, and a button that moves under the cursor is a liability
  * before it is a flourish.
  *
- * SEAMLESS JOIN WITH FOOTER. The section carries no bottom padding of its
- * own. Instead, a transparent spacer div at the end provides breathing room
- * while letting the ambient orange glow (positioned at 110% so it bleeds
- * past the section edge) carry into the footer visually. The footer's own
- * complementary gradient picks up the warmth at its top edge, completing
- * the continuous composition.
+ * ONE CONTINUOUS PAGE (MIDIS, 2026-10-28). No band, no glow, no spacer:
+ * the section shares the page background with the FAQs above it, so the
+ * FAQs flow straight into it, and it keeps its prominence through type
+ * and the orange accent alone.
  */
 
 export function FinalCta() {
   return (
     <section
       aria-labelledby="final-cta-heading"
-      data-tone="ink"
-      data-veil="rich"
-      data-end="solid"
-      className="on-dark relative overflow-hidden bg-ink pt-[var(--space-section)] text-white"
+      data-tone="paper"
+      className="relative py-[var(--space-section)] text-fg"
     >
-      {/*
-        Two coordinated ambient washes. The lower pool is positioned at
-        110% Y so it bleeds past the section's bottom edge into the footer
-        above, creating a continuous glow rather than a hard cutoff. The
-        upper wash lifts the top from flat black. Both drift slowly under
-        ambient animation; stopped under reduced motion.
-      */}
-      <div
-        aria-hidden="true"
-        className="ambient pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(52rem 34rem at 50% 112%, rgba(239,135,22,0.24), transparent 62%), radial-gradient(58rem 22rem at 50% -4%, rgba(255,255,255,0.04), transparent 68%)",
-        }}
-      />
-
-      <div className="container-site relative z-10">
+      <div className="container-site">
         {/* A controlled measure: wide enough for the headline to read as
             display type, narrow enough that the description never runs long
             lines across a 1920px screen. */}
         <div className="mx-auto max-w-4xl text-center">
           <Reveal>
-            <Eyebrow tone="ink" align="center">
+            <Eyebrow align="center">
               Let&apos;s begin
             </Eyebrow>
           </Reveal>
@@ -118,7 +99,7 @@ export function FinalCta() {
           </Reveal>
 
           <Reveal delay={280}>
-            <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-muted-dark sm:text-lg">
+            <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
               {finalCta.subheadline}
             </p>
           </Reveal>
@@ -134,7 +115,7 @@ export function FinalCta() {
 
               <Button
                 href={finalCta.secondaryCta.href}
-                variant="onDark"
+                variant="secondary"
                 size="lg"
               >
                 {finalCta.secondaryCta.label}
@@ -146,17 +127,18 @@ export function FinalCta() {
               naturally on very narrow screens. The email address lives in
               the footer only (MIDIS instruction, 2026-10-24). */}
           <Reveal delay={460}>
-            <p className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted-dark">
+            <p className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted">
               <span>Or reach us directly —</span>
-              {/* Brand green + glyph (MIDIS WhatsApp-branding brief,
-                  2026-10-21); #25D366 on this ink band reads at ~8:1. */}
+              {/* Brand-green glyph (MIDIS WhatsApp-branding brief,
+                  2026-10-21) with charcoal text: #25D366 as TEXT is only
+                  ~1.9:1 on the light page, so the green stays on the icon. */}
               <a
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link-underline-accent inline-flex items-center gap-1.5 font-medium text-[#25D366] transition-colors hover:text-[#1EBE5D]"
+                className="link-underline-accent inline-flex items-center gap-1.5 font-medium text-fg transition-colors hover:text-accent-ink"
               >
-                <WhatsAppIcon className="size-4" />
+                <WhatsAppIcon className="size-4 text-[#25D366]" />
                 WhatsApp
               </a>
             </p>
@@ -164,15 +146,6 @@ export function FinalCta() {
         </div>
       </div>
 
-      {/*
-        Transparent spacer. This div has no background of its own — the
-        section's overflow:hidden is the only boundary. It gives the orange
-        glow (at 112% Y in the radial above) room to be visible before the
-        footer starts, creating the seamless gradient join without any
-        bottom padding on the section that would introduce a dark gap between
-        the CTA's glow and the footer's matching gradient.
-      */}
-      <div aria-hidden="true" className="h-20 sm:h-24" />
     </section>
   );
 }

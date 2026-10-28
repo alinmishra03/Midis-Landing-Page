@@ -62,8 +62,11 @@ interface Geometry {
   band: number;
   /** The whole centre line. */
   d: string;
-  /** Straight segment of each stage, for hover/selection highlights. */
-  stageSegments: { x1: number; x2: number; y: number }[];
+  /** Each stage's stretch of the ribbon, as fractions of the path, for
+      the hover/selection highlight. A stage next to a U-turn runs to the
+      turn's midpoint, so its highlight follows the curve instead of
+      stopping square where the curve begins. */
+  stageSpans: { start: number; end: number }[];
   /** Fraction of the path at the middle of each stage's segment. */
   stageMid: number[];
   /** Chevron joints between stages: position and direction (+1 → right). */
@@ -85,6 +88,8 @@ function buildPath(runs: Run[], turnRoom: number, band: number) {
   let length = 0;
   /** Cumulative length at the start of each run. */
   const runStart: number[] = [];
+  /** Cumulative length at the midpoint of the U-turn after each run. */
+  const turnMid: number[] = [];
 
   runs.forEach((run, index) => {
     runStart.push(length);
@@ -102,6 +107,7 @@ function buildPath(runs: Run[], turnRoom: number, band: number) {
     d += ` A ${radius} ${radius} 0 0 ${sweep} ${x + dir * radius} ${run.y + radius}`;
     if (straight > 0.5) d += ` L ${x + dir * radius} ${next.y - radius}`;
     d += ` A ${radius} ${radius} 0 0 ${sweep} ${x} ${next.y}`;
+    turnMid.push(length + (Math.PI * radius + Math.max(0, straight)) / 2);
     length += Math.PI * radius + Math.max(0, straight);
     /* The next run starts where the turn lands. */
     if (Math.abs(next.from - x) > 0.5) {
@@ -110,7 +116,7 @@ function buildPath(runs: Run[], turnRoom: number, band: number) {
     }
   });
 
-  return { d, length, runStart };
+  return { d, length, runStart, turnMid };
 }
 
 function measure(board: HTMLElement, wide: boolean): Geometry | null {
@@ -177,7 +183,7 @@ function measure(board: HTMLElement, wide: boolean): Geometry | null {
     });
   }
 
-  const { d, length, runStart } = buildPath(runs, turn, band);
+  const { d, length, runStart, turnMid } = buildPath(runs, turn, band);
   const last = runs[runs.length - 1];
   const lastDir: 1 | -1 = last.to > last.from ? 1 : -1;
   /* Fractions of the stroked path (the arrowhead is drawn separately and
@@ -193,11 +199,24 @@ function measure(board: HTMLElement, wide: boolean): Geometry | null {
     h,
     band,
     d,
-    stageSegments: stageRanges.map((range) => ({
-      x1: Math.min(range.x1, range.x2),
-      x2: Math.max(range.x1, range.x2),
-      y: runs[range.run].y,
-    })),
+    stageSpans: stageRanges.map((range) => {
+      const run = runs[range.run];
+      /* A stage that opens its run (after a turn) starts at that turn's
+         midpoint; one that closes its run (before a turn) ends at the next
+         turn's midpoint; the first and last stages reach the path ends. */
+      const opens = Math.abs(range.x1 - run.from) < 0.5;
+      const closes = Math.abs(range.x2 - run.to) < 0.5;
+      const start =
+        range.run === 0 && opens
+          ? 0
+          : opens
+            ? turnMid[range.run - 1]
+            : runStart[range.run] + Math.abs(range.x1 - run.from);
+      const end = closes
+        ? (turnMid[range.run] ?? length)
+        : runStart[range.run] + Math.abs(range.x2 - run.from);
+      return { start: start / length, end: end / length };
+    }),
     stageMid,
     joints,
     arrow: { x: last.to, y: last.y, dir: lastDir },
@@ -359,18 +378,23 @@ export function Process() {
                 <ArrowHead geo={geo} ref={arrowFillRef} hidden />
               </g>
 
-              {/* hover / selection: the stage's own run, lit — above the fill, so
-                  reached stages light up too */}
-              {focus !== null ? (
-                <line
+              {/* hover / selection: the stage's own stretch of the ribbon, lit —
+                  above the fill, so reached stages light up too. All five are
+                  always drawn and only their opacity changes (globals.css),
+                  so lighting a stage never adds, removes or moves anything. */}
+              {geo.stageSpans.map((span, index) => (
+                <path
+                  key={index}
                   className="pr-lit"
-                  x1={geo.stageSegments[focus].x1}
-                  x2={geo.stageSegments[focus].x2}
-                  y1={geo.stageSegments[focus].y}
-                  y2={geo.stageSegments[focus].y}
+                  data-active={focus === index || undefined}
+                  d={geo.d}
+                  pathLength={1}
+                  fill="none"
                   strokeWidth={geo.band}
+                  strokeDasharray={`${span.end - span.start} 1`}
+                  strokeDashoffset={-span.start}
                 />
-              ) : null}
+              ))}
 
               {/* chevron joints — notches cut through base and fill alike */}
               {geo.joints.map((joint, index) => {
@@ -398,8 +422,14 @@ export function Process() {
                   data-reached="false"
                   data-active={active || undefined}
                   className="pr-stage"
-                  onMouseEnter={() => setHover(index)}
-                  onMouseLeave={() => setHover(null)}
+                  /* A real mouse only: on touch screens a tap would leave a
+                     hover stuck on. Taps and keys use the button below. */
+                  onPointerEnter={(event) => {
+                    if (event.pointerType === "mouse") setHover(index);
+                  }}
+                  onPointerLeave={(event) => {
+                    if (event.pointerType === "mouse") setHover(null);
+                  }}
                 >
                   <button
                     type="button"
@@ -408,7 +438,12 @@ export function Process() {
                     aria-pressed={selected === index}
                     aria-describedby={descId}
                     onClick={() => setSelected((value) => (value === index ? null : index))}
-                    onFocus={() => setHover(index)}
+                    /* Keyboard focus lights the stage like a hover; the focus
+                       a tap or click leaves behind does not, or a deselected
+                       stage would stay lit on touch screens. */
+                    onFocus={(event) => {
+                      if (event.currentTarget.matches(":focus-visible")) setHover(index);
+                    }}
                     onBlur={() => setHover(null)}
                   >
                     <span className="pr-num">{step.number}</span>

@@ -63,11 +63,9 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      {/* `data-atmosphere` on <main> gives every section the soft
-          page-colour transitions into and out of the charcoal bands (see
-          "SITE ATMOSPHERE" in globals.css). The fixed background photograph
-          it was built over was removed on MIDIS's instruction (2026-10-27),
-          so the veils now sit on the plain page colour. */}
+      {/* `data-atmosphere` on <main> gives the homepage's sections one
+          shared light background and crisp, solid charcoal bands (see
+          "SECTION BACKGROUNDS ON THE HOMEPAGE" in globals.css). */}
       <Header />
 
       <main id="main" data-atmosphere="">

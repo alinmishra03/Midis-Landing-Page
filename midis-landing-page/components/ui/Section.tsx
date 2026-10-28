@@ -32,11 +32,10 @@ const tones: Record<Tone, string> = {
 };
 
 /**
- * How much of the site backdrop shows through this section, on pages that
- * have one (`main[data-atmosphere]` — see "SITE ATMOSPHERE" in globals.css).
- * `clean` for card- and text-dense sections, `rich` where the photo helps
- * the composition. Elsewhere the attribute is inert and the tone's solid
- * background applies unchanged.
+ * Inert since 2026-10-28. It set how much of a site background photograph
+ * showed through each section; the photo and the veils built for it are
+ * gone (see "SECTION BACKGROUNDS ON THE HOMEPAGE" in globals.css). Still
+ * written as `data-veil`, harmlessly, so call sites need not change.
  */
 type Veil = "clean" | "subtle" | "soft" | "rich";
 

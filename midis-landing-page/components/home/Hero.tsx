@@ -58,7 +58,7 @@ export function Hero() {
     <section
       id="hero"
       aria-labelledby="hero-heading"
-      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.5rem)] pb-12 sm:pt-[calc(var(--header-h)+1.75rem)] lg:pb-16"
+      className="hero-stage relative isolate pt-[calc(var(--header-h)+1.5rem)] pb-[calc(var(--space-section)/2)] sm:pt-[calc(var(--header-h)+1.75rem)]"
     >
       <div className="container-site">
         {/* ================= 1. the introduction ================= */}

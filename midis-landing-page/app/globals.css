@@ -129,7 +129,10 @@
      768, ~65px at 1024, ~82px at 1440, 88px ceiling (it was 56 -> 96px).
      The block gap (section header -> its content) is 24px on phones and
      ~36px at 1440 (it was 28 -> 44px). */
-  --space-section: clamp(3rem, 1.5rem + 4vw, 5.5rem);
+  /* One continuous page (2026-10-28): the gap BETWEEN two sections is one
+     of these (each takes half) — 40px on phones, ~49px at 768, ~58px at
+     1024, ~74px at 1440, 80px from 1600. */
+  --space-section: clamp(2.5rem, 1.25rem + 3.75vw, 5rem);
   --space-block: clamp(1.5rem, 2.5vw, 2.5rem);
 
   /*
@@ -753,181 +756,35 @@ p {
 }
 
 /* ==========================================================================
-   SITE ATMOSPHERE (MIDIS hero + full-site background briefs, 2026-10-23)
+   ONE CONTINUOUS LANDING PAGE (MIDIS, 2026-10-28)
    --------------------------------------------------------------------------
-   One photograph behind the whole homepage, every section a veil over it.
+   No section dividers of any kind: no bands, no fades, no shadows, no
+   separator lines between sections. Every homepage section sits on the
+   same warm off-white page background (the light sections used to
+   alternate white and off-white; Pricing and the final CTA were full-width
+   charcoal bands with blurred light-to-charcoal ramps). Sections are told
+   apart by their headings, content and layouts; MIDIS's charcoal lives on
+   inside components (the process ribbon, the featured pricing card).
 
-   LAYER 1  the canvas: body's --color-paper, as everywhere.
-   LAYER 2  (removed, MIDIS 2026-10-27) — this was a fixed designer's-desk
-            photograph behind the whole page. The veils below now sit on
-            the plain page colour, where they read as solid; they are kept
-            for the soft transitions into and out of the charcoal bands.
-   LAYER 3  the veils — each section's background becomes the page colour
-            at a strength from --veil-*: dense where text and cards are
-            dense, thinner where the photo helps the composition.
-   LAYER 4  the transitions — every section starts and ends at the SAME
-            strength (--veil-edge), easing to its own strength over its
-            top and bottom padding, so neighbouring sections always meet
-            at identical pixels. No boundary can exist by construction.
+   SPACING. Neighbouring sections used to stack two full section paddings
+   (up to ~176px of blank between them). Each section now takes HALF the
+   rhythm above and below its content, so the gap between two sections is
+   one --space-section: ~40px on phones, ~49px at 768, ~58px at 1024,
+   ~74px at 1440, 80px from 1600. The hero sets its own top (it clears the
+   floating header) and the same half at its foot; the last section keeps
+   a full rhythm above the footer.
 
-   THE CHARCOAL BANDS (Pricing, the final CTA, the footer) stay charcoal —
-   their type, glass cards and washes are built for it — but they no
-   longer START as a hard edge: each fades in from the light veil through
-   its own top padding, before any of its content begins, and the final
-   CTA fades to solid ink at its foot so the footer continues it exactly.
-
-   Scoped to main[data-atmosphere] (the homepage only): every other route
-   keeps its solid sections. Every colour is a token, every strength a
-   variable with its own dark-theme value — the dark veil sits a little
-   thinner, because the same photo under a near-black veil reads far
-   dimmer than under a light one.
+   Scoped to main[data-atmosphere] (the homepage). Unlayered, so these
+   outrank the tone and padding utilities on each section.
    ========================================================================== */
 
-:root {
-  --veil-edge: 91%; /* where every section meets the next */
-  --veil-clean: 95%; /* card- and text-dense sections */
-  --veil-subtle: 91%;
-  --veil-soft: 88%;
-  --veil-rich: 81%; /* where the photo carries the composition */
-  --ink-veil: 97%; /* the charcoal bands */
-  --ink-veil-rich: 88%;
+main[data-atmosphere] > section[data-tone] {
+  background: var(--color-paper);
+  padding-block: calc(var(--space-section) / 2);
 }
 
-/* PHONES: thinner veils so the photograph reads (MIDIS mobile brief,
-   2026-10-23 — "barely noticeable" at the values above). Desktop and
-   tablet keep the approved values. */
-@media (max-width: 639.98px) {
-  :root {
-    --veil-edge: 84%;
-    --veil-clean: 90%;
-    --veil-subtle: 84%;
-    --veil-soft: 80%;
-    --veil-rich: 74%;
-  }
-}
-
-/* ---- Layer 3 + 4: the light sections ----
-   Paper and surface sections share ONE veil colour (the warm paper) so
-   there is no off-white/white step left between them; cards inside keep
-   their own opaque surfaces and stand off the veil. Each section eases
-   from --veil-edge to its own strength over 12rem (or a quarter of a
-   short section) and back. Unlayered, so it outranks the tone utility. */
-
-main[data-atmosphere] section[data-tone="paper"],
-main[data-atmosphere] section[data-tone="surface"] {
-  --veil-mid: var(--veil-subtle);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 0%,
-    color-mix(in srgb, var(--color-paper) var(--veil-mid), transparent) min(12rem, 25%),
-    color-mix(in srgb, var(--color-paper) var(--veil-mid), transparent)
-      max(calc(100% - 12rem), 75%),
-    color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent) 100%
-  );
-}
-
-main[data-atmosphere] section[data-veil="clean"] {
-  --veil-mid: var(--veil-clean);
-}
-
-main[data-atmosphere] section[data-veil="soft"] {
-  --veil-mid: var(--veil-soft);
-}
-
-main[data-atmosphere] section[data-veil="rich"] {
-  --veil-mid: var(--veil-rich);
-}
-
-/* ---- Layer 3 + 4: the charcoal bands ----
-   Light veil → charcoal over --ink-ramp, inside the band's own top
-   padding (grown by half on this page to give the dusk room), so no
-   content ever sits on the in-between greys; charcoal held; and back to
-   the light veil through the bottom padding. The ramp is an eased
-   S-curve (0 → 12 → 50 → 88 → 100% ink across 0/30/50/70/100% of the
-   ramp), built by mixing the two END colours — never a linear band that
-   reads as a shadow. The final CTA (data-end="solid") deepens instead to
-   solid ink at its foot, where the solid footer continues it exactly. */
-
-main[data-atmosphere] section[data-tone="ink"] {
-  --ink-mid: var(--ink-veil);
-  /* The light-to-charcoal ramp: ~44px on phones, ~62px on large screens
-     (full-width pass, 2026-10-28; it was 88px+, which with the padding
-     below opened every band on 104px+ of mostly empty dusk). */
-  --ink-ramp: max(calc(var(--space-section) * 0.7), 2.75rem);
-  --light-end: color-mix(in srgb, var(--color-paper) var(--veil-edge), transparent);
-  --ink-end: color-mix(in srgb, var(--color-ink) var(--ink-mid), transparent);
-  /* The section rhythm, or the ramp plus 20px if that is taller — so the
-     ramp always ends inside the padding, before any content: 64px on
-     phones, 88px on large screens (was 104-110px everywhere). */
-  padding-top: max(var(--space-section), calc(var(--ink-ramp) + 1.25rem));
-  padding-bottom: max(var(--space-section), calc(var(--ink-ramp) + 1.25rem));
-  background: linear-gradient(
-    180deg,
-    var(--light-end) 0,
-    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(var(--ink-ramp) * 0.3),
-    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(var(--ink-ramp) * 0.5),
-    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(var(--ink-ramp) * 0.7),
-    var(--ink-end) var(--ink-ramp),
-    var(--ink-end) calc(100% - var(--ink-ramp)),
-    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.7),
-    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.5),
-    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(100% - var(--ink-ramp) * 0.3),
-    var(--light-end) 100%
-  );
-}
-
-main[data-atmosphere] section[data-tone="ink"][data-veil="rich"] {
-  --ink-mid: var(--ink-veil-rich);
-}
-
-/* The second layer is the BRIDGE to the footer: the footer's own top glow
-   (radial 56rem × 22rem, orange at 12%, centred on its top edge — see
-   Footer.tsx) mirrored onto this section's bottom edge. Same centre, same
-   radii, same strength, so the two halves meet at identical pixels and
-   the warmth carries across with no line. */
-main[data-atmosphere] section[data-tone="ink"][data-end="solid"] {
-  padding-bottom: 0;
-  background:
-    radial-gradient(56rem 22rem at 50% 100%, rgba(239, 135, 22, 0.12), transparent 68%),
-    linear-gradient(
-    180deg,
-    var(--light-end) 0,
-    color-mix(in srgb, var(--ink-end) 12%, var(--light-end)) calc(var(--ink-ramp) * 0.3),
-    color-mix(in srgb, var(--ink-end) 50%, var(--light-end)) calc(var(--ink-ramp) * 0.5),
-    color-mix(in srgb, var(--ink-end) 88%, var(--light-end)) calc(var(--ink-ramp) * 0.7),
-    var(--ink-end) var(--ink-ramp),
-    var(--ink-end) 55%,
-    var(--color-ink) 100%
-  );
-}
-
-/* The bands' own decorative orange washes start where the charcoal is
-   fully in, never on the light part of the ramp — otherwise they tint
-   the page at the band's top edge, which is a visible seam. */
-main[data-atmosphere] section[data-tone="ink"] > .ambient {
-  mask-image: linear-gradient(
-    180deg,
-    transparent 0,
-    transparent calc(var(--ink-ramp) * 0.5),
-    #000 calc(var(--ink-ramp) * 1.2),
-    #000 calc(100% - var(--ink-ramp) * 1.2),
-    transparent calc(100% - var(--ink-ramp) * 0.5),
-    transparent 100%
-  );
-}
-
-/* The final CTA's drifting glow fades out before its foot (by 92%, clear
-   of the drift's 7% scale), leaving the static bridge above to meet the
-   footer: a moving glow can never match a still one at the seam. */
-main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
-  mask-image: linear-gradient(
-    180deg,
-    transparent 0,
-    transparent calc(var(--ink-ramp) * 0.5),
-    #000 calc(var(--ink-ramp) * 1.2),
-    #000 60%,
-    transparent 92%
-  );
+main[data-atmosphere] > section[data-tone]:last-child {
+  padding-bottom: var(--space-section);
 }
 
 /* --------------------------------------------------------------------------
@@ -1131,101 +988,6 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
   max-width: var(--container-site);
   margin-inline: auto;
   padding-inline: var(--gutter);
-}
-
-/* ==========================================================================
-   GLASS
-   --------------------------------------------------------------------------
-   USED SELECTIVELY, AND THE REASON MATTERS.
-
-   backdrop-filter blurs WHAT IS BEHIND the element. Over a flat paper
-   background there is nothing to blur, so the effect costs a compositor
-   layer and renders as a plain translucent rectangle. Glass is therefore
-   applied only where something actually sits behind it: over photography,
-   over the dark sections, and over the accent wash. The typography-led
-   sections stay clean, which is also what keeps the glass ones special.
-
-   A WARNING WORTH LEAVING IN THE CODE: an element with backdrop-filter
-   becomes the CONTAINING BLOCK for its fixed-position descendants. That is
-   not a quirk — it already broke this site's mobile menu once, collapsing
-   the panel to 1px tall. Never put a position:fixed child inside one.
-   ========================================================================== */
-
-/* On a DARK ground — the pricing grid, the final CTA. */
-@utility glass-dark {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: var(--radius-card-lg);
-  background: rgb(255 255 255 / 0.045);
-  /*
-   * NO HAND-WRITTEN -webkit- PREFIX HERE, DELIBERATELY.
-   *
-   * Writing `backdrop-filter` and `-webkit-backdrop-filter` with identical
-   * values let Lightning CSS dedupe the pair and keep only the PREFIXED
-   * one — and Chrome does not recognise `-webkit-backdrop-filter`
-   * (`CSS.supports("-webkit-backdrop-filter", "blur(4px)")` is false while
-   * the unprefixed form is true). The result was glass that rendered as a
-   * flat translucent rectangle in every Chromium browser.
-   *
-   * Lightning CSS prefixes from the browser targets on its own. Declaring
-   * the standard property alone is what actually ships working glass.
-   */
-  backdrop-filter: blur(14px) saturate(120%);
-  box-shadow:
-    0 16px 48px rgb(0 0 0 / 0.3),
-    inset 0 1px 0 rgb(255 255 255 / 0.1);
-  transition:
-    transform var(--dur-base) var(--ease-out-quart),
-    border-color var(--dur-base) var(--ease-out-quart),
-    background-color var(--dur-base) var(--ease-out-quart),
-    box-shadow var(--dur-base) var(--ease-out-quart);
-}
-
-@media (hover: hover) {
-  .glass-dark:hover {
-    border-color: rgb(239 135 22 / 0.4);
-    background: rgb(255 255 255 / 0.07);
-  }
-}
-
-/* On a LIGHT ground that has imagery or a wash behind it. */
-@utility glass-light {
-  position: relative;
-  isolation: isolate;
-  border: 1px solid rgb(255 255 255 / 0.55);
-  border-radius: var(--radius-card-lg);
-  background: rgb(255 255 255 / 0.62);
-  /* Standard property only — see the note in glass-dark. */
-  backdrop-filter: blur(16px) saturate(130%);
-  box-shadow:
-    0 14px 40px rgb(20 21 24 / 0.08),
-    inset 0 1px 0 rgb(255 255 255 / 0.7);
-  transition:
-    transform var(--dur-base) var(--ease-out-quart),
-    border-color var(--dur-base) var(--ease-out-quart),
-    box-shadow var(--dur-base) var(--ease-out-quart);
-}
-
-/*
- * Mobile simplification.
- *
- * backdrop-filter is the most expensive thing on this page for a phone GPU,
- * and at small sizes the blur is barely legible anyway. Below lg the glass
- * becomes a plain translucent surface: same design language, a fraction of
- * the cost.
- */
-@media (max-width: 1023px) {
-  .glass-dark,
-  .glass-light {
-    backdrop-filter: none;
-  }
-  .glass-dark {
-    background: rgb(255 255 255 / 0.06);
-  }
-  .glass-light {
-    background: rgb(255 255 255 / 0.9);
-  }
 }
 
 /* ==========================================================================
@@ -1635,74 +1397,16 @@ main[data-atmosphere] section[data-tone="ink"][data-end="solid"] > .ambient {
  * Applied unconditionally: without the gradient it is invisible no-op.
  */
 @utility cta-accent-text {
-  color: var(--color-accent);
+  /* Solid #D26E0A since the CTA moved onto the light page (2026-10-28) —
+     the same orange as "Into Customers." in the hero. (It was a white →
+     orange gradient on the charcoal band; charcoal → orange on the light
+     page read as a muddy brown.) The brightest orange that clears 3:1 on
+     the page; the raw brand orange is too light for large type here. */
+  color: #d26e0a;
   padding-bottom: 0.14em;
   margin-bottom: -0.14em;
 }
 
-@supports (background-clip: text) or (-webkit-background-clip: text) {
-  .cta-accent-text {
-    color: transparent;
-    background-image: linear-gradient(
-      100deg,
-      #ffffff 0%,
-      #ffffff 26%,
-      var(--color-accent) 68%,
-      #f6ad5c 100%
-    );
-    background-size: 220% 100%;
-    background-position: 0% 50%;
-    background-clip: text;
-    -webkit-background-clip: text;
-    transition: background-position 1100ms var(--ease-out-quart);
-  }
-
-  /* Driven from the heading, so hovering anywhere on the headline moves it
-     — a target the size of two words would be fussy to find. */
-  @media (hover: hover) and (pointer: fine) {
-    .cta-headline:hover .cta-accent-text {
-      background-position: 100% 50%;
-    }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cta-accent-text {
-    transition: none;
-  }
-}
-
-/*
- * The one decorative detail: a thin orange rule under the content, drawing
- * out from the centre once the section is reached. It is 2px of gradient
- * that fades at both ends, so it reads as a glint rather than a border.
- */
-@utility accent-rule {
-  height: 2px;
-  width: min(9rem, 40%);
-  margin-inline: auto;
-  border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--color-accent),
-    transparent
-  );
-  transform: scaleX(0);
-  transform-origin: center;
-}
-
-[data-reveal="shown"] .accent-rule {
-  transform: scaleX(1);
-  transition: transform 1200ms var(--ease-out-expo) 220ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .accent-rule {
-    transform: scaleX(1);
-    transition: none;
-  }
-}
 
 /* ==========================================================================
    SITE HEADER — the floating navigation shell
@@ -3741,9 +3445,6 @@ body:has(.sticky-cta) footer {
   }
 }
 
-/* Dark theme: a charcoal ribbon would vanish into the page, so the ribbon
-   lifts to a graphite that still reads as the same object. */
-
 /* A soft, local lift of the page colour behind the chart, so the
    photograph never puts detail behind the descriptions. Feathered on all
    sides: it has no edge to see. */
@@ -3780,9 +3481,18 @@ body:has(.sticky-cta) footer {
   filter: drop-shadow(0 12px 18px rgb(20 21 24 / 0.16));
 }
 
+/* The hover/selection highlight: a soft brightening of the stage's own
+   stretch of the ribbon that fades in and out. Opacity is the only thing
+   that changes — no scale, no movement, no size change. */
 .pr-lit {
-  stroke: rgb(255 255 255 / 0.13);
+  stroke: rgb(255 255 255 / 0.14);
   stroke-linecap: butt;
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out-quart);
+}
+
+.pr-lit[data-active] {
+  opacity: 1;
 }
 
 .pr-joint {
@@ -3945,9 +3655,7 @@ body:has(.sticky-cta) footer {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   color: #f68b13;
-  transition:
-    color var(--dur-base) var(--ease-out-quart),
-    transform var(--dur-fast) var(--ease-out-quart);
+  transition: color var(--dur-base) var(--ease-out-quart);
 }
 
 .pr-name {
@@ -3997,25 +3705,19 @@ body:has(.sticky-cta) footer {
   }
 }
 
-/* Hover, focus or tap: the stage's run lights (in the SVG), its number
-   nudges along the direction of travel, its description comes forward. */
+/* Hover, focus or tap: the stage's stretch of ribbon brightens (in the
+   SVG) and its description comes forward. Nothing moves. (The number used
+   to nudge 2px sideways; removed 2026-10-28.) */
 .pr-stage[data-active] .pr-desc {
   color: var(--color-fg);
-}
-
-.pr-stage[data-active] .pr-num {
-  transform: translateX(2px);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pr-label,
   .pr-num,
-  .pr-desc {
+  .pr-desc,
+  .pr-lit {
     transition: none;
-  }
-
-  .pr-stage[data-active] .pr-num {
-    transform: none;
   }
 }
 
