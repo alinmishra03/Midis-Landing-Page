@@ -61,8 +61,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "We could not process that submission. Please refresh and try again." }, { status: 400 });
   }
 
+  /* Each failure keeps its own status (it used to be 502 for all of them):
+     422 a field Strapi rejected · 503 the API refused us (token/permission)
+     · 504 Strapi unreachable or timed out · 502 anything else upstream. */
   const result = await submitPortfolioInquiry(parsed.data);
   if (!result.ok) {
+    if (result.reason === "invalid") {
+      return NextResponse.json(
+        { ok: false, message: "Please check the highlighted fields and try again.", fieldErrors: result.fieldErrors },
+        { status: 422 },
+      );
+    }
     return NextResponse.json(
       {
         ok: false,
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
             ? `We could not submit your request just now. Please email us at ${FALLBACK_EMAIL}.`
             : `We could not submit your request just now. Please try again, or email us at ${FALLBACK_EMAIL}.`,
       },
-      { status: 502 },
+      { status: result.reason === "forbidden" ? 503 : result.reason === "unreachable" ? 504 : 502 },
     );
   }
 
