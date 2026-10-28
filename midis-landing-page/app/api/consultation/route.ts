@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { site } from "@/content/site";
-import { consultationSchema, toPortfolioConsultation } from "@/lib/consultation";
+import { consultationSchema } from "@/lib/consultation";
+import { submitPortfolioInquiry } from "@/lib/portfolio-inquiry";
 import { clientIp, makeLimiter } from "@/lib/audit/limits";
 
 /**
  * The consultation form (homepage hero, lead popup and the audit page's
- * in-place form — one component, ConsultationForm) → MIDIS admin Strapi.
- * Validation and the field mapping: lib/consultation.ts.
+ * in-place form — one component, ConsultationForm) → the unified Strapi
+ * collection portfolio-inquiries (2026-10-28; it replaced
+ * portfolio-consultations). Validation: lib/consultation.ts; field mapping,
+ * enum values and the request itself: lib/portfolio-inquiry.ts.
  *
  * A server-side proxy, the same convention as /api/enquiry: input is
  * validated here, a spam trap and a rate limit apply, and any future API
@@ -17,12 +20,10 @@ import { clientIp, makeLimiter } from "@/lib/audit/limits";
  *
  *   MIDIS_ADMIN_API_URL   base URL of the admin Strapi (optional;
  *                         defaults to https://admins.midis.in)
- *   MIDIS_ADMIN_API_TOKEN only if the collection's create permission is
- *                         ever moved off the Public role (optional)
+ *   MIDIS_ADMIN_API_TOKEN a token with create on Portfolio Inquiry — needed
+ *                         unless the Public role has that permission
  */
 
-const BASE = (process.env.MIDIS_ADMIN_API_URL ?? "https://admins.midis.in").replace(/\/$/, "");
-const ENDPOINT = `${BASE}/api/portfolio-consultations`;
 const FALLBACK_EMAIL = site.email;
 
 const limited = makeLimiter(5, 60_000);
@@ -60,41 +61,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "We could not process that submission. Please refresh and try again." }, { status: 400 });
   }
 
-  let response: Response;
-  try {
-    response = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(process.env.MIDIS_ADMIN_API_TOKEN ? { Authorization: `Bearer ${process.env.MIDIS_ADMIN_API_TOKEN}` } : {}),
-      },
-      body: JSON.stringify({ data: toPortfolioConsultation(parsed.data, new Date()) }),
-      signal: AbortSignal.timeout(12_000),
-      cache: "no-store",
-    });
-  } catch (error) {
-    console.error("[consultation] Strapi unreachable:", (error as Error).name);
-    return NextResponse.json(
-      { ok: false, message: `We could not submit your request just now. Please try again, or email us at ${FALLBACK_EMAIL}.` },
-      { status: 502 },
-    );
-  }
-
-  const body = (await response.json().catch(() => ({}))) as {
-    data?: { id?: number | string; documentId?: string } | null;
-    error?: { status?: number; name?: string; message?: string };
-  };
-
-  if (!response.ok || !body.data || (body.data.id === undefined && !body.data.documentId)) {
-    /* Strapi's error name/message describe the schema, not the visitor. */
-    console.error(
-      `[consultation] Strapi rejected the submission (${response.status}): ${body.error?.name ?? ""} ${body.error?.message ?? ""}`.trim(),
-    );
+  const result = await submitPortfolioInquiry(parsed.data);
+  if (!result.ok) {
     return NextResponse.json(
       {
         ok: false,
         message:
-          response.status === 401 || response.status === 403
+          result.reason === "forbidden"
             ? `We could not submit your request just now. Please email us at ${FALLBACK_EMAIL}.`
             : `We could not submit your request just now. Please try again, or email us at ${FALLBACK_EMAIL}.`,
       },

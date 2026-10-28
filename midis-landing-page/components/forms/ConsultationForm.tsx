@@ -33,7 +33,8 @@ import { cn } from "@/lib/utils";
  * chosen country's numbering plan, an optional website (validated only when
  * filled), and one of the five approved services.
  *
- * SUBMISSION → /api/consultation → MIDIS admin Strapi. The thank-you screen
+ * SUBMISSION → /api/consultation → the unified Strapi collection
+ * portfolio-inquiries (lib/portfolio-inquiry.ts). The thank-you screen
  * appears ONLY once the route confirms Strapi stored the record; any error
  * keeps every value in place and says what to do. A pending request
  * disables the button, and a second submit is ignored. A success marks the
@@ -63,7 +64,8 @@ export function ConsultationForm({
   titleId,
   descriptionId,
 }: {
-  /** Where the lead came from — stored with it. */
+  /** Where the form is rendered (the homepage one takes the Services
+      preselect). Every record is stored with sourceWebsite "midis-portfolio". */
   source: ConsultationSource;
   /** "wide" (the homepage hero panel): from xl the heading block sits
       beside the fields instead of above them. "popup" (the lead popup):
@@ -127,7 +129,7 @@ export function ConsultationForm({
     event.preventDefault();
     if (sending.current || sent) return;
 
-    const parsed = consultationSchema.safeParse({ ...values, source, hp: honey });
+    const parsed = consultationSchema.safeParse({ ...values, hp: honey });
     if (!parsed.success) {
       const next: Partial<Record<FieldName, string>> = {};
       for (const issue of parsed.error.issues) {
@@ -148,7 +150,7 @@ export function ConsultationForm({
       const response = await fetch("/api/consultation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, source, hp: honey }),
+        body: JSON.stringify({ ...values, hp: honey }),
       });
       const body = await response.json().catch(() => ({}));
 

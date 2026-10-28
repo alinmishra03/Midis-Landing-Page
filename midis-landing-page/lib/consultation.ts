@@ -1,53 +1,23 @@
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js/max";
-import { CONSULTATION_SERVICES, type ConsultationService } from "@/content/forms";
+import { CONSULTATION_SERVICES } from "@/content/forms";
 
 /**
- * THE CONSULTATION FORM → MIDIS admin Strapi
- * (POST https://admins.midis.in/api/portfolio-consultations).
+ * THE CONSULTATION FORM'S VALIDATION — one schema, run by the form (inline
+ * errors — components/forms/ConsultationForm.tsx, used by the homepage
+ * hero, the lead popup and the audit page) and again by the server route
+ * (nothing a browser sends is trusted).
  *
- * One schema, run by the form (inline errors — components/forms/
- * ConsultationForm.tsx, used by the homepage hero AND the lead popup) and
- * again by the server route (nothing a browser sends is trusted).
- *
- * THE COLLECTION, as verified against the live endpoint on 2026-10-23
- * (validation probes only — no record was created by them):
- *
- *   name, email, serviceNeeded, phone, projectDescription
- *   serviceNeeded is an ENUMERATION:
- *     "New Website" | "Redesign" | "E-commerce" | "Landing page" | "other"
- *   Strapi rejects the whole record for any unknown key, so there is no
- *   field for the website URL, the source or a timestamp.
- *
- * THE 2026-10-28 MAPPING (single-step form, client-approved brief):
- *   - the five approved service labels map onto the existing enum
- *     (SERVICE_VALUE) — "Not Sure Yet" is stored as "other";
- *   - nothing is discarded: projectDescription carries the website URL (if
- *     given), the exact service label, the source (Homepage / Popup /
- *     Free Website Audit page) and the server's submission timestamp, one
- *     per line, so the record holds everything the brief asks to keep.
- *     (Strapi also stamps createdAt itself.)
- *
- * Strapi itself accepted an empty name and a malformed email in those
- * probes, so the rules below are the only guard — keep them.
+ * WHERE IT GOES (2026-10-28): the unified Strapi collection
+ * portfolio-inquiries, via /api/consultation. The field mapping, the
+ * service enumeration values and the request live in
+ * lib/portfolio-inquiry.ts (server-only).
  */
 
-export const SERVICE_VALUE: Record<ConsultationService, string> = {
-  "New Website Development": "New Website",
-  "Website Redesign": "Redesign",
-  "E-commerce Website": "E-commerce",
-  "Landing Page Development": "Landing page",
-  "Not Sure Yet": "other",
-};
-
-export const CONSULTATION_SOURCES = ["homepage", "popup", "audit"] as const;
-export type ConsultationSource = (typeof CONSULTATION_SOURCES)[number];
-
-const SOURCE_LABEL: Record<ConsultationSource, string> = {
-  homepage: "Homepage",
-  popup: "Popup",
-  audit: "Free Website Audit page",
-};
+/** Which placement the form is rendered in. Used on the client only (the
+    homepage form accepts the Services preselect); the collection has no
+    field for it — every record carries sourceWebsite "midis-portfolio". */
+export type ConsultationSource = "homepage" | "popup" | "audit";
 
 /**
  * "example.com", "www.example.com/page" and "https://example.com" are all
@@ -100,27 +70,9 @@ export const consultationSchema = z.object({
   service: z.enum(CONSULTATION_SERVICES, {
     message: "Please choose what you need help with.",
   }),
-  source: z.enum(CONSULTATION_SOURCES),
   /** Spam trap: bots fill it, people never see it. */
   hp: z.string().optional().default(""),
 });
 
 export type ConsultationInput = z.input<typeof consultationSchema>;
 export type Consultation = z.infer<typeof consultationSchema>;
-
-/** The Strapi `data` object. See THE 2026-10-28 MAPPING above. */
-export function toPortfolioConsultation(input: Consultation, submittedAt: Date) {
-  const details = [
-    input.website ? `Website: ${input.website}` : "Website: (not provided)",
-    `Needs help with: ${input.service}`,
-    `Source: ${SOURCE_LABEL[input.source]}`,
-    `Submitted: ${submittedAt.toISOString()}`,
-  ];
-  return {
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    serviceNeeded: SERVICE_VALUE[input.service],
-    projectDescription: details.join("\n"),
-  };
-}
