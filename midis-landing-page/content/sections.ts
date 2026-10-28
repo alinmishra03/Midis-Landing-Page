@@ -310,39 +310,6 @@ export const pricingTiers: readonly PricingTier[] = [
 export const pricingTiersNote =
   "MIDIS doesn't sell one-size-fits-all packages. Every project is scoped against your actual requirements, and the proposal breaks down exactly what drives the number.";
 
-/**
- * The five factors are the PDF subheadline's own list, split out.
- * `body` is SUPPORTING copy: it explains each factor without quoting a figure
- * or implying a band.
- */
-export const pricingFactors = [
-  {
-    number: "01",
-    title: "Project scope",
-    body: "How many pages, how much of the content already exists, and whether the site serves one audience or several.",
-  },
-  {
-    number: "02",
-    title: "Design requirements",
-    body: "Whether the work follows an existing brand or establishes a new visual system, and how much is bespoke rather than templated.",
-  },
-  {
-    number: "03",
-    title: "Website functionality",
-    body: "Booking, accounts, search, multi-language, a storefront — anything the site has to do beyond presenting information.",
-  },
-  {
-    number: "04",
-    title: "Integrations",
-    body: "The systems the site has to talk to: a CRM, a payment provider, inventory, analytics, or an internal tool with an API.",
-  },
-  {
-    number: "05",
-    title: "Ongoing support",
-    body: "Whether the engagement ends at launch or continues into maintenance, measurement, and continuous improvement.",
-  },
-] as const;
-
 /* ==========================================================================
    SECTION 9 — FAQs  (MIDIS.pdf p.12)
    --------------------------------------------------------------------------

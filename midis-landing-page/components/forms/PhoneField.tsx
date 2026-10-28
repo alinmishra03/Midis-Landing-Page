@@ -117,7 +117,7 @@ export function PhoneField({
            the screen. A zero basis contributes nothing; flex-1 grows it. */
         numberInputProps={{
           className:
-            "w-0 min-w-0 flex-1 rounded-r-lg bg-transparent px-3.5 py-3 text-base text-fg placeholder:text-muted/70 focus:outline-none",
+            "w-0 min-w-0 flex-1 text-ellipsis rounded-r-lg bg-transparent px-3.5 py-3 text-base text-fg placeholder:text-muted/70 focus:outline-none",
         }}
       />
 

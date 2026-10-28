@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { site } from "@/content/site";
 import { enquirySchema, toStrapi } from "@/lib/enquiry";
 
 /**
@@ -22,7 +23,7 @@ const STRAPI_BASE =
 const STRAPI_ENDPOINT = `${STRAPI_BASE.replace(/\/$/, "")}/api/enquiries`;
 
 /** Contact route offered whenever a submission could not be stored. */
-const FALLBACK_EMAIL = "hello@midis.in";
+const FALLBACK_EMAIL = site.email;
 
 /* ==========================================================================
    Rate limiting

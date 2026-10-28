@@ -15,13 +15,16 @@ import { Arrow, Button } from "@/components/ui/Button";
  * handles the smooth scroll and the `scroll-padding-top` header clearance
  * exactly as it does for every other estimator link. Focus follows after
  * the glide has settled, with `preventScroll` so it cannot yank the page.
- * The target is step one's first RADIO, deliberately: focusing a radio
- * never opens the mobile keyboard mid-scroll, where a text field would.
+ * The target is the consultation form's first field (Your Name; the
+ * four-step estimator's first radio until 2026-10-28). It is a text field,
+ * so focus moves only on fine-pointer devices: on touch, focusing it would
+ * open the keyboard mid-scroll.
  */
 export function focusEstimatorAfterScroll() {
+  if (!window.matchMedia("(pointer: fine)").matches) return;
   window.setTimeout(() => {
     document
-      .querySelector<HTMLInputElement>("#estimator form input[type='radio']")
+      .querySelector<HTMLInputElement>("#estimator form input:not([tabindex='-1'])")
       ?.focus({ preventScroll: true });
   }, 700);
 }

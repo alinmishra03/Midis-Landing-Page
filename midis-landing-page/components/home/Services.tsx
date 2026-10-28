@@ -7,7 +7,7 @@ import { Eyebrow, Section } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import { services, servicesSection } from "@/content/sections";
 import { preselectProjectType } from "@/lib/estimator-prefill";
-import type { ProjectType } from "@/content/forms";
+import type { ConsultationService } from "@/content/forms";
 
 /**
  * SECTION 4 — Core services. IMAGE-LED SHOWCASE GRID, 2026-10-21 (fifth
@@ -52,13 +52,13 @@ import type { ProjectType } from "@/content/forms";
  * No external links.
  */
 
-/** Service slug → APPROVED estimator option (content/forms.ts). Only exact
-    conceptual matches; mapping the rest to "Other" would silently answer a
-    form question the visitor never saw. */
-const ESTIMATOR_TYPE: Partial<Record<string, ProjectType>> = {
-  "website-design-development": "New Website",
-  "ecommerce-shopify": "E-commerce",
-  "website-redesign": "Redesign",
+/** Service slug → APPROVED consultation-form option (content/forms.ts,
+    CONSULTATION_SERVICES). Only exact conceptual matches; mapping the rest
+    to "Not Sure Yet" would silently answer a question the visitor never saw. */
+const ESTIMATOR_TYPE: Partial<Record<string, ConsultationService>> = {
+  "website-design-development": "New Website Development",
+  "ecommerce-shopify": "E-commerce Website",
+  "website-redesign": "Website Redesign",
 };
 
 const CARD_IMG_SIZES = "(min-width:1024px) 31vw, (min-width:768px) 46vw, 94vw";

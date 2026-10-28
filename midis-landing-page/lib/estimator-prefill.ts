@@ -1,4 +1,4 @@
-import type { ProjectType } from "@/content/forms";
+import type { ConsultationService } from "@/content/forms";
 
 /**
  * THE SERVICE → ESTIMATOR BRIDGE (MIDIS lead-generation brief, 2026-10-21).
@@ -16,14 +16,15 @@ import type { ProjectType } from "@/content/forms";
  * param would survive reloads and sharing, preselecting an answer the
  * visitor never chose. The event exists only in the moment of the click.
  *
- * ONLY VALUES FROM PROJECT_TYPES CAN ARRIVE: the estimator re-validates
- * against the approved list before accepting (see EstimatorForm), so this
- * can never invent a form option — the brief's explicit line.
+ * ONLY APPROVED VALUES CAN ARRIVE: the consultation form (which replaced
+ * the estimator, 2026-10-28) re-validates against CONSULTATION_SERVICES
+ * before accepting (see ConsultationForm), so this can never invent a form
+ * option — the brief's explicit line.
  */
 export const ESTIMATOR_PRESELECT_EVENT = "midis:estimator-preselect";
 
-export function preselectProjectType(type: ProjectType) {
+export function preselectProjectType(type: ConsultationService) {
   window.dispatchEvent(
-    new CustomEvent<ProjectType>(ESTIMATOR_PRESELECT_EVENT, { detail: type }),
+    new CustomEvent<ConsultationService>(ESTIMATOR_PRESELECT_EVENT, { detail: type }),
   );
 }

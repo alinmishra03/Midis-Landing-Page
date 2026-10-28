@@ -2,9 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Arrow, Button, ButtonGroup } from "@/components/ui/Button";
-import { EstimatorForm } from "@/components/forms/EstimatorForm";
+import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import { Checkbox, FieldError, TextField } from "@/components/forms/Fields";
-import { Eyebrow } from "@/components/ui/Section";
 import { consent } from "@/content/forms";
 import { footerLegal } from "@/content/site";
 import {
@@ -609,18 +608,12 @@ export function WebsiteAuditTool() {
     </form>
 
     {estimating ? (
-      /* The landing page's own Project Estimator — the same component and
-         the same shell as the homepage hero, opened in place. A sibling of
-         the audit form, never inside it (forms can't nest). */
+      /* The landing page's own consultation form — the same component as
+         the homepage hero and the lead popup (it replaced the four-step
+         estimator, 2026-10-28), opened in place. A sibling of the audit
+         form, never inside it (forms can't nest). */
       <div ref={estimatorRef} id="estimator" className="hero-rise scroll-mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-8">
-        <Eyebrow className="mb-2 xl:mb-3">Start your project</Eyebrow>
-        <h2 className="text-[length:var(--text-display-sm)] leading-[1.1]">Get Your Project Estimate</h2>
-        <p className="mt-1.5 text-sm leading-snug text-muted sm:leading-relaxed">
-          Tell us a little about your project, and we&rsquo;ll help you plan the next steps.
-        </p>
-        <div className="mt-3.5 sm:mt-6">
-          <EstimatorForm variant="bare" />
-        </div>
+        <ConsultationForm source="audit" />
       </div>
     ) : null}
     </div>

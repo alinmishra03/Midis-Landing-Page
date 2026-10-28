@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { site } from "@/content/site";
 import { LeadPopups } from "@/components/popups/LeadPopups";
@@ -146,6 +147,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             restarting per page; it decides itself which routes it may open
             on (see components/popups/LeadPopups.tsx). */}
         <LeadPopups />
+        {/*
+          HubSpot tracking (the client's embed code, MIDIS brief 2026-10-28):
+          portal 247821896, NA2. next/script loads it once for the whole app,
+          after hydration, so it never blocks the first render; the id
+          matches the embed's own `hs-script-loader`, which HubSpot uses to
+          detect a duplicate. Tracking only — it does not by itself send
+          the site's forms to HubSpot CRM (see ConsultationForm).
+        */}
+        <Script
+          id="hs-script-loader"
+          src="https://js-na2.hs-scripts.com/247821896.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

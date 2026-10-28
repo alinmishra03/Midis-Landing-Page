@@ -54,7 +54,10 @@ export const site = {
   /** From the thank-you page footer, MIDIS.pdf page 17. */
   footerStrapline: "Website Design, Development & Digital Growth",
 
-  email: "hello@midis.in",
+  /* MIDIS's official contact address (instruction of 2026-10-28; it was
+     hello@midis.in). The footer link, structured data, audit emails/PDF
+     and every form's fallback message all read it from here. */
+  email: "connect@midis.in",
 
   /**
    * Published lines. Both were recorded in the existing MIDIS build; the US

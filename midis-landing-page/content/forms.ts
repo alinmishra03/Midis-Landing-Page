@@ -202,6 +202,63 @@ export const thankYouProject = {
 
 export type ThankYouContent = typeof thankYou | typeof thankYouProject;
 
+/* ==========================================================================
+   THE CONSULTATION FORM  (MIDIS client-approved brief, 2026-10-28)
+   --------------------------------------------------------------------------
+   One single-step form, used verbatim by the homepage hero AND the lead
+   popup (components/forms/ConsultationForm.tsx). It replaced the four-step
+   Project Estimator. Every string below is the client's exact wording —
+   do not edit without their approval.
+   ========================================================================== */
+
+/** APPROVED — "What do you need help with?", in this order, no others. */
+export const CONSULTATION_SERVICES = [
+  "New Website Development",
+  "Website Redesign",
+  "E-commerce Website",
+  "Landing Page Development",
+  "Not Sure Yet",
+] as const;
+
+export type ConsultationService = (typeof CONSULTATION_SERVICES)[number];
+
+/** The client's HubSpot meetings page — the thank-you screen's only CTA. */
+export const MEETING_URL = "https://meetings-na2.hubspot.com/mohit-mayank";
+
+export const consultationForm = {
+  heading: "Let’s Build a Website That Grows Your Business",
+  description:
+    "Looking to build a new website or improve your existing one? Tell us a little about your requirements, and let’s explore how MIDIS can help your business grow.",
+  fields: {
+    name: { label: "Your Name", placeholder: "Enter your name" },
+    email: { label: "Business Email", placeholder: "Enter your business email" },
+    phone: {
+      label: "Phone Number",
+      placeholder: "Enter your phone number with country code",
+    },
+    website: { label: "Website URL (Optional)", placeholder: "Enter your website URL" },
+    service: { label: "What do you need help with?" },
+  },
+  submit: "Get a Free Consultation",
+  consent:
+    "By submitting, you agree that MIDIS may use your details to contact you about our services. No commitment required.",
+  thankYou: {
+    heading: "Thank You for Your Interest in MIDIS!",
+    confirmation: [
+      "Your request has been received successfully.",
+      "Let’s take the next step toward building a website that helps your business grow.",
+    ],
+    meetingHeading: "Schedule Your Free Consultation",
+    meetingDescription:
+      "Choose a convenient date and time to discuss your business goals, website requirements, and how MIDIS can help.",
+    meetingCta: "Book Your Free 20-Minute Meeting",
+    followUp: [
+      "Prefer not to schedule right now? No problem! Our team may follow up using the contact details you provided.",
+      "We look forward to connecting with you!",
+    ],
+  },
+} as const;
+
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 export type AuditService = (typeof AUDIT_SERVICES)[number];
 export type Budget = (typeof BUDGETS)[number];

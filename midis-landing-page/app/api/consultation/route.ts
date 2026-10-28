@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { site } from "@/content/site";
 import { consultationSchema, toPortfolioConsultation } from "@/lib/consultation";
 import { clientIp, makeLimiter } from "@/lib/audit/limits";
 
 /**
- * "Before you go" consultation popup → MIDIS admin Strapi.
+ * The consultation form (homepage hero, lead popup and the audit page's
+ * in-place form — one component, ConsultationForm) → MIDIS admin Strapi.
+ * Validation and the field mapping: lib/consultation.ts.
  *
  * A server-side proxy, the same convention as /api/enquiry: input is
  * validated here, a spam trap and a rate limit apply, and any future API
@@ -20,7 +23,7 @@ import { clientIp, makeLimiter } from "@/lib/audit/limits";
 
 const BASE = (process.env.MIDIS_ADMIN_API_URL ?? "https://admins.midis.in").replace(/\/$/, "");
 const ENDPOINT = `${BASE}/api/portfolio-consultations`;
-const FALLBACK_EMAIL = "hello@midis.in";
+const FALLBACK_EMAIL = site.email;
 
 const limited = makeLimiter(5, 60_000);
 
@@ -65,7 +68,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
         ...(process.env.MIDIS_ADMIN_API_TOKEN ? { Authorization: `Bearer ${process.env.MIDIS_ADMIN_API_TOKEN}` } : {}),
       },
-      body: JSON.stringify({ data: toPortfolioConsultation(parsed.data) }),
+      body: JSON.stringify({ data: toPortfolioConsultation(parsed.data, new Date()) }),
       signal: AbortSignal.timeout(12_000),
       cache: "no-store",
     });

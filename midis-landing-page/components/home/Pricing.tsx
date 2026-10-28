@@ -3,7 +3,6 @@ import { Section, SectionHeader } from "@/components/ui/Section";
 import { Reveal } from "@/components/ui/Reveal";
 import {
   pricing,
-  pricingFactors,
   pricingTiers,
   pricingTiersNote,
 } from "@/content/sections";
@@ -12,27 +11,23 @@ import { cn } from "@/lib/utils";
 /**
  * SECTION 8 — Pricing and project scope.
  *
- * TWO LAYERS, BOTH FROM MIDIS.pdf PAGE 11.
+ * THE PACKAGE GRID, FROM MIDIS.pdf PAGE 11. The PDF's visual reference
+ * for this section is a pricing-package page: a prominent multi-column
+ * composition with a clear plan hierarchy. That STRUCTURE is reproduced here — three columns on
+ * desktop, the middle one emphasised, a stacked single column on a phone
+ * (the reference's own mobile treatment is one card per view; squeezing
+ * three columns into 360px is ruled out).
  *
- * 1. THE PACKAGE GRID. The PDF's visual reference for this section is a
- *    pricing-package page: a prominent multi-column composition with a clear
- *    plan hierarchy. That STRUCTURE is reproduced here — three columns on
- *    desktop, the middle one emphasised, a stacked single column on a phone
- *    (the reference's own mobile treatment is one card per view; squeezing
- *    three columns into 360px is ruled out).
+ * WITHOUT PRICES, AND NOT BECAUSE THE SECTION IS UNFINISHED. MIDIS has no
+ * published, confirmed rate card, the brief forbids inventing one, and
+ * MIDIS's own FAQ directly below says cost "depends on the size and
+ * complexity of your project". So the price slot carries "Tailored
+ * estimate" and each card routes to the estimator — the PDF's approved
+ * CTA for this section. The tiers are the PDF's own project types, not
+ * invented package brands; see content/sections.ts for provenance.
  *
- *    WITHOUT PRICES, AND NOT BECAUSE THE SECTION IS UNFINISHED. MIDIS has no
- *    published, confirmed rate card, the brief forbids inventing one, and
- *    MIDIS's own FAQ directly below says cost "depends on the size and
- *    complexity of your project". So the price slot carries "Tailored
- *    estimate" and each card routes to the estimator — the PDF's approved
- *    CTA for this section. The tiers are the PDF's own project types, not
- *    invented package brands; see content/sections.ts for provenance.
- *
- * 2. THE FIVE FACTORS. The PDF subheadline's own list, split out — what
- *    actually moves the number. Kept beneath the packages as the explanation
- *    of how a tailored estimate is built, with the one-by-one scroll reveals
- *    the mobile brief asked for.
+ * The "What moves the number" cost-factor cards that sat beneath the grid
+ * were removed on MIDIS's instruction, 2026-10-28.
  *
  * The dark band is deliberate. It separates this section from the FAQ
  * accordion directly beneath it, and it gives the final CTA something to
@@ -167,78 +162,6 @@ export function Pricing() {
             {pricingTiersNote}
           </p>
         </Reveal>
-      </div>
-
-      {/* ================= what moves the number ================= */}
-      <div className="container-wide relative z-10 mt-14 sm:mt-16">
-        <Reveal>
-          <p className="eyebrow text-accent">What moves the number</p>
-        </Reveal>
-
-        {/*
-          Glass earns its place HERE specifically. These cards sit on the dark
-          band over the accent wash below, so there is genuinely something
-          behind them to blur — unlike a card on flat paper, where
-          backdrop-filter costs a compositor layer and renders as a plain
-          translucent rectangle.
-
-          `factor-grid` carries the shared perspective the card entrances
-          rotate around, and the `lg`-only stagger. Mobile gap is 14px —
-          close enough to read as one stack, open enough that two cards are
-          never mistaken for one.
-        */}
-        <ol className="factor-grid mt-7 grid gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {pricingFactors.map((factor) => (
-            <Reveal
-              as="li"
-              key={factor.number}
-              variant="card3d"
-              /*
-                No per-card delay. Each card has its own observer, so on a
-                phone it animates when IT arrives — which is the one-by-one
-                reveal. The stagger is reapplied from `lg` in CSS, where
-                several cards enter together.
-              */
-              className="group/card"
-            >
-              <div className="factor-card glass-dark h-full rounded-[1.25rem] p-5 sm:p-7">
-                <span
-                  aria-hidden="true"
-                  className="factor-number font-display text-sm font-semibold tabular-nums text-accent"
-                >
-                  {factor.number}
-                </span>
-                <h3 className="mt-3.5 text-lg font-semibold leading-snug text-white">
-                  {factor.title}
-                </h3>
-                <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted-dark">
-                  {factor.body}
-                </p>
-              </div>
-            </Reveal>
-          ))}
-
-          {/*
-            The sixth cell completes the 3x2 grid rather than leaving a hole,
-            and it carries the honest statement the section is built on.
-          */}
-          <Reveal as="li" variant="card3d">
-            <div className="factor-card glass-dark flex h-full flex-col justify-center rounded-[1.25rem] border-accent/25 bg-accent/[0.07] p-5 sm:p-7">
-              <p className="text-[0.9375rem] leading-relaxed text-white/90">
-                We scope a project before quoting it, and the proposal breaks
-                down what drives the number — so you can adjust the scope
-                rather than guess at the price.
-              </p>
-              <a
-                href={pricing.cta.href}
-                className="group/btn mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-accent"
-              >
-                <span className="link-underline">Start with the estimator</span>
-                <Arrow />
-              </a>
-            </div>
-          </Reveal>
-        </ol>
       </div>
     </Section>
   );

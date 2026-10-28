@@ -30,7 +30,7 @@ Ready to Build                 ← white
 Something Better?              ← white→orange gradient
 Let's discuss your goals…      ← description
 [Start Your Project →] [Book a Consultation]
-Or reach us directly — hello@midis.in / WhatsApp
+Or reach us directly — connect@midis.in / WhatsApp
 ———                            ← thin orange rule, draws from centre
 ```
 
@@ -129,7 +129,7 @@ content.
 | --- | --- | --- |
 | Start Your Project | `#estimator` | anchor exists |
 | Book a Consultation | `/free-website-audit` | 200 |
-| Email | `mailto:hello@midis.in` | valid |
+| Email | `mailto:connect@midis.in` | valid |
 | WhatsApp | `wa.me/919779320626` | 200 |
 
 ---

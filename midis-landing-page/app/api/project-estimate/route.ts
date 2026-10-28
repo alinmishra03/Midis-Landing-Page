@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { site } from "@/content/site";
 import { z } from "zod";
 import { readLead, signLead } from "@/lib/lead-token";
 import { STAGE_SCHEMAS, toPortfolioProjectEstimate, type Stage } from "@/lib/project-estimate";
@@ -33,7 +34,7 @@ import { clientIp, makeLimiter } from "@/lib/audit/limits";
 
 const BASE = (process.env.MIDIS_ADMIN_API_URL ?? "https://admins.midis.in").replace(/\/$/, "");
 const ENDPOINT = `${BASE}/api/portfolio-project-estimates`;
-const FALLBACK_EMAIL = "hello@midis.in";
+const FALLBACK_EMAIL = site.email;
 
 /* Auto-save and four steps: generous enough for one visitor, not a flood. */
 const limited = makeLimiter(40, 60_000);

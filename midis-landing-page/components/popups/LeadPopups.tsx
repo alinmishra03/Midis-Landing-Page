@@ -8,18 +8,11 @@ import {
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { Eyebrow } from "@/components/ui/Section";
-import { Arrow, Button } from "@/components/ui/Button";
-import { FieldError, Honeypot, SelectField, TextField } from "@/components/forms/Fields";
-import { PROJECT_TYPES } from "@/content/forms";
-import { popupSchema } from "@/lib/enquiry";
-import { consultationSchema } from "@/lib/consultation";
+import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import {
-  markLeadSubmitted,
   readPopupState,
   updatePopupState,
 } from "@/lib/popups";
-import { cn } from "@/lib/utils";
 
 /**
  * THE AUTOMATIC LEAD POPUP (MIDIS brief, 2026-10-23 — replaces the
@@ -34,14 +27,15 @@ import { cn } from "@/lib/utils";
  *     closed and the tab is visible, so two never stack and a background
  *     tab is not ambushed on return.
  *   - It stops for good once a lead is submitted this session, here or
- *     through the estimator.
+ *     through the homepage form — so it never opens over a thank-you
+ *     screen.
  *   - When the 20 seconds are up but the visitor is typing in a field, is
- *     part-way through the Project Estimator, or another modal (the work
+ *     part-way through the homepage form (`#estimator`), or another modal (the work
  *     gallery's detail dialog, the mobile menu) is open, it waits and opens
  *     as soon as that clears (checked each second).
  *
  * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
- * dialog: "Before you go". No browser lets a page show its own content as
+ * trigger. Since 2026-10-28 both show the same content. No browser lets a page show its own content as
  * the tab actually closes, so this is EXIT INTENT, the standard stand-in:
  * the pointer leaving the page through the TOP edge, toward the tabs, the
  * address bar and the close button. Desktop (fine pointer) only, because
@@ -52,6 +46,11 @@ import { cn } from "@/lib/utils";
  * visitor is typing. The two popups are independent, each on its own
  * rules; the timed one simply waits while the exit one is open.
  *
+ * THE CONTENT (MIDIS client-approved brief, 2026-10-28): exactly the
+ * homepage hero's consultation form — the shared ConsultationForm, so the
+ * heading, five fields, validation, consent line and thank-you screen are
+ * one implementation. No "Maybe Later" / "No Thanks" button any more.
+ *
  * MANUAL CTAs are untouched: every "Get a Project Estimate" button is a
  * plain link to #estimator and works instantly.
  *
@@ -60,9 +59,8 @@ import { cn } from "@/lib/utils";
  * audit form and the thank-you pages are lead flows of their own — and the
  * clock only runs there.
  *
- * Every popup is dismissible: close button, Escape, backdrop click, and an
- * explicit secondary action. The form posts kind:"popup" through the same
- * validated /api/enquiry route as every other lead.
+ * Every popup is dismissible: close button, Escape, backdrop click. The
+ * form posts source:"popup" to /api/consultation, like the homepage form.
  */
 
 /** The timed popup opens every this-many ms of visible, popup-free time. */
@@ -77,28 +75,6 @@ const EXIT_MIN_DWELL_MS = 10_000;
 const AUTO_ROUTES = new Set(["/"]);
 
 type PopupKind = "timed" | "exit";
-
-const COPY = {
-  timed: {
-    eyebrow: "Let’s build something better",
-    heading: "Have a Website Project in Mind?",
-    description:
-      "Tell us what you’re planning, and the MIDIS team will help you explore the right solution for your business.",
-    primary: "Get a Free Consultation",
-    secondary: "Maybe Later",
-    source: "initial_popup",
-  },
-  /* The exit copy from the client's popup brief of 2026-10-20. */
-  exit: {
-    eyebrow: "Before you go",
-    heading: "Let’s Talk About Your Next Big Idea.",
-    description:
-      "Have a project in mind? Tell us a little about it, and our team can help you explore the next steps.",
-    primary: "Get a Free Consultation",
-    secondary: "No Thanks",
-    source: "exit_popup",
-  },
-} as const;
 
 /** True while the visitor is in a form field — the popup must wait. */
 function isTyping(): boolean {
@@ -144,7 +120,6 @@ export function LeadPopups() {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<PopupKind>("timed");
   const [closing, setClosing] = useState(false);
-  const [sent, setSent] = useState(false);
 
   const pathname = usePathname();
   const autoRoute = AUTO_ROUTES.has(pathname);
@@ -160,7 +135,6 @@ export function LeadPopups() {
         ? document.activeElement
         : null;
     setClosing(false);
-    setSent(false);
     setKind(which);
     setOpen(true);
   }, []);
@@ -337,16 +311,10 @@ export function LeadPopups() {
     return () => document.body.removeAttribute("data-popup-open");
   }, [open]);
 
-  const onSubmitted = useCallback(() => {
-    markLeadSubmitted();
-    setSent(true);
-  }, []);
-
   const headingId = useId();
   const descriptionId = useId();
 
   if (!open) return null;
-  const copy = COPY[kind];
 
   return (
     <div
@@ -359,8 +327,9 @@ export function LeadPopups() {
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        aria-describedby={sent ? undefined : descriptionId}
+        aria-describedby={descriptionId}
         tabIndex={-1}
+        data-kind={kind}
         className="popup-panel"
         onPointerDown={(event) => event.stopPropagation()}
       >
@@ -373,263 +342,17 @@ export function LeadPopups() {
           <CloseGlyph />
         </button>
 
-        {sent ? (
-          <div className="py-4 text-center">
-            <SuccessGlyph />
-            <h2 id={headingId} className="mt-4 font-display text-xl font-semibold">
-              Thank you — we&rsquo;ve received your enquiry.
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              A member of the MIDIS team will get back to you shortly.
-            </p>
-            <Button type="button" size="md" onClick={dismiss} className="mt-6">
-              Continue Browsing
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Eyebrow className="mb-2.5">{copy.eyebrow}</Eyebrow>
-            <h2
-              id={headingId}
-              className="font-display text-[1.375rem] font-semibold leading-[1.15] sm:text-2xl"
-            >
-              {copy.heading}
-            </h2>
-            <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-muted">
-              {copy.description}
-            </p>
-
-            <PopupForm
-              key={kind}
-              /* "Before you go" posts to the admin Strapi's
-                 portfolio-consultations collection (/api/consultation);
-                 the timed popup keeps the existing /api/enquiry inbox. */
-              target={kind === "exit" ? "consultation" : "enquiry"}
-              source={copy.source}
-              submitLabel={copy.primary}
-              secondaryLabel={copy.secondary}
-              onDismiss={dismiss}
-              onSubmitted={onSubmitted}
-            />
-          </>
-        )}
+        {/* The SAME form as the homepage hero (2026-10-28): heading,
+            fields, validation, consent line and thank-you screen. A
+            successful submission swaps in the thank-you screen here and
+            marks the session, so neither popup opens again this visit. */}
+        <ConsultationForm
+          source="popup"
+          titleId={headingId}
+          descriptionId={descriptionId}
+        />
       </div>
     </div>
-  );
-}
-
-/* ========================================================================== */
-
-type FieldName = "name" | "email" | "projectType" | "phone" | "message";
-
-const EMPTY: Record<FieldName, string> = {
-  name: "",
-  email: "",
-  projectType: "",
-  phone: "",
-  message: "",
-};
-
-/**
- * The popups' concise lead form. Validates field-by-field against the SAME
- * Zod schema the server runs and reports success only when the CMS
- * confirmed the record — exactly the estimator's contract, with five
- * fields instead of four steps. The timed popup posts to /api/enquiry;
- * the exit popup ("Before you go") posts to /api/consultation, which
- * stores it in the MIDIS admin's portfolio-consultations collection.
- */
-function PopupForm({
-  target,
-  source,
-  submitLabel,
-  secondaryLabel,
-  onDismiss,
-  onSubmitted,
-}: {
-  target: "enquiry" | "consultation";
-  source: (typeof COPY)[PopupKind]["source"];
-  submitLabel: string;
-  secondaryLabel: string;
-  onDismiss: () => void;
-  onSubmitted: () => void;
-}) {
-  const [values, setValues] = useState(EMPTY);
-  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "submitting">("idle");
-  const [honey, setHoney] = useState("");
-  const sentRef = useRef(false);
-  const messageId = useId();
-
-  const set = (field: FieldName) => (value: string) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
-  };
-
-  async function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (status === "submitting" || sentRef.current) return;
-
-    const parsed =
-      target === "consultation"
-        ? consultationSchema.safeParse({ ...values, hp: honey })
-        : popupSchema.safeParse({
-            kind: "popup",
-            source,
-            ...values,
-            website: honey,
-          });
-
-    if (!parsed.success) {
-      const next: Partial<Record<FieldName, string>> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as FieldName;
-        if (key && !next[key]) next[key] = issue.message;
-      }
-      setErrors(next);
-      return;
-    }
-
-    setStatus("submitting");
-    setFormError(null);
-
-    try {
-      const response = await fetch(target === "consultation" ? "/api/consultation" : "/api/enquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-      const body = await response.json().catch(() => ({}));
-
-      if (!response.ok || !body.ok) {
-        setStatus("idle");
-        setFormError(
-          body.message ??
-            "We could not submit your request just now. Please email us at hello@midis.in.",
-        );
-        if (body.fieldErrors) setErrors(body.fieldErrors);
-        return;
-      }
-
-      /* Only now — the CMS has confirmed the record. */
-      sentRef.current = true;
-      onSubmitted();
-    } catch {
-      setStatus("idle");
-      setFormError(
-        "We could not reach our server. Please check your connection, or email us at hello@midis.in.",
-      );
-    }
-  }
-
-  return (
-    <form onSubmit={onSubmit} noValidate className="relative mt-5">
-      <Honeypot value={honey} onChange={setHoney} />
-
-      <div className="flex flex-col gap-3.5">
-        <div className="grid gap-3.5 sm:grid-cols-2">
-          <TextField
-            label="Name"
-            name="name"
-            autoComplete="name"
-            required
-            value={values.name}
-            onChange={(event) => set("name")(event.target.value)}
-            error={errors.name}
-          />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="yourname@gmail.com"
-            required
-            value={values.email}
-            onChange={(event) => set("email")(event.target.value)}
-            error={errors.email}
-          />
-        </div>
-
-        <SelectField
-          label="What do you need?"
-          name="projectType"
-          options={PROJECT_TYPES}
-          required
-          value={values.projectType}
-          onChange={set("projectType")}
-          error={errors.projectType}
-        />
-
-        <TextField
-          label="Phone"
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          optional
-          placeholder="Include country code"
-          value={values.phone}
-          onChange={(event) => set("phone")(event.target.value)}
-          error={errors.phone}
-        />
-
-        <div>
-          <label htmlFor={messageId} className="block text-sm font-medium text-fg">
-            About your project{" "}
-            <span className="ml-0.5 font-normal text-muted">(optional)</span>
-          </label>
-          <textarea
-            id={messageId}
-            name="message"
-            rows={2}
-            value={values.message}
-            onChange={(event) => set("message")(event.target.value)}
-            aria-invalid={errors.message ? true : undefined}
-            className={cn(
-              "mt-2 block w-full resize-none rounded-lg border bg-surface px-3.5 py-3 text-base text-fg",
-              "placeholder:text-muted/70 transition-colors duration-[var(--dur-fast)]",
-              "focus:border-accent focus:outline-none",
-              errors.message ? "border-danger" : "border-line hover:border-fg/25",
-            )}
-            placeholder="A sentence or two is plenty."
-          />
-          <FieldError id={`${messageId}-error`}>{errors.message}</FieldError>
-        </div>
-      </div>
-
-      {formError ? (
-        <div
-          role="alert"
-          className="mt-4 rounded-lg border border-danger/30 bg-danger-soft p-3.5"
-        >
-          <FieldError id="popup-form-error">{formError}</FieldError>
-        </div>
-      ) : null}
-
-      <div className="mt-5 flex flex-col items-stretch gap-2.5">
-        <Button type="submit" size="md" disabled={status === "submitting"}>
-          {status === "submitting" ? (
-            <>
-              <SpinnerGlyph />
-              {target === "consultation" ? "Submitting…" : "Sending…"}
-            </>
-          ) : (
-            <>
-              {submitLabel}
-              <Arrow />
-            </>
-          )}
-        </Button>
-        <button type="button" onClick={onDismiss} className="popup-secondary">
-          {secondaryLabel}
-        </button>
-      </div>
-
-      <p aria-live="polite" className="sr-only">
-        {status === "submitting" ? "Sending your enquiry." : ""}
-      </p>
-    </form>
   );
 }
 
@@ -648,47 +371,3 @@ function CloseGlyph() {
   );
 }
 
-function SuccessGlyph() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="40"
-      height="40"
-      aria-hidden="true"
-      className="mx-auto text-accent-ink"
-    >
-      <circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M7.5 12.4l3 3 6-6.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SpinnerGlyph() {
-  return (
-    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" className="animate-spin">
-      <circle
-        cx="8"
-        cy="8"
-        r="6.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        opacity="0.25"
-      />
-      <path
-        d="M8 1.5A6.5 6.5 0 0 1 14.5 8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}

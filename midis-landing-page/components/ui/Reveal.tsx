@@ -108,9 +108,8 @@ type Variant =
   /** Process steps: rise with a slight rotation, like cards being dealt. */
   | "deal"
   /**
-   * The cost-factor cards: rise, fade, settle from 0.96 and straighten from
-   * a small forward lean. Needs a perspective on the parent — see
-   * `factor-grid` in globals.css.
+   * The pricing package cards: rise, fade, settle from 0.96 and straighten
+   * from a small forward lean (globals.css, THE `card3d` REVEAL).
    */
   | "card3d"
   /**

@@ -397,14 +397,16 @@ export function Honeypot({
   value: string;
   onChange: (value: string) => void;
 }) {
+  /* useId: the hero form and the popup form can be on the page together. */
+  const id = useId();
   return (
     <div
       aria-hidden="true"
       className="absolute left-[-9999px] top-0 h-px w-px overflow-hidden"
     >
-      <label htmlFor="website-hp">Website (leave this blank)</label>
+      <label htmlFor={id}>Website (leave this blank)</label>
       <input
-        id="website-hp"
+        id={id}
         name="website"
         type="text"
         tabIndex={-1}
