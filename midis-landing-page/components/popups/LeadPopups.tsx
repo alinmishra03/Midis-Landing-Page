@@ -19,22 +19,25 @@ import {
  * three-trigger system of 2026-10-20, whose welcome popup opened 2.6s after
  * load and interrupted the first look at the page).
  *
- * THE TIMED POPUP OPENS EVERY 20 SECONDS (MIDIS instruction, 2026-10-28:
- * "while scrolling, and sitting on the page or not scrolling"; the 3-per-
- * visit cap of 2026-10-24 is gone):
- *   - 20 seconds after the page loads, and again 20 seconds after each
- *     close, scrolling or not. The clock only runs while the popup is
- *     closed and the tab is visible, so two never stack and a background
- *     tab is not ambushed on return.
- *   - It stops for good once a lead is submitted this session, here or
- *     through the homepage form — so it never opens over a thank-you
- *     screen.
- *   - When the 20 seconds are up but the visitor is typing in a field, is
- *     part-way through the homepage form (`#estimator`), or another modal (the work
- *     gallery's detail dialog, the mobile menu) is open, it waits and opens
- *     as soon as that clears (checked each second).
- *
- * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
+ * THE TIMED POPUP OPENS AFTER EVERY 20 SECONDS OF ACTIVE SCROLLING (MIDIS
+ * instruction, 2026-10-28; it was briefly a plain 20s clock):
+ *   - Only scrolling time counts. A scroll starts the clock; it runs while
+ *     scroll events keep arriving and pauses once they have stopped for
+ *     SCROLL_IDLE_MS. An idle page, reading without scrolling and a
+ *     background tab add nothing, so nothing opens on load.
+ *   - Closing it starts a fresh 20 seconds of scrolling — dismissal never
+ *     disables it. The clock never runs while it is open (the page cannot
+ *     scroll then), so two never stack.
+ *   - It stops for the rest of the browser session once a lead is
+ *     submitted, here or through the homepage form.
+ *   - When the 20 seconds are up but the visitor is in a form field, typed
+ *     in any form in the last FORM_ACTIVE_MS, or another modal (the work
+ *     gallery's dialog, the mobile menu) is open, it holds and opens on the
+ *     next scroll once that has cleared.
+ *   (Until 2026-10-28 it also held whenever the homepage form was on screen
+ *   with anything typed in it, or had merely been clicked in the last
+ *   minute — which kept it from ever opening for many visitors.)
+ * * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
  * trigger. Since 2026-10-28 both show the same content. No browser lets a page show its own content as
  * the tab actually closes, so this is EXIT INTENT, the standard stand-in:
  * the pointer leaving the page through the TOP edge, toward the tabs, the
@@ -55,25 +58,23 @@ import {
  * plain link to #estimator and works instantly.
  *
  * Mounted once in the root layout, so client-side navigation never spawns a
- * second timer or listener set. It only OPENS on the landing page — the
- * audit form and the thank-you pages are lead flows of their own — and the
- * clock only runs there.
- *
- * Every popup is dismissible: close button, Escape, backdrop click. The
+ * second timer or listener set, and the scrolling time banked so far
+ * carries across pages. It runs on every page except the thank-you pages
+ * (a visitor there has just converted).
+ * * Every popup is dismissible: close button, Escape, backdrop click. The
  * form posts source:"popup" to /api/consultation, like the homepage form.
  */
 
-/** The timed popup opens every this-many ms of visible, popup-free time. */
+/** The timed popup opens after this much accumulated scrolling time. */
 const REPEAT_MS = 20_000;
-/** How often a due-but-blocked popup re-checks whether it may open. */
-const BLOCKED_RETRY_MS = 1_000;
-/** Estimator interaction this recent means the visitor is still on it. */
-const ESTIMATOR_ACTIVE_MS = 60_000;
+/** Scrolling counts as stopped this long after the last scroll event. */
+const SCROLL_IDLE_MS = 1_000;
+/** Typing in any form this recently means the visitor is still on it. */
+const FORM_ACTIVE_MS = 30_000;
 /** The exit popup ignores the toolbar for this long after landing. */
 const EXIT_MIN_DWELL_MS = 10_000;
-/** Routes the popup may open on. */
-const AUTO_ROUTES = new Set(["/"]);
-
+/** Pages the popup never opens on. */
+const isQuietRoute = (pathname: string) => pathname.startsWith("/thank-you");
 type PopupKind = "timed" | "exit";
 
 /** True while the visitor is in a form field — the popup must wait. */
@@ -97,38 +98,21 @@ function otherModalOpen(): boolean {
   );
 }
 
-/** True while the visitor is part-way through the Project Estimator: they
-    touched it in the last minute, or it is on screen with answers in it. */
-function estimatorInProgress(lastActivity: number): boolean {
-  if (lastActivity > 0 && performance.now() - lastActivity < ESTIMATOR_ACTIVE_MS) {
-    return true;
-  }
-  const form = document.querySelector<HTMLFormElement>("#estimator form");
-  if (!form) return false;
-  const box = form.getBoundingClientRect();
-  if (box.bottom <= 0 || box.top >= window.innerHeight) return false;
-  return [
-    ...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-      "input:not([type=hidden]):not([type=radio]):not([type=checkbox]), textarea",
-    ),
-  ].some(
-    (field) => !field.closest("[aria-hidden='true']") && field.value.trim() !== "",
-  );
+/** True while the visitor typed in a form field recently. */
+function formInProgress(lastInput: number): boolean {
+  return lastInput > 0 && performance.now() - lastInput < FORM_ACTIVE_MS;
 }
-
 export function LeadPopups() {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<PopupKind>("timed");
   const [closing, setClosing] = useState(false);
 
   const pathname = usePathname();
-  const autoRoute = AUTO_ROUTES.has(pathname);
-
+  const autoRoute = !isQuietRoute(pathname);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
-  /* When the visitor last typed, picked or clicked inside the estimator. */
-  const estimatorActivityRef = useRef(0);
-
+  /* When the visitor last typed in a form field (any form on the page). */
+  const formInputRef = useRef(0);
   const show = useCallback((which: PopupKind) => {
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
@@ -151,76 +135,97 @@ export function LeadPopups() {
 
   /* ---------------- the automatic trigger ---------------- */
 
-  /* Estimator activity, recorded without re-rendering. */
+  /* Form typing, recorded without re-rendering. */
   useEffect(() => {
     if (!autoRoute) return;
-    const onActivity = (event: Event) => {
-      if (event.target instanceof Element && event.target.closest("#estimator")) {
-        estimatorActivityRef.current = performance.now();
+    const onInput = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest("form")) {
+        formInputRef.current = performance.now();
       }
     };
-    document.addEventListener("input", onActivity, true);
-    document.addEventListener("pointerdown", onActivity, true);
-    return () => {
-      document.removeEventListener("input", onActivity, true);
-      document.removeEventListener("pointerdown", onActivity, true);
-    };
+    document.addEventListener("input", onInput, true);
+    return () => document.removeEventListener("input", onInput, true);
   }, [autoRoute]);
 
   /* Runs while the popup is CLOSED; opening it tears this down, closing it
-     starts a fresh 20s. The countdown pauses while the tab is hidden: the
-     time still owed is kept and resumed on return. All bookkeeping lives
-     in closure variables, so the clock never re-renders anything, and at
-     most one timeout is pending. */
+     starts a fresh 20s of scrolling. All bookkeeping lives in closure
+     variables, so scrolling never re-renders anything; at most one timeout
+     is pending, and only while the visitor is scrolling. Route changes
+     between allowed pages keep this effect (and its banked time) alive. */
   useEffect(() => {
     if (!autoRoute || open) return;
     if (readPopupState().submitted) return;
 
-    let remaining = REPEAT_MS;
-    let startedAt: number | null = null;
+    /* Scrolling time banked from earlier bursts. */
+    let banked = 0;
+    /* Start of the current burst, or null while not scrolling. */
+    let burstStart: number | null = null;
+    let lastScroll = 0;
     let timer: number | undefined;
 
-    const pause = () => {
-      if (startedAt !== null) {
-        remaining = Math.max(remaining - (performance.now() - startedAt), 0);
-        startedAt = null;
-      }
+    /* A burst counts up to its last scroll event plus the idle grace. */
+    const elapsed = (now: number) =>
+      banked +
+      (burstStart === null
+        ? 0
+        : Math.min(now, lastScroll + SCROLL_IDLE_MS) - burstStart);
+
+    const endBurst = (now: number) => {
+      banked = elapsed(now);
+      burstStart = null;
       window.clearTimeout(timer);
     };
 
-    const run = () => {
-      if (document.visibilityState !== "visible") return;
-      startedAt = performance.now();
-      timer = window.setTimeout(due, remaining);
-    };
-
     const due = () => {
-      startedAt = null;
       if (readPopupState().submitted) return;
-      /* Due but blocked: check again shortly rather than skip a round. */
-      if (
-        isTyping() ||
-        otherModalOpen() ||
-        estimatorInProgress(estimatorActivityRef.current)
-      ) {
-        remaining = BLOCKED_RETRY_MS;
-        run();
+      if (isTyping() || otherModalOpen() || formInProgress(formInputRef.current)) {
+        /* Hold at "due": the next scroll checks again. */
+        banked = REPEAT_MS;
         return;
       }
       updatePopupState({ timedCount: readPopupState().timedCount + 1 });
       show("timed");
     };
 
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") run();
-      else pause();
+    /* Wakes at whichever comes first: the 20s mark or the burst going
+       idle. Scroll events in between only move lastScroll forward. */
+    const tick = () => {
+      const now = performance.now();
+      if (elapsed(now) >= REPEAT_MS) {
+        endBurst(now);
+        due();
+        return;
+      }
+      if (now - lastScroll >= SCROLL_IDLE_MS) {
+        endBurst(now);
+        return;
+      }
+      timer = window.setTimeout(
+        tick,
+        Math.min(REPEAT_MS - elapsed(now), lastScroll + SCROLL_IDLE_MS - now),
+      );
     };
 
+    const onScroll = () => {
+      if (document.visibilityState !== "visible") return;
+      lastScroll = performance.now();
+      if (burstStart === null) {
+        burstStart = lastScroll;
+        tick();
+      }
+    };
+
+    /* A hidden tab ends the burst; nothing accrues until scrolling resumes. */
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") endBurst(performance.now());
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
-    run();
 
     return () => {
-      pause();
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [autoRoute, open, show]);
