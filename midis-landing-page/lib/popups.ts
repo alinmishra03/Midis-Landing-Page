@@ -13,8 +13,8 @@
  */
 
 export interface PopupState {
-  /** How many times the timed popup has opened this session. It repeats
-      every 20 seconds up to a cap (MIDIS, 2026-10-24: 3 per visit). */
+  /** How many times the timed popup has opened this session. It reopens
+      every 20 seconds, uncapped (MIDIS, 2026-10-28). */
   timedCount: number;
   /** The exit-intent popup has opened this session. Once only. */
   exitShown: boolean;

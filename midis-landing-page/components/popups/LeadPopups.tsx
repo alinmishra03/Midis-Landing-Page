@@ -26,20 +26,19 @@ import { cn } from "@/lib/utils";
  * three-trigger system of 2026-10-20, whose welcome popup opened 2.6s after
  * load and interrupted the first look at the page).
  *
- * THE TIMED POPUP REPEATS EVERY 20 SECONDS (MIDIS instruction, 2026-10-24;
- * it used to open once per session, after 20s of browsing AND a scroll):
+ * THE TIMED POPUP OPENS EVERY 20 SECONDS (MIDIS instruction, 2026-10-28:
+ * "while scrolling, and sitting on the page or not scrolling"; the 3-per-
+ * visit cap of 2026-10-24 is gone):
  *   - 20 seconds after the page loads, and again 20 seconds after each
- *     close — scrolling or not. The clock only runs while the popup is
+ *     close, scrolling or not. The clock only runs while the popup is
  *     closed and the tab is visible, so two never stack and a background
  *     tab is not ambushed on return.
- *   - At most 3 times per visit (MIDIS, 2026-10-24). The count lives in
- *     sessionStorage, so a refresh or a route change does not reset it; a
- *     new tab or browser session starts fresh.
  *   - It stops for good once a lead is submitted this session, here or
  *     through the estimator.
- *   - When the 20 seconds are up but the visitor is typing in a field, or
- *     another modal (the work gallery's detail dialog, the mobile menu) is
- *     open, it waits and opens as soon as that clears (checked each second).
+ *   - When the 20 seconds are up but the visitor is typing in a field, is
+ *     part-way through the Project Estimator, or another modal (the work
+ *     gallery's detail dialog, the mobile menu) is open, it waits and opens
+ *     as soon as that clears (checked each second).
  *
  * THE EXIT POPUP (MIDIS request, 2026-10-23) is the second automatic
  * dialog: "Before you go". No browser lets a page show its own content as
@@ -68,10 +67,10 @@ import { cn } from "@/lib/utils";
 
 /** The timed popup opens every this-many ms of visible, popup-free time. */
 const REPEAT_MS = 20_000;
-/** …but no more than this many times per visit (browser session). */
-const MAX_TIMED_PER_VISIT = 3;
 /** How often a due-but-blocked popup re-checks whether it may open. */
 const BLOCKED_RETRY_MS = 1_000;
+/** Estimator interaction this recent means the visitor is still on it. */
+const ESTIMATOR_ACTIVE_MS = 60_000;
 /** The exit popup ignores the toolbar for this long after landing. */
 const EXIT_MIN_DWELL_MS = 10_000;
 /** Routes the popup may open on. */
@@ -122,6 +121,25 @@ function otherModalOpen(): boolean {
   );
 }
 
+/** True while the visitor is part-way through the Project Estimator: they
+    touched it in the last minute, or it is on screen with answers in it. */
+function estimatorInProgress(lastActivity: number): boolean {
+  if (lastActivity > 0 && performance.now() - lastActivity < ESTIMATOR_ACTIVE_MS) {
+    return true;
+  }
+  const form = document.querySelector<HTMLFormElement>("#estimator form");
+  if (!form) return false;
+  const box = form.getBoundingClientRect();
+  if (box.bottom <= 0 || box.top >= window.innerHeight) return false;
+  return [
+    ...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      "input:not([type=hidden]):not([type=radio]):not([type=checkbox]), textarea",
+    ),
+  ].some(
+    (field) => !field.closest("[aria-hidden='true']") && field.value.trim() !== "",
+  );
+}
+
 export function LeadPopups() {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<PopupKind>("timed");
@@ -133,9 +151,8 @@ export function LeadPopups() {
 
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
-  /* In-memory twin of the stored count, so the cap still holds where
-     sessionStorage is blocked (some privacy modes). */
-  const timedCountRef = useRef(0);
+  /* When the visitor last typed, picked or clicked inside the estimator. */
+  const estimatorActivityRef = useRef(0);
 
   const show = useCallback((which: PopupKind) => {
     restoreFocusRef.current =
@@ -160,20 +177,30 @@ export function LeadPopups() {
 
   /* ---------------- the automatic trigger ---------------- */
 
+  /* Estimator activity, recorded without re-rendering. */
+  useEffect(() => {
+    if (!autoRoute) return;
+    const onActivity = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest("#estimator")) {
+        estimatorActivityRef.current = performance.now();
+      }
+    };
+    document.addEventListener("input", onActivity, true);
+    document.addEventListener("pointerdown", onActivity, true);
+    return () => {
+      document.removeEventListener("input", onActivity, true);
+      document.removeEventListener("pointerdown", onActivity, true);
+    };
+  }, [autoRoute]);
+
   /* Runs while the popup is CLOSED; opening it tears this down, closing it
      starts a fresh 20s. The countdown pauses while the tab is hidden: the
-     time still owed is kept and resumed on return. */
+     time still owed is kept and resumed on return. All bookkeeping lives
+     in closure variables, so the clock never re-renders anything, and at
+     most one timeout is pending. */
   useEffect(() => {
     if (!autoRoute || open) return;
-    /* Finished for this visit: a lead landed, or the cap is reached. */
-    const finished = () => {
-      const state = readPopupState();
-      return (
-        state.submitted ||
-        Math.max(state.timedCount, timedCountRef.current) >= MAX_TIMED_PER_VISIT
-      );
-    };
-    if (finished()) return;
+    if (readPopupState().submitted) return;
 
     let remaining = REPEAT_MS;
     let startedAt: number | null = null;
@@ -187,30 +214,27 @@ export function LeadPopups() {
       window.clearTimeout(timer);
     };
 
-    const due = () => {
-      startedAt = null;
-      if (finished()) return;
-      /* Went hidden at the last instant: open a beat after the return. */
-      if (document.visibilityState !== "visible") {
-        remaining = BLOCKED_RETRY_MS;
-        return;
-      }
-      /* Due but blocked: check again shortly rather than skip a round. */
-      if (isTyping() || otherModalOpen()) {
-        remaining = BLOCKED_RETRY_MS;
-        run();
-        return;
-      }
-      timedCountRef.current =
-        Math.max(readPopupState().timedCount, timedCountRef.current) + 1;
-      updatePopupState({ timedCount: timedCountRef.current });
-      show("timed");
-    };
-
     const run = () => {
       if (document.visibilityState !== "visible") return;
       startedAt = performance.now();
       timer = window.setTimeout(due, remaining);
+    };
+
+    const due = () => {
+      startedAt = null;
+      if (readPopupState().submitted) return;
+      /* Due but blocked: check again shortly rather than skip a round. */
+      if (
+        isTyping() ||
+        otherModalOpen() ||
+        estimatorInProgress(estimatorActivityRef.current)
+      ) {
+        remaining = BLOCKED_RETRY_MS;
+        run();
+        return;
+      }
+      updatePopupState({ timedCount: readPopupState().timedCount + 1 });
+      show("timed");
     };
 
     const onVisibility = () => {
