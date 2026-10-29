@@ -113,9 +113,9 @@ export function Hero() {
           </h1>
 
           {/* One block: description, then the statistics 16px below. From
-              1024px it sits under the showcase; from 1280px the two share a
-              row there, split by a hairline. */}
-          <div className="hero-meta grid gap-y-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-x-8">
+              1024px it sits under the showcase, and once the column is wide
+              enough the two share a row (globals.css, "THE META ROW"). */}
+          <div className="hero-meta grid gap-y-4">
             <p
               className="hero-sub hero-rise max-w-[34rem] text-sm leading-[1.6] text-muted md:text-[0.9375rem] 2xl:text-base"
               style={{ "--d": "100ms" } as React.CSSProperties}
@@ -129,7 +129,7 @@ export function Hero() {
               animates them once when they come into view.
             */}
             <ul
-              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-3.5 xl:min-w-[21rem] xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"
+              className="hero-stats hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-3.5"
               style={{ "--d": "180ms" } as React.CSSProperties}
             >
               {stats.map((stat, index) => (

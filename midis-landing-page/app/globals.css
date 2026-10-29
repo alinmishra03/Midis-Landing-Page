@@ -686,9 +686,14 @@ p {
 
    The form spans both lower rows. The left column is the devices, then
    the description and statistics as one group, from the form's top line
-   down; the form card, which is taller, simply runs longer (the spare
-   height is the last row's `1fr`). The intro and stage wrappers are
-   `display: contents` so their children join this one grid.
+   down (any spare height is the last row's `1fr`). The intro and stage
+   wrappers are `display: contents` so their children join this one grid.
+
+   COLUMNS (alignment pass, 2026-10-29): 50/50 from 1024px — the form
+   needs ~460px for its paired fields to keep ~195px each (the country
+   code plus a usable number box) — and 55/45 from 1280px. With the pairs
+   the form is ~560–600px tall, close to the left column's own height, so
+   the two columns end near the same line.
 
    THE DESKTOP IMAGE (Hero.tsx <picture>, from 1024px only): "Midis Website
    Hero Devices (1).png", 1774x887 — the phone and laptop alone on a white
@@ -715,11 +720,10 @@ p {
    blur, no glow, no colour overlay. */
 @media (min-width: 1024px) {
   .hero-layout {
-    --stage-gap: 1.75rem;
+    --stage-gap: 1.5rem;
     display: grid;
-    container-type: inline-size;
-    /* media : form = 1.3 : 1 (≈56.5% : 43.5%). */
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    container: hero-layout / inline-size;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;
     grid-template-areas:
       "title title"
@@ -796,6 +800,41 @@ p {
 @media (min-width: 1280px) {
   .hero-layout {
     --stage-gap: 2rem;
+    /* media : form = 55 : 45. */
+    grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+  }
+}
+
+/* THE META ROW (desktop). The description and the statistics share a row
+   — description ~55%, statistics ~45%, centred on each other — once the
+   left column is wide enough for both (≈ 660px: from a 1232px hero, i.e.
+   1366px screens up). Narrower, they stack: the description, then the
+   statistics under a hairline, as on phones. A container query on the
+   hero's own width, so it follows the real column, not the viewport; the
+   hero is only a container from 1024px, so phones never match. */
+@container hero-layout (min-width: 77rem) {
+  /* The statistics take their natural width (~320px: each figure as wide
+     as its own label), the description the rest (~55%). */
+  .hero-meta {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.75rem;
+  }
+
+  /* Beside the text, the hairline above the statistics has nothing to
+     separate; the one between the two figures stays. */
+  .hero-meta .hero-stats {
+    grid-template-columns: auto auto;
+    max-width: none;
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+/* "50+" / "20+" and their labels never break. */
+@media (min-width: 1024px) {
+  .hero-meta .hero-stats li > span:last-child > span {
+    white-space: nowrap;
   }
 }
 

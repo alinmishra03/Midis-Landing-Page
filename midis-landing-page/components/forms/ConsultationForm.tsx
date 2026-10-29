@@ -72,8 +72,9 @@ export function ConsultationForm({
       preselect). Every record is stored with sourceWebsite "midis-portfolio". */
   source: ConsultationSource;
   /** "wide" (the homepage hero panel): below 1024px it lays out exactly
-      like "stacked"; from 1024px it is the hero's right-hand column, one
-      field per row (desktop hero redesign, 2026-10-29). "popup" (the lead
+      like "stacked"; from 1024px it is the hero's right-hand column:
+      name | email and phone | website in equal pairs, the service, submit
+      and consent full width (hero alignment pass, MIDIS 2026-10-29). "popup" (the lead
       popup): tighter spacing and never more than two columns, however wide
       the dialog. Content is identical in every layout. */
   layout?: "stacked" | "wide" | "popup";
@@ -262,11 +263,12 @@ export function ConsultationForm({
            website / service / the submit. Narrower (phones) it is one
            column. The viewport is never consulted: the same form lives in
            the hero, a dialog and the audit page.
-           THE HERO ("wide") from 1024px is the exception: its column is
-           narrow and the brief wants one field per row there, so its pairing
-           rules are limited to below 1024px (`max-lg:`) — identical to the
-           other layouts on phones and tablets — and `lg:grid-cols-1` takes
-           over above. */
+           THE HERO ("wide") from 1024px is the exception: its column width
+           is set by the hero grid, so its container rules are limited to
+           below 1024px (`max-lg:`) — identical to the other layouts on
+           phones and tablets — and from 1024px it is always two equal
+           columns (the hero keeps the form column ≥ ~430px there, so each
+           half stays above the 25rem pairing threshold's ~194px). */
         className={cn("@container relative mt-3 md:mt-4", popup && "md:mt-3.5")}
       >
         <Honeypot value={honey} onChange={setHoney} />
@@ -279,7 +281,7 @@ export function ConsultationForm({
             popup
               ? "gap-y-2.5 @[25rem]:grid-cols-2 md:gap-y-3"
               : wide
-                ? "gap-y-3 max-lg:@[25rem]:grid-cols-2 md:gap-y-3.5 max-lg:@[42rem]:grid-cols-3 lg:grid-cols-1 lg:gap-y-3"
+                ? "gap-y-3 max-lg:@[25rem]:grid-cols-2 md:gap-y-3.5 max-lg:@[42rem]:grid-cols-3 lg:grid-cols-2 lg:gap-y-3"
                 : "gap-y-3 @[25rem]:grid-cols-2 md:gap-y-3.5 @[42rem]:grid-cols-3",
           )}
         >
@@ -332,7 +334,7 @@ export function ConsultationForm({
               popup
                 ? "@[25rem]:col-span-2"
                 : wide
-                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1"
+                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1 lg:col-span-2"
                   : "@[25rem]:col-span-2 @[42rem]:col-span-1"
             }
           >
@@ -356,7 +358,7 @@ export function ConsultationForm({
               popup
                 ? "@[25rem]:col-span-2"
                 : wide
-                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1 max-lg:@[42rem]:pt-[1.625rem]"
+                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1 max-lg:@[42rem]:pt-[1.625rem] lg:col-span-2"
                   : "@[25rem]:col-span-2 @[42rem]:col-span-1 @[42rem]:pt-[1.625rem]"
             }
           >
