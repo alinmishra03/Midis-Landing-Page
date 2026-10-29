@@ -71,10 +71,11 @@ export function ConsultationForm({
   /** Where the form is rendered (the homepage one takes the Services
       preselect). Every record is stored with sourceWebsite "midis-portfolio". */
   source: ConsultationSource;
-  /** "wide" (the homepage hero panel): from xl the heading block sits
-      beside the fields instead of above them. "popup" (the lead popup):
-      tighter spacing and never more than two columns, however wide the
-      dialog. Content is identical in every layout. */
+  /** "wide" (the homepage hero panel): below 1024px it lays out exactly
+      like "stacked"; from 1024px it is the hero's right-hand column, one
+      field per row (desktop hero redesign, 2026-10-29). "popup" (the lead
+      popup): tighter spacing and never more than two columns, however wide
+      the dialog. Content is identical in every layout. */
   layout?: "stacked" | "wide" | "popup";
   /** Lets a dialog name itself after the visible heading. */
   titleId?: string;
@@ -224,7 +225,6 @@ export function ConsultationForm({
       className={cn(
         "consult-form",
         popup && "consult-popup",
-        wide && "xl:grid xl:grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] xl:items-start xl:gap-x-12",
       )}
     >
       <div>
@@ -234,7 +234,6 @@ export function ConsultationForm({
           className={cn(
             /* 20px below 768px (mobile compact pass, 2026-10-28), 24px above. */
             "font-display text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.02em] text-balance md:text-[1.5rem]",
-            wide && "xl:text-[1.75rem] xl:leading-[1.15]",
           )}
         >
           {copy.heading}
@@ -243,7 +242,6 @@ export function ConsultationForm({
           id={introId}
           className={cn(
             "mt-1 text-[0.8125rem] leading-[1.5] text-muted md:mt-1.5 md:text-sm md:leading-[1.55]",
-            wide && "xl:mt-3",
             popup && "md:mt-1 md:text-[0.84375rem] md:leading-[1.5]",
           )}
         >
@@ -263,17 +261,26 @@ export function ConsultationForm({
            the hero's wide panel) THREE per row — name / email / phone, then
            website / service / the submit. Narrower (phones) it is one
            column. The viewport is never consulted: the same form lives in
-           the hero, a dialog and the audit page. */
-        className={cn("@container relative mt-3 md:mt-4", wide && "xl:mt-0", popup && "md:mt-3.5")}
+           the hero, a dialog and the audit page.
+           THE HERO ("wide") from 1024px is the exception: its column is
+           narrow and the brief wants one field per row there, so its pairing
+           rules are limited to below 1024px (`max-lg:`) — identical to the
+           other layouts on phones and tablets — and `lg:grid-cols-1` takes
+           over above. */
+        className={cn("@container relative mt-3 md:mt-4", popup && "md:mt-3.5")}
       >
         <Honeypot value={honey} onChange={setHoney} />
 
         <div
           className={cn(
-            "consult-fields grid gap-x-3 @[25rem]:grid-cols-2",
+            "consult-fields grid gap-x-3",
             /* The popup stays at two columns (its brief), 12px rows. */
             /* Rows: 10px (popup) / 12px on phones, 12 / 14px from 768px. */
-            popup ? "gap-y-2.5 md:gap-y-3" : "gap-y-3 md:gap-y-3.5 @[42rem]:grid-cols-3",
+            popup
+              ? "gap-y-2.5 @[25rem]:grid-cols-2 md:gap-y-3"
+              : wide
+                ? "gap-y-3 max-lg:@[25rem]:grid-cols-2 md:gap-y-3.5 max-lg:@[42rem]:grid-cols-3 lg:grid-cols-1 lg:gap-y-3"
+                : "gap-y-3 @[25rem]:grid-cols-2 md:gap-y-3.5 @[42rem]:grid-cols-3",
           )}
         >
           <TextField
@@ -320,7 +327,15 @@ export function ConsultationForm({
             onChange={(event) => set("website")(event.target.value)}
             error={errors.website}
           />
-          <div className={cn("@[25rem]:col-span-2", !popup && "@[42rem]:col-span-1")}>
+          <div
+            className={
+              popup
+                ? "@[25rem]:col-span-2"
+                : wide
+                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1"
+                  : "@[25rem]:col-span-2 @[42rem]:col-span-1"
+            }
+          >
             <SelectField
               label={fields.service.label}
               name="service"
@@ -336,7 +351,15 @@ export function ConsultationForm({
           {/* In three columns the submit is the row's third cell: the top
               padding is a label's height plus its gap, so the button lines
               up with the inputs beside it, even when they show errors. */}
-          <div className={cn("@[25rem]:col-span-2", !popup && "@[42rem]:col-span-1 @[42rem]:pt-[1.625rem]")}>
+          <div
+            className={
+              popup
+                ? "@[25rem]:col-span-2"
+                : wide
+                  ? "max-lg:@[25rem]:col-span-2 max-lg:@[42rem]:col-span-1 max-lg:@[42rem]:pt-[1.625rem]"
+                  : "@[25rem]:col-span-2 @[42rem]:col-span-1 @[42rem]:pt-[1.625rem]"
+            }
+          >
             <Button
               type="submit"
               size="md"
@@ -346,7 +369,9 @@ export function ConsultationForm({
                 /* 44px (popup) / 46px on phones; 46 / 48px from 768px. */
                 popup
                   ? "min-h-11 md:min-h-[2.875rem]"
-                  : "mt-0.5 min-h-[2.875rem] md:min-h-12 @[42rem]:mt-0 @[42rem]:min-h-11",
+                  : wide
+                    ? "mt-0.5 min-h-[2.875rem] md:min-h-12 max-lg:@[42rem]:mt-0 max-lg:@[42rem]:min-h-11"
+                    : "mt-0.5 min-h-[2.875rem] md:min-h-12 @[42rem]:mt-0 @[42rem]:min-h-11",
               )}
             >
               {status === "submitting" ? (

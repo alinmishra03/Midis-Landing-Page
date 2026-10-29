@@ -677,28 +677,159 @@ p {
   }
 }
 
-/* THE EDITORIAL HEADLINE (2026-10-28; enlarged in the alignment pass).
-   Full width below 1200px: 34px to 390 (the longest line, "Visitors Into
-   Customers.", then fits a 375px phone in two lines; 320-360px take three,
-   never a lone word), ~55px at 768, 72px from ~1040.
-   From 1200px it fills the 62% column: ~63px at 1200, ~74px at 1440,
-   81.6px from 1600 (where the container stops growing) — always two lines
-   there ("Websites That Turn / Visitors Into Customers."), the longer
-   second line kept inside the column. Weight 750 on desktop (Inter Tight
-   is variable); 700 below 1200px, where 750's extra width would push a
-   390px phone from two lines to three. */
+/* DESKTOP HERO LAYOUT (MIDIS hero redesign, 2026-10-29). From 1024px only;
+   everything above this block is the phone/tablet hero, untouched.
+
+     title  title        the headline, full width
+     media  form         the devices LEFT, the form RIGHT, same top line
+     meta   form         description + statistics directly under them
+
+   The form spans both lower rows. The left column is the devices, then
+   the description and statistics as one group, from the form's top line
+   down; the form card, which is taller, simply runs longer (the spare
+   height is the last row's `1fr`). The intro and stage wrappers are
+   `display: contents` so their children join this one grid.
+
+   THE DESKTOP IMAGE (Hero.tsx <picture>, from 1024px only): "Midis Website
+   Hero Devices (1).png", 1774x887 — the phone and laptop alone on a white
+   ground. In the source the devices (phone coaster to laptop edge) occupy
+   x 238–1445, y 185–800, with their floor reflection down to ~y 870.
+
+   THE FRAME is sized to the devices: as wide as the column, 0.56 of that
+   tall. The image is scaled so the devices span 92% of the frame's width
+   (img width = 1774 / 1207 × 0.92 = 135.2% of the frame), centred
+   across it, with the laptop's top 3% of the width below the frame's top
+   — level with the form's top edge. Only empty ground is clipped; the
+   devices are never cropped.
+
+   THE BLEND: no card — no radius, border or shadow. The image's ground is
+   #FEFEFE where the page is #FAF9F6, so the image is drawn with
+   `mix-blend-mode: multiply` over the frame painted in the page colour
+   (white × #FAF9F6 ≈ #FAF9F6; the devices change by 2–4 levels at most —
+   imperceptible — and stay fully sharp). Because the ground is a hair off
+   pure white, it still lands 1 level under the page, and its floor shading
+   2–3; on a long straight edge even that reads, so the FRAME's edges fade
+   to transparent: 3% at the sides and top, the bottom 10% (the laptop's base
+   ends at 89% of the frame's height). Those bands
+   hold only empty ground and the floor reflection, never the devices. No
+   blur, no glow, no colour overlay. */
+@media (min-width: 1024px) {
+  .hero-layout {
+    --stage-gap: 1.75rem;
+    display: grid;
+    container-type: inline-size;
+    /* media : form = 1.3 : 1 (≈56.5% : 43.5%). */
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "title title"
+      "media form"
+      "meta  form";
+    column-gap: var(--stage-gap);
+    row-gap: 1.25rem;
+  }
+
+  .hero-layout > .hero-intro,
+  .hero-layout > .hero-stage-row {
+    display: contents;
+  }
+
+  .hero-layout #hero-heading {
+    grid-area: title;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-layout .hero-meta {
+    grid-area: meta;
+    align-self: start;
+  }
+
+  .hero-layout #estimator {
+    grid-area: form;
+    margin: 0;
+  }
+
+  .hero-layout .hero-showcase {
+    grid-area: media;
+    margin: 0;
+    align-self: start;
+    aspect-ratio: 1 / 0.56;
+    height: auto;
+    overflow: hidden;
+    /* The backdrop the image multiplies against: the page colour. */
+    background: var(--color-paper);
+    /* Width units for the image below (the frame's height follows its
+       width, never the image, which is absolute). */
+    container-type: inline-size;
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%),
+      linear-gradient(180deg, transparent 0, #000 3%, #000 90%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%),
+      linear-gradient(180deg, transparent 0, #000 3%, #000 90%, transparent 100%);
+    mask-composite: intersect;
+  }
+
+  .hero-layout .hero-showcase img {
+    /* Width 135.2cqw; height half of it (2:1). The devices' centre
+       (x 841.5 = 47.44% of the width) on the frame's centre; their top
+       (y 185 = 20.86% of the height = 10.43% of the width) 3cqw down. */
+    --w: 135.2cqw;
+    position: absolute;
+    inset: auto;
+    left: calc(50cqw - 0.4744 * var(--w));
+    top: calc(3cqw - 0.1043 * var(--w));
+    width: var(--w);
+    max-width: none;
+    height: auto;
+    object-fit: fill;
+    /* #FEFEFE ground → #FFFFFF, so it multiplies to exactly the page colour
+       (devices +0.5% brightness; not a blur). */
+    filter: brightness(1.005);
+    mix-blend-mode: multiply;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-layout {
+    --stage-gap: 2rem;
+  }
+}
+
+/* THE EDITORIAL HEADLINE (2026-10-28; readability pass 2026-10-29).
+   34px on phones to 430px, ~55px at 768, ~69px at 1024; from 1200px
+   ~67px at 1280, ~74px at 1440, 81.6px from 1600. Measured line breaks:
+   three lines on phones ("Websites That / Turn Visitors / Into
+   Customers."), two from 768px ("Websites That Turn / Visitors Into
+   Customers."); "Into Customers." never splits. Weight 750 on desktop
+   (Inter Tight is variable), 700 below 1200px. */
 .hero-title {
   font-size: clamp(2.125rem, 0.75rem + 5.6vw, 4.5rem);
   font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: -0.045em;
+  /* READABILITY PASS (MIDIS, 2026-10-29): the tracking was -0.045em
+     (-0.05em on desktop) on a 1.02 line, which packed the letters and
+     lines together. Phones now set at 0, tablets a hair tighter, desktop
+     -0.015em, all on a 1.1 line; the lines wrap naturally (`text-balance`
+     in Hero.tsx) rather than being squeezed onto fewer. */
+  line-height: 1.1;
+  letter-spacing: 0em;
+}
+
+@media (min-width: 768px) {
+  .hero-title {
+    letter-spacing: -0.01em;
+  }
 }
 
 @media (min-width: 1200px) {
   .hero-title {
     font-size: clamp(3.75rem, 0.5rem + 4.6vw, 5.1rem);
     font-weight: 750;
-    letter-spacing: -0.05em;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
   }
 }
 

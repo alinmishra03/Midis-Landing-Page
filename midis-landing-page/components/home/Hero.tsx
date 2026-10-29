@@ -1,10 +1,22 @@
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { CountUp } from "@/components/ui/CountUp";
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import { hero } from "@/content/sections";
 /* MIDIS's hero image (supplied 2026-10-28, replacing "Midis Website
-   Product Hero Scene.png"; filename as given). */
+   Product Hero Scene.png"; filename as given). Phones and tablets. */
 import heroImage from "@/public/images/hero/MIDIS Website Workspace in Warm Cream.png";
+/* The DESKTOP hero image (supplied 2026-10-29; filename as given): the
+   phone and laptop alone on a white ground, from 1024px only. */
+import heroImageDesktop from "@/public/images/hero/Midis Website Hero Devices (1).png";
+
+/* The desktop source's srcset. Rendered width ≈ 1.35 × the left column
+   (the white margins run past the frame; see globals.css), i.e. ~70vw,
+   capped where the container stops growing. */
+const desktopSource = getImageProps({
+  src: heroImageDesktop,
+  alt: "",
+  sizes: "(min-width: 1712px) 1200px, 70vw",
+}).props;
 
 /**
  * SECTION 1 — Hero.
@@ -35,6 +47,15 @@ import heroImage from "@/public/images/hero/MIDIS Website Workspace in Warm Crea
  *      1280px the heading sits beside the fields, which run three per row:
  *      a two-row form instead of a tall column.
  *
+ * THE DESKTOP HERO (from 1024px; MIDIS redesign brief, 2026-10-29). The
+ * layers above describe phones and tablets, which are unchanged. From
+ * 1024px the same elements form one grid (`.hero-layout`, globals.css):
+ * the headline across the top; the showcase LEFT (~56%) and the form RIGHT
+ * (~44%, one field per row) starting on the same line; the description and
+ * statistics directly under the showcase. The showcase shows a separate
+ * desktop image (the phone and laptop alone, via <picture>), blended into
+ * the page with no card around it; phones keep the image above.
+ *
  * Reading order = DOM order = the brief's sequence: headline, description,
  * statistics, visual, form. Normal flow throughout — the overlap is a
  * negative margin, not absolute positioning — and no fixed heights.
@@ -61,15 +82,20 @@ export function Hero() {
       aria-labelledby="hero-heading"
       className="hero-stage relative isolate pt-[calc(var(--header-h)+1.5rem)] pb-[calc(var(--space-section)/2)] sm:pt-[calc(var(--header-h)+1.75rem)]"
     >
-      <div className="container-site">
+      {/*
+        `hero-layout`: from 1024px ONE grid (globals.css, "DESKTOP HERO
+        LAYOUT") — the headline across the top, then the showcase LEFT and
+        the form RIGHT starting on the same line, with the description and
+        statistics under the showcase so the left column fills the form's
+        height. The two wrappers inside become `display: contents` there so
+        their children join that grid. Below 1024px none of it applies:
+        phones and tablets stack exactly as before.
+      */}
+      <div className="container-site hero-layout">
         {/* ================= 1. the introduction ================= */}
-        {/* Two columns from 1200px: 62/38 (the 48px gap comes out of both
-            in proportion), so the headline's longer line still fits at
-            1200. `items-center` centres the headline and the description +
-            statistics group on each other; with the 14–16px description
-            the two blocks are within ~25px of the same height, so neither
-            sits visibly higher. Stacked below 1200px. */}
-        <div className="grid gap-y-5 sm:gap-y-6 min-[1200px]:grid-cols-[minmax(0,62fr)_minmax(0,38fr)] min-[1200px]:items-center min-[1200px]:gap-x-12">
+        {/* Below 1024px: headline, then the description + statistics block
+            beneath it. */}
+        <div className="hero-intro grid gap-y-5 sm:gap-y-6">
           {/*
             "Into Customers." never splits (`whitespace-nowrap`) and
             `text-wrap: balance` evens the lines around it, so no line is
@@ -86,10 +112,10 @@ export function Hero() {
             </span>
           </h1>
 
-          {/* One block: description, then the statistics 16px below. Beside
-              each other at 1024–1199px only — a bounded range, so the rule
-              never competes with the desktop layout above it. */}
-          <div className="grid gap-y-4 lg:max-[1200px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:max-[1200px]:items-end lg:max-[1200px]:gap-x-8">
+          {/* One block: description, then the statistics 16px below. From
+              1024px it sits under the showcase; from 1280px the two share a
+              row there, split by a hairline. */}
+          <div className="hero-meta grid gap-y-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:gap-x-8">
             <p
               className="hero-sub hero-rise max-w-[34rem] text-sm leading-[1.6] text-muted md:text-[0.9375rem] 2xl:text-base"
               style={{ "--d": "100ms" } as React.CSSProperties}
@@ -103,7 +129,7 @@ export function Hero() {
               animates them once when they come into view.
             */}
             <ul
-              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-3.5 lg:max-[1200px]:max-w-none"
+              className="hero-rise grid max-w-[26rem] grid-cols-2 border-t border-line pt-3.5 xl:min-w-[21rem] xl:border-t-0 xl:border-l xl:pt-0 xl:pl-8"
               style={{ "--d": "180ms" } as React.CSSProperties}
             >
               {stats.map((stat, index) => (
@@ -144,36 +170,55 @@ export function Hero() {
           </div>
         </div>
 
-        {/* ================= 2. the showcase ================= */}
-        <figure
-          className="hero-showcase hero-reveal mt-2 sm:mt-4"
-          style={{ "--d": "160ms" } as React.CSSProperties}
-        >
-          <Image
-            src={heroImage}
-            alt="A laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”, on a marble desk with an orange MIDIS mug"
-            priority
-            placeholder="blur"
-            sizes="(min-width: 1830px) 1600px, (min-width: 640px) 93vw, 100vw"
-            /* Size and the top crop: .hero-showcase img (globals.css). */
-            className="block"
-          />
-        </figure>
+        {/* Below 1024px: the showcase, then the panel overlapping its lower
+            edge. From 1024px the two join the `hero-layout` grid. */}
+        <div className="hero-stage-row">
+          {/* ================= 2. the showcase ================= */}
+          <figure
+            className="hero-showcase hero-reveal mt-2 sm:mt-4"
+            style={{ "--d": "160ms" } as React.CSSProperties}
+          >
+            {/* ART DIRECTION (MIDIS, 2026-10-29): from 1024px the browser
+                takes the <source> — the devices-only image — and below it
+                the <img> exactly as before, so phones and tablets are
+                untouched. `contents`: the <picture> adds no box, so the
+                <img> lays out as the figure's child, as it always has. */}
+            <picture className="contents">
+              <source
+                media="(min-width: 1024px)"
+                srcSet={desktopSource.srcSet}
+                sizes={desktopSource.sizes}
+                width={heroImageDesktop.width}
+                height={heroImageDesktop.height}
+              />
+              <Image
+                src={heroImage}
+                alt="A laptop and a smartphone showing the MIDIS website, “Websites That Turn Visitors Into Customers”"
+                priority
+                placeholder="blur"
+                sizes="(min-width: 1830px) 1100px, (min-width: 1024px) 66vw, (min-width: 640px) 93vw, 100vw"
+                /* Size and the crop: .hero-showcase img (globals.css). */
+                className="block"
+              />
+            </picture>
+          </figure>
 
-        {/* ================= 3. the consultation ================= */}
-        {/*
-          `id="estimator"` is on the panel, so every `#estimator` link lands
-          on the form (the html scroll-padding clears the fixed header). The
-          negative top margin lifts it over the showcase's lower edge — the
-          desk, below the devices — and the side margins inset it so the
-          image frames it.
-        */}
-        <div
-          id="estimator"
-          className="hero-form-shell hero-panel hero-rise relative z-10 mt-1 p-4 sm:-mt-6 sm:mx-6 sm:p-5 md:p-7 lg:-mt-10 lg:mx-10 xl:-mt-14 xl:px-10 xl:py-9"
-          style={{ "--d": "300ms" } as React.CSSProperties}
-        >
-          <ConsultationForm source="homepage" layout="wide" />
+          {/* ================= 3. the consultation ================= */}
+          {/*
+            `id="estimator"` is on the panel, so every `#estimator` link lands
+            on the form (the html scroll-padding clears the fixed header).
+            Below 1024px the negative top margin lifts it over the showcase's
+            lower edge — the desk, below the devices — and the side margins
+            inset it so the image frames it. From 1024px it is the right
+            column: no overlap, no inset.
+          */}
+          <div
+            id="estimator"
+            className="hero-form-shell hero-panel hero-rise relative z-10 mt-1 p-4 sm:-mt-6 sm:mx-6 sm:p-5 md:p-7 lg:px-7 lg:py-6 xl:px-8 xl:py-7"
+            style={{ "--d": "300ms" } as React.CSSProperties}
+          >
+            <ConsultationForm source="homepage" layout="wide" />
+          </div>
         </div>
       </div>
     </section>
