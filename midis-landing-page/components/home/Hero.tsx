@@ -47,8 +47,9 @@ import heroImage from "@/public/images/hero/MIDIS Website Workspace in Warm Crea
  * follow, the showcase settles in, the panel rises last; the numerals count
  * up once in view. All of it is off under prefers-reduced-motion.
  *
- * THE STATISTICS. "30+ Clients" and "20+ Live Projects" are MIDIS's own
- * instructed figures (2026-10-22) — confirm before launch.
+ * THE STATISTICS. "50+ Clients" (raised from 30+ on MIDIS's instruction,
+ * 2026-10-29) and "20+ Live Projects" are MIDIS's own instructed figures
+ * (2026-10-22) — confirm before launch.
  *
  * ONE H1. The hero owns it; the panel's heading is an h2.
  */
@@ -182,7 +183,7 @@ export function Hero() {
 /** The hero's two MIDIS-instructed figures — see THE STATISTICS above. */
 const stats = [
   {
-    value: 30,
+    value: 50,
     label: "Clients",
     /* Two people. */
     icon: (
