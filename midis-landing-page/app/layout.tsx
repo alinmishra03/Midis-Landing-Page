@@ -72,6 +72,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  /* Google Search Console ownership (MIDIS, 2026-10-29). Rendered as
+     <meta name="google-site-verification"> in every page's <head>. */
+  verification: {
+    google: "T5qYEE9MFf3Ub96rnuYs-vhjmmDNYjbp-vzvaeOJOcY",
+  },
   robots: {
     index: true,
     follow: true,
