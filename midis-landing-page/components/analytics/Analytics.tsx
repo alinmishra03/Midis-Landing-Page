@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import Script from "next/script";
 import {
   GA_MEASUREMENT_ID,
+  GTM_CONTAINER_ID,
   META_PIXEL_ID,
   TRACKED_CLICKS,
   readConsent,
@@ -12,7 +13,8 @@ import {
 } from "@/lib/analytics";
 
 /**
- * GOOGLE ANALYTICS 4 + META PIXEL — mounted once, in the root layout, so
+ * GOOGLE ANALYTICS 4 + META PIXEL + GOOGLE TAG MANAGER — mounted once, in
+ * the root layout, so
  * both live for the whole session and survive client-side navigation.
  * Everything about consent, IDs and events is in lib/analytics.ts.
  *
@@ -29,6 +31,12 @@ import {
  * hashed name, email and phone with every event (plus its own automatic
  * button-click events) — measured on 2026-10-29. The brief allows no
  * personal form data to reach Meta.
+ *
+ * GTM is Google's standard bootstrap (dataLayer + `gtm.start` + gtm.js),
+ * sharing the one `window.dataLayer` with gtag. No `gtag('config')` for
+ * it — a container ID is not a measurement ID. The <noscript> iframe
+ * fallback is deliberately left out: without JavaScript there is no
+ * banner to consent in, so it could only load GTM without consent.
  *
  * CLICK TRACKING is one delegated listener: any element with a
  * `data-track` attribute listed in TRACKED_CLICKS reports when clicked, so
@@ -81,6 +89,15 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 fbq('set', 'autoConfig', false, '${META_PIXEL_ID}');
 fbq('init', '${META_PIXEL_ID}');
 fbq('track', 'PageView');`}
+      </Script>
+
+      {/* Google Tag Manager */}
+      <Script id="gtm" strategy="afterInteractive">
+        {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_CONTAINER_ID}');`}
       </Script>
     </>
   );

@@ -29,6 +29,10 @@
 
 export const GA_MEASUREMENT_ID = "G-EPDDCR21K0";
 export const META_PIXEL_ID = "1731274227883408";
+/** Google Tag Manager (MIDIS, 2026-10-29). Consent-gated like the two
+    above. Its container is managed in the GTM UI, not here — anything it
+    fires must not repeat what this file already sends. */
+export const GTM_CONTAINER_ID = "GTM-KJHK47ZV";
 
 declare global {
   interface Window {
