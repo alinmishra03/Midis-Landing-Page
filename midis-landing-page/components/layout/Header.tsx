@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/Button";
 import { sectionNav } from "@/content/site";
@@ -176,6 +177,11 @@ export function Header() {
 
   const closeAnd = () => setOpen(false);
 
+  /* The section links are in-page anchors on the homepage; on any other
+     route (the /thank-you page) they lead back to the homepage section. */
+  const pathname = usePathname();
+  const anchor = (hash: string) => (pathname === "/" ? hash : `/${hash}`);
+
   return (
     <>
       <header className="site-header" data-scrolled={scrolled || undefined}>
@@ -205,7 +211,7 @@ export function Header() {
                     return (
                       <li key={item.href}>
                         <a
-                          href={item.href}
+                          href={anchor(item.href)}
                           className="nav-link"
                           data-active={active || undefined}
                           /* The observer will confirm this a moment later;
@@ -225,7 +231,7 @@ export function Header() {
 
               {/* ================= right: the actions ================= */}
               <div className="nav-group-end">
-                <Button href="#estimator" size="sm" className="hidden sm:inline-flex">
+                <Button href={anchor("#estimator")} size="sm" className="hidden sm:inline-flex">
                   Get a Free Consultation
                 </Button>
 
@@ -285,7 +291,7 @@ export function Header() {
                 style={{ "--i": index } as React.CSSProperties}
               >
                 <a
-                  href={item.href}
+                  href={anchor(item.href)}
                   onClick={closeAnd}
                   className="nav-panel-link"
                   data-active={activeId === item.href.slice(1) || undefined}
@@ -308,7 +314,7 @@ export function Header() {
           className="nav-panel-item container-site flex flex-col gap-3 pt-5"
           style={{ "--i": sectionNav.length } as React.CSSProperties}
         >
-          <Button href="#estimator" size="lg" onClick={closeAnd} className="w-full">
+          <Button href={anchor("#estimator")} size="lg" onClick={closeAnd} className="w-full">
             Get a Free Consultation
           </Button>
           <Button

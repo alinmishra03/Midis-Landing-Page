@@ -51,8 +51,8 @@ import {
  *
  * THE CONTENT (MIDIS client-approved brief, 2026-10-28): exactly the
  * homepage hero's consultation form — the shared ConsultationForm, so the
- * heading, five fields, validation, consent line and thank-you screen are
- * one implementation. No "Maybe Later" / "No Thanks" button any more.
+ * heading, five fields, validation and consent line are one
+ * implementation. A success closes the popup and goes to /thank-you. No "Maybe Later" / "No Thanks" button any more.
  *
  * MANUAL CTAs are untouched: every "Get a Project Estimate" button is a
  * plain link to #estimator and works instantly.
@@ -131,6 +131,12 @@ export function LeadPopups() {
       setClosing(false);
       restoreFocusRef.current?.focus?.({ preventScroll: true });
     }, 180);
+  }, []);
+
+  /* After a successful submission: gone immediately, no exit transition. */
+  const closeForRedirect = useCallback(() => {
+    setOpen(false);
+    setClosing(false);
   }, []);
 
   /* ---------------- the automatic trigger ---------------- */
@@ -381,14 +387,16 @@ export function LeadPopups() {
         </button>
 
         {/* The SAME form as the homepage hero (2026-10-28): heading,
-            fields, validation, consent line and thank-you screen. A
-            successful submission swaps in the thank-you screen here and
-            marks the session, so neither popup opens again this visit. */}
+            fields, validation and consent line. A successful submission
+            marks the session, so neither popup opens again this visit,
+            closes the popup at once and goes to /thank-you (2026-10-29).
+            No focus restore: the page underneath is being replaced. */}
         <ConsultationForm
           source="popup"
           layout="popup"
           titleId={headingId}
           descriptionId={descriptionId}
+          onSubmitted={closeForRedirect}
         />
       </div>
     </div>

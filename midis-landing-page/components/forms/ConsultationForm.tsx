@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Country } from "react-phone-number-input/max";
 import { Eyebrow } from "@/components/ui/Section";
 import { Arrow, Button } from "@/components/ui/Button";
@@ -9,7 +10,6 @@ import { PhoneField } from "@/components/forms/PhoneField";
 import { site } from "@/content/site";
 import {
   CONSULTATION_SERVICES,
-  MEETING_URL,
   consultationForm as copy,
   type ConsultationService,
 } from "@/content/forms";
@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
  * ONE COMPONENT for every place a visitor can ask for a consultation — the
  * homepage hero (`#estimator`), the lead popup and the Free Website Audit
  * page's in-place form — so the heading, description, five fields, options,
- * validation, submit button, consent line and thank-you screen can never
- * drift apart. It replaced the four-step Project Estimator. All wording
- * lives in content/forms.ts (`consultationForm`), verbatim from the brief.
+ * validation, submit button and consent line can never drift apart. It
+ * replaced the four-step Project Estimator. All wording lives in
+ * content/forms.ts (`consultationForm`), verbatim from the brief.
  *
  * VALIDATION is lib/consultation.ts's schema, the same one the server runs:
  * name, business email, an international phone number checked against the
@@ -34,16 +34,18 @@ import { cn } from "@/lib/utils";
  * filled), and one of the five approved services.
  *
  * SUBMISSION → /api/consultation → the unified Strapi collection
- * portfolio-inquiries (lib/portfolio-inquiry.ts). The thank-you screen
- * appears ONLY once the route confirms Strapi stored the record; any error
- * keeps every value in place and says what to do. A pending request
- * disables the button, and a second submit is ignored. A success marks the
- * session (lib/popups.ts), so the lead popup does not pitch again.
- *
- * THE THANK-YOU SCREEN has one action: the HubSpot meetings link, opened in
- * a new tab (Button adds target/rel for external URLs). No automatic
- * redirect, no "Maybe later" — the follow-up note is plain text.
+ * portfolio-inquiries (lib/portfolio-inquiry.ts). Only once the route
+ * confirms Strapi stored the record does the visitor move on — client-side,
+ * to the dedicated /thank-you page (MIDIS brief, 2026-10-29), with nothing
+ * from the form in the URL or in storage. Any error keeps every value in
+ * place and says what to do. A pending request disables the button, and a
+ * second submit is ignored; the button stays disabled through the
+ * navigation. A success marks the session (lib/popups.ts), so the lead
+ * popup does not pitch again.
  */
+
+/** The dedicated confirmation page (app/thank-you/page.tsx). */
+const THANK_YOU_PATH = "/thank-you";
 
 type FieldName = "name" | "email" | "phone" | "website" | "service";
 
@@ -63,6 +65,7 @@ export function ConsultationForm({
   layout = "stacked",
   titleId,
   descriptionId,
+  onSubmitted,
 }: {
   /** Where the form is rendered (the homepage one takes the Services
       preselect). Every record is stored with sourceWebsite "midis-portfolio". */
@@ -75,6 +78,9 @@ export function ConsultationForm({
   /** Lets a dialog name itself after the visible heading. */
   titleId?: string;
   descriptionId?: string;
+  /** Runs after a confirmed submission, just before the redirect — the
+      popup closes itself here. */
+  onSubmitted?: () => void;
 }) {
   const ownTitleId = useId();
   const ownDescriptionId = useId();
@@ -87,10 +93,9 @@ export function ConsultationForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "submitting">("idle");
   const [honey, setHoney] = useState("");
-  const [sent, setSent] = useState(false);
   const sending = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const thanksRef = useRef<HTMLHeadingElement>(null);
+  const router = useRouter();
 
   const set = (field: FieldName) => (value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -112,11 +117,32 @@ export function ConsultationForm({
     return () => window.removeEventListener(ESTIMATOR_PRESELECT_EVENT, onPreselect);
   }, [source]);
 
-  /* The thank-you heading takes focus, so it is announced and the next Tab
-     reaches the booking button. */
+  /* A success has exactly one destination; fetch it ahead so the redirect
+     is instant. */
   useEffect(() => {
-    if (sent) thanksRef.current?.focus({ preventScroll: true });
-  }, [sent]);
+    router.prefetch(THANK_YOU_PATH);
+  }, [router]);
+
+  /* Next keeps the page we leave mounted but hidden (React <Activity>, see
+     node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md),
+     so without this a visitor returning from /thank-you would find the
+     form still "Submitting…" with their details in it. The cleanup runs as
+     the page is hidden; the ref limits it to after a confirmed submission,
+     so an unsent draft is still kept. */
+  const resetOnHide = useRef(false);
+  useLayoutEffect(() => {
+    return () => {
+      if (!resetOnHide.current) return;
+      resetOnHide.current = false;
+      sending.current = false;
+      setValues(EMPTY);
+      setCountry("IN");
+      setErrors({});
+      setFormError(null);
+      setHoney("");
+      setStatus("idle");
+    };
+  }, []);
 
   function focusField(field: FieldName) {
     const name = field === "website" ? "websiteUrl" : field;
@@ -127,7 +153,7 @@ export function ConsultationForm({
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (sending.current || sent) return;
+    if (sending.current) return;
 
     const parsed = consultationSchema.safeParse({ ...values, hp: honey });
     if (!parsed.success) {
@@ -160,30 +186,26 @@ export function ConsultationForm({
             `We could not submit your request just now. Please try again, or email us at ${site.email}.`,
         );
         if (body.fieldErrors) setErrors(body.fieldErrors);
+        sending.current = false;
+        setStatus("idle");
         return;
       }
-
-      /* Only now — the CMS has confirmed the record. */
-      markLeadSubmitted();
-      setSent(true);
     } catch {
       setFormError(
         `We could not reach our server. Please check your connection and try again, or email us at ${site.email}.`,
       );
-    } finally {
       sending.current = false;
       setStatus("idle");
+      return;
     }
-  }
 
-  if (sent) {
-    return (
-      <ThankYou
-        headingId={headingId}
-        headingRef={thanksRef}
-        className={layout === "wide" ? "mx-auto max-w-xl" : undefined}
-      />
-    );
+    /* Only now — the CMS has confirmed the record. `sending` and the
+       disabled button are left as they are until the confirmation page
+       replaces this one, so nothing can be submitted twice on the way. */
+    markLeadSubmitted();
+    resetOnHide.current = true;
+    onSubmitted?.();
+    router.push(THANK_YOU_PATH);
   }
 
   const fields = copy.fields;
@@ -365,68 +387,6 @@ export function ConsultationForm({
 }
 
 /* ========================================================================== */
-
-function ThankYou({
-  headingId,
-  headingRef,
-  className,
-}: {
-  headingId: string;
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
-  className?: string;
-}) {
-  const t = copy.thankYou;
-  return (
-    <div className={cn("hero-rise text-center", className)}>
-      <span aria-hidden="true" className="consult-success">
-        <svg viewBox="0 0 24 24" width="26" height="26">
-          <path
-            d="M6.5 12.4l3.6 3.6 7.4-8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-
-      <h2
-        ref={headingRef}
-        id={headingId}
-        tabIndex={-1}
-        className="mt-4 font-display text-[1.5rem] font-semibold leading-[1.15] tracking-[-0.02em] text-balance focus:outline-none sm:text-[1.75rem]"
-      >
-        {t.heading}
-      </h2>
-      {t.confirmation.map((line) => (
-        <p key={line} className="mx-auto mt-2 max-w-[28rem] text-sm leading-relaxed text-muted sm:text-[0.9375rem]">
-          {line}
-        </p>
-      ))}
-
-      <div className="mt-6 border-t border-line pt-6">
-        <h3 className="font-display text-lg font-semibold leading-snug sm:text-xl">
-          {t.meetingHeading}
-        </h3>
-        <p className="mx-auto mt-2 max-w-[28rem] text-sm leading-relaxed text-muted">
-          {t.meetingDescription}
-        </p>
-        <Button href={MEETING_URL} size="lg" className="consult-submit mt-5 w-full">
-          {t.meetingCta}
-          <Arrow />
-          <span className="sr-only"> (opens in a new tab)</span>
-        </Button>
-      </div>
-
-      <div className="mt-5 space-y-1.5 text-sm leading-relaxed text-muted">
-        {t.followUp.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function SpinnerGlyph() {
   return (
