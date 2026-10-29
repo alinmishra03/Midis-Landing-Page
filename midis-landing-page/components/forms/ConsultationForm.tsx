@@ -16,6 +16,7 @@ import {
 import { consultationSchema, type ConsultationSource } from "@/lib/consultation";
 import { ESTIMATOR_PRESELECT_EVENT } from "@/lib/estimator-prefill";
 import { markLeadSubmitted } from "@/lib/popups";
+import { trackLead } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 /**
@@ -203,6 +204,9 @@ export function ConsultationForm({
        disabled button are left as they are until the confirmation page
        replaces this one, so nothing can be submitted twice on the way. */
     markLeadSubmitted();
+    /* The conversion (GA4 generate_lead, Meta Lead) — here and only here.
+       No form values are sent; see lib/analytics.ts. */
+    trackLead(source);
     resetOnHide.current = true;
     onSubmitted?.();
     router.push(THANK_YOU_PATH);

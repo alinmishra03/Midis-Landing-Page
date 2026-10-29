@@ -97,8 +97,11 @@ export function ConsultationThankYou() {
               {t.meetingDescription}
             </p>
 
+            {/* `data-track`: the click is reported by the analytics
+                listener (components/analytics/Analytics.tsx). */}
             <Button
               href={MEETING_URL}
+              data-track="book-consultation"
               size="lg"
               /* Tighter on phones so the label keeps to one line from 360px. */
               className="consult-submit mt-6 w-full px-4 text-sm min-[400px]:text-[0.9375rem] sm:w-auto sm:px-8 sm:text-base"

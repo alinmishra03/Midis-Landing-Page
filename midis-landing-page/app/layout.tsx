@@ -4,6 +4,8 @@ import Script from "next/script";
 import "./globals.css";
 import { site } from "@/content/site";
 import { LeadPopups } from "@/components/popups/LeadPopups";
+import { Analytics } from "@/components/analytics/Analytics";
+import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 
 /**
  * Root layout.
@@ -140,6 +142,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           src="https://js-na2.hs-scripts.com/247821896.js"
           strategy="afterInteractive"
         />
+        {/*
+          Google Analytics 4 + Meta Pixel (MIDIS brief, 2026-10-29), loaded
+          only after the visitor accepts in the cookie banner. Mounted once
+          here so they live across client-side navigation; IDs, consent and
+          events are in lib/analytics.ts.
+        */}
+        <Analytics />
+        <ConsentBanner />
       </body>
     </html>
   );

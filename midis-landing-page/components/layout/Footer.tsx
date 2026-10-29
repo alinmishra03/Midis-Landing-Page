@@ -1,6 +1,7 @@
 import { Logo } from "./Logo";
 import { Reveal } from "@/components/ui/Reveal";
 import { Arrow } from "@/components/ui/Button";
+import { CookiePreferencesButton } from "@/components/analytics/ConsentBanner";
 import {
   footerColumns,
   footerLegal,
@@ -240,6 +241,11 @@ export function Footer() {
                 </a>
               </li>
             ))}
+            {/* Reopens the cookie banner, to change or withdraw consent
+                for analytics (components/analytics/ConsentBanner.tsx). */}
+            <li>
+              <CookiePreferencesButton className="link-underline inline-flex min-h-6 cursor-pointer items-center transition-colors hover:text-white" />
+            </li>
           </ul>
         </div>
       </div>
