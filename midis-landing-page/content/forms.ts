@@ -223,7 +223,7 @@ export const CONSULTATION_SERVICES = [
 export type ConsultationService = (typeof CONSULTATION_SERVICES)[number];
 
 /** The client's HubSpot meetings page — the thank-you screen's only CTA. */
-export const MEETING_URL = "https://meetings-na2.hubspot.com/mohit-mayank";
+export const MEETING_URL = "https://meetings-na2.hubspot.com/midis/sagar-bakshi";
 
 export const consultationForm = {
   heading: "Let’s Build a Website That Grows Your Business.",
